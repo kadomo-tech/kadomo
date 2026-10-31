@@ -7,7 +7,8 @@
 #        ./build.sh --open      install, restart the running copy
 #        ./build.sh --direct    build with swiftc (tools/dev-build.sh) instead of SwiftPM
 #        ./build.sh --universal one binary for Apple silicon and Intel (implies --direct)
-#        ./build.sh --package   also zip the app into dist/ to copy to another Mac
+#        ./build.sh --package   also zip the app into dist/ and release/, and update install.sh's checksum
+#                               (use with --universal; run it after any change that should ship)
 #        PREFIX=/Applications ./build.sh   install somewhere else
 set -euo pipefail
 here=${0:A:h}
@@ -68,6 +69,13 @@ if [[ " $* " == *" --package "* ]]; then
   rm -f "$zip"
   ditto -c -k --keepParent "$app" "$zip"
   echo "packaged $zip"
+  # install.sh ships release/, so refresh it and its checksum together or installs get the old build.
+  mkdir -p "$here/release"
+  rm -f "$here"/release/KadomoMenu-*.zip
+  cp "$zip" "$here/release/"
+  sum=$(shasum -a 256 "$zip" | cut -d' ' -f1)
+  sed -i '' -e "s/^RELEASE_VERSION=.*/RELEASE_VERSION=\"$version\"/" -e "s/^RELEASE_SHA256=.*/RELEASE_SHA256=\"$sum\"/" "$here/install.sh"
+  echo "updated release/ and install.sh ($sum)"
 fi
 
 if [[ " $* " == *" --open "* ]]; then

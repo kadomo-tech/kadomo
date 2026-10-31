@@ -11,6 +11,7 @@ Keyboard-first macOS launcher. Swift 6 + AppKit, SwiftPM, no dependencies.
 ## Build and check
 
 - `./build.sh [--open]` installs `~/Applications/KadomoMenu.app` and `~/.local/bin/kadomo-menu`.
+- `install.sh` ships the prebuilt zip in `release/`, not the sources. After a fix that should reach installs, run `./build.sh --universal --package` and commit `release/` with `install.sh`.
 - `swift test`, or `tools/dev-build.sh test` where SwiftPM cannot write its temp files.
 - `tools/selftest.sh` end-to-end in-process checks; `tools/check-cli.sh` the CLI over the socket.
 - `tools/snap.sh` renders every theme and state to `.build/shots/*.png`. Look at them after UI changes.

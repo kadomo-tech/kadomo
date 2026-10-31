@@ -28,7 +28,7 @@ WORK=""
 # The bundled build. Update these together when a new version is built into release/.
 RELEASE_VERSION="0.1.0"
 RELEASE_ZIP="$ROOT/release/KadomoMenu-$RELEASE_VERSION-x86_64-arm64.zip"
-RELEASE_SHA256="0b8063ef0d799fb3b7525150c13b6be57cde2e421d79567ca1c7864d10bbe063"
+RELEASE_SHA256="2ab9033bc06df9dddaf545a685be65305795c66b9754a0084b13f106a5a0376c"
 ZIP_PATH="$RELEASE_ZIP"
 
 # The default theme's font, pinned to a Nerd Fonts release and checked against its SHA-256.
@@ -75,6 +75,20 @@ preflight() {
     ((${macos%%.*} >= 14)) || die "macOS 14 or later is required (this Mac runs $macos)."
     ((EUID != 0)) || die "run this as your own user, not with sudo."
     [[ -f "$ZIP_PATH" ]] || die "no app zip at $(short_path "$ZIP_PATH"). Is this a complete clone of the repo?"
+    [[ "$ZIP_PATH" != "$RELEASE_ZIP" ]] || check_fresh
+}
+
+# Refuses a release/ build that is older than the source it ships, so a fix that was
+# committed without rebuilding the zip cannot quietly install the old app.
+check_fresh() {
+    local built newer
+    git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1 || return 0
+    # An uncommitted zip was just rebuilt from the working tree.
+    [[ -z "$(git -C "$ROOT" status --porcelain -- release)" ]] || return 0
+    built="$(git -C "$ROOT" log -1 --format=%H -- release)"
+    [[ -n "$built" ]] || return 0
+    newer="$(git -C "$ROOT" rev-list --count "$built..HEAD" -- Sources Package.swift Info.plist.in)"
+    ((newer == 0)) || die "the app in release/ is older than the source ($newer newer commit(s)). Rebuild it with ./build.sh --universal --package, then run this again."
 }
 
 any_selected() { ((ITEM_ON[I_INSTALL] + ITEM_ON[I_FONT] + ITEM_ON[I_START])); }
