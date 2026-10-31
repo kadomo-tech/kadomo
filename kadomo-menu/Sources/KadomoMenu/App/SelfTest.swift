@@ -55,6 +55,19 @@ enum SelfTest {
         launcher.model.handle(.query("term"))
         check("app search", launcher.model.selectedItem?.kind == .app, launcher.model.selectedItem?.title ?? "nil")
 
+        // Real key events through the panel, the way a person types.
+        launcher.show()
+        for ch in "term" {
+            for type in [NSEvent.EventType.keyDown, .keyUp] {
+                if let e = NSEvent.keyEvent(with: type, location: .zero, modifierFlags: [], timestamp: 0,
+                                            windowNumber: launcher.panel.windowNumber, context: nil,
+                                            characters: String(ch), charactersIgnoringModifiers: String(ch),
+                                            isARepeat: false, keyCode: 0) { launcher.panel.sendEvent(e) }
+            }
+        }
+        check("typing searches", launcher.model.state.query == "term", "query=\(launcher.model.state.query) field=\(launcher.view.field.stringValue) key=\(launcher.panel.isKeyWindow)")
+        launcher.hide()
+
         // Hot reload picks up new files; a broken config keeps the last good one.
         let late = Paths.commandsDirectory + "/late.toml"
         try? "[[command]]\nid = \"late\"\ntitle = \"Added Later\"\nurl = \"https://example.com\"\n".write(toFile: late, atomically: false, encoding: .utf8)

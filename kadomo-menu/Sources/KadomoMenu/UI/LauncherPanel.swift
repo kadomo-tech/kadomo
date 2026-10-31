@@ -47,7 +47,14 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
 /// The shared text editor behind the search field, so the caret takes the theme color.
 final class FieldEditor: NSTextView {
     init() {
-        super.init(frame: .zero, textContainer: nil)
+        // A nil container leaves the view with no text storage, and typing goes nowhere.
+        let storage = NSTextStorage()
+        let layout = NSLayoutManager()
+        storage.addLayoutManager(layout)
+        let container = NSTextContainer(size: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude))
+        container.widthTracksTextView = false
+        layout.addTextContainer(container)
+        super.init(frame: .zero, textContainer: container)
         isFieldEditor = true
         isRichText = false
         allowsUndo = true
