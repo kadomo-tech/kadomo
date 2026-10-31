@@ -1,8 +1,8 @@
 import AppKit
 import KadomoMenuCore
 
-/// Built-in commands: system power and sound, macOS settings panes, window
-/// and workspace control, appearance, the keyboard reference, and the
+/// Built-in commands: system power and sound, macOS settings panes,
+/// appearance, the keyboard reference, and the
 /// launcher's own settings. Only public APIs and stock tools.
 enum SystemProvider {
     static func osascript(_ source: String) -> Action { .exec(path: "/usr/bin/osascript", args: ["-e", source]) }
@@ -81,68 +81,6 @@ enum SystemProvider {
                  parent: p, icon: .symbol("paintbrush"), keywords: ["edit theme", "colors", "fonts"], action: .builtin("theme.customize"), order: 3),
             Item(id: "look:themes-folder", title: "Open Themes Folder", parent: p, icon: .symbol("folder"),
                  action: .builtin("folder.themes"), order: 4),
-        ]
-    }
-
-    static func windows() -> [Item] {
-        let p = Categories.windows
-        return [
-            Item(id: "win:hide-others", title: "Hide Other Apps", subtitle: "Hide everything except the app you were using",
-                 parent: p, icon: .symbol("eye.slash"), keywords: ["focus", "declutter"], action: .builtin("app.hide-others"), order: 0),
-            Item(id: "win:show-all", title: "Show All Apps", subtitle: "Unhide every hidden app", parent: p, icon: .symbol("eye"),
-                 action: .builtin("app.show-all"), order: 1),
-            Item(id: "win:hide-current", title: "Hide Current App", parent: p, icon: .symbol("minus.square"),
-                 action: .builtin("app.hide-front"), order: 2),
-            Item(id: "win:quit-current", title: "Quit Current App", parent: p, icon: .symbol("xmark.square"),
-                 keywords: ["close", "kill"], action: .builtin("app.quit-front"), confirm: true, order: 3),
-        ]
-    }
-
-    /// Window and workspace commands for a tiling window manager, when one is installed.
-    static func windowManager(_ setting: String) -> [Item] {
-        let yabai = setting == "auto" || setting == "yabai" ? Executor.which("yabai") : nil
-        let aero = setting == "auto" || setting == "aerospace" ? Executor.which("aerospace") : nil
-        let w = Categories.windows, s = Categories.workspaces
-        var items: [Item] = []
-        if let aero, yabai == nil || setting == "aerospace" {
-            for (dir, sym) in [("left", "arrow.left"), ("right", "arrow.right"), ("up", "arrow.up"), ("down", "arrow.down")] {
-                items.append(Item(id: "wm:focus-\(dir)", title: "Focus Window \(dir.capitalized)", subtitle: "AeroSpace", parent: w,
-                                  icon: .symbol(sym), action: .exec(path: aero, args: ["focus", dir]), order: 20))
-            }
-            items.append(Item(id: "wm:float", title: "Toggle Floating", subtitle: "AeroSpace", parent: w, icon: .symbol("macwindow.badge.plus"),
-                              keywords: ["tiling"], action: .exec(path: aero, args: ["layout", "floating", "tiling"]), order: 30))
-            items.append(Item(id: "wm:fullscreen", title: "Toggle Fullscreen", subtitle: "AeroSpace", parent: w, icon: .symbol("arrow.up.left.and.arrow.down.right"),
-                              action: .exec(path: aero, args: ["fullscreen"]), order: 31))
-            for n in 1...9 {
-                items.append(Item(id: "ws:\(n)", title: "Workspace \(n)", subtitle: "Switch with AeroSpace", parent: s, icon: .symbol("\(n).square"),
-                                  keywords: ["space \(n)", "desktop \(n)"], action: .exec(path: aero, args: ["workspace", "\(n)"]), order: n))
-                items.append(Item(id: "ws:move-\(n)", title: "Move Window to Workspace \(n)", subtitle: "AeroSpace", parent: s,
-                                  icon: .symbol("arrow.right.square"), action: .exec(path: aero, args: ["move-node-to-workspace", "\(n)"]), order: 20 + n))
-            }
-        } else if let yabai {
-            for (dir, name, sym) in [("west", "Left", "arrow.left"), ("east", "Right", "arrow.right"), ("north", "Up", "arrow.up"), ("south", "Down", "arrow.down")] {
-                items.append(Item(id: "wm:focus-\(dir)", title: "Focus Window \(name)", subtitle: "yabai", parent: w, icon: .symbol(sym),
-                                  action: .exec(path: yabai, args: ["-m", "window", "--focus", dir]), order: 20))
-            }
-            items.append(Item(id: "wm:float", title: "Toggle Floating", subtitle: "yabai", parent: w, icon: .symbol("macwindow.badge.plus"),
-                              keywords: ["tiling"], action: .exec(path: yabai, args: ["-m", "window", "--toggle", "float"]), order: 30))
-            items.append(Item(id: "wm:fullscreen", title: "Toggle Zoom Fullscreen", subtitle: "yabai", parent: w, icon: .symbol("arrow.up.left.and.arrow.down.right"),
-                              action: .exec(path: yabai, args: ["-m", "window", "--toggle", "zoom-fullscreen"]), order: 31))
-            items.append(Item(id: "wm:balance", title: "Balance Windows", subtitle: "yabai", parent: w, icon: .symbol("square.split.2x1"),
-                              action: .exec(path: yabai, args: ["-m", "space", "--balance"]), order: 32))
-            for n in 1...9 {
-                items.append(Item(id: "ws:\(n)", title: "Workspace \(n)", subtitle: "Switch with yabai (needs its scripting addition)", parent: s,
-                                  icon: .symbol("\(n).square"), keywords: ["space \(n)", "desktop \(n)"],
-                                  action: .exec(path: yabai, args: ["-m", "space", "--focus", "\(n)"]), order: n))
-            }
-        }
-        return items
-    }
-
-    static func development() -> [Item] {
-        [
-            Item(id: "dev:edit-config", title: "Edit Kadomo Menu Config", subtitle: "config.toml in your text editor", parent: Categories.development,
-                 icon: .symbol("doc.text"), keywords: ["dotfiles", "settings", "configure"], action: .builtin("config.edit"), order: 50),
         ]
     }
 

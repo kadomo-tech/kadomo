@@ -18,7 +18,6 @@ enum DefaultFiles {
     # show_recent = 0              # 0-5 recently used items on the home menu
     # favorites = ["app:com.apple.Safari"]
     # hidden = ["sys:screensaver"] # item ids to leave out
-    # window_manager = "auto"      # auto, yabai, aerospace, off
     # debug_log = false
 
     # [search]
@@ -66,7 +65,7 @@ enum DefaultFiles {
 
     ```toml
     [[category]]
-    id = "development/projects"      # nested under Development
+    id = "development/projects"      # creates Development, with Projects inside
     title = "Projects"
     icon = "folder"                  # an SF Symbol name
 
@@ -99,8 +98,8 @@ enum DefaultFiles {
     launcher open, `hint` shows text at the right edge, `also_in = ["system"]`
     lists the command in more categories, `order` sorts within the category.
 
-    Built-in category ids: apps, windows, workspaces, system, settings,
-    appearance, development, commands, keybinds, about.
+    Built-in category ids: apps, appearance, keybinds, services, commands,
+    about, system, settings (inside system).
     """
 
     static let exampleCommands = """

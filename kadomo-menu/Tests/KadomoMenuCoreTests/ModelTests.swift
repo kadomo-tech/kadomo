@@ -6,7 +6,7 @@ import Testing
     static func catalog() -> Catalog {
         Catalog(items: Categories.home + [
             Item(id: "app:firefox", title: "Firefox", kind: .app, parent: Categories.apps, action: .openApp(path: "/Applications/Firefox.app", newInstance: false)),
-            Item(id: "app:terminal", title: "Terminal", kind: .app, parent: Categories.apps, alsoIn: [Categories.development],
+            Item(id: "app:terminal", title: "Terminal", kind: .app, parent: Categories.apps,
                  secondary: [SecondaryAction("Open New Window", .exec(path: "/usr/bin/true", args: []))]),
             Item(id: "sys:sleep", title: "Sleep", parent: Categories.system, action: .exec(path: "/usr/bin/pmset", args: ["sleepnow"])),
             Item(id: "sys:restart", title: "Restart…", parent: Categories.system, action: .builtin("restart"), confirm: true),
@@ -27,19 +27,19 @@ import Testing
 
     @Test func homeShowsOnlyNonEmptyCategoriesInOrder() {
         let m = model()
-        // Windows, Workspaces, Settings, Commands, About are empty here and hidden.
-        #expect(titles(m) == ["Apps", "System", "Appearance", "Development", "Keybinds"])
+        // Services, Commands, About are empty here and hidden; Settings sits under System.
+        #expect(titles(m) == ["Applications", "Appearance", "Keybinds", "System"])
     }
 
     @Test func enterOpensCategoryAndEscapeGoesBack() {
         let m = model()
-        m.handle(cmd(.down)) // System
+        for _ in 0..<3 { m.handle(cmd(.down)) } // System
         #expect(m.handle(cmd(.enter)) == .handled)
         #expect(m.state.path == [Categories.system])
         #expect(titles(m) == ["Restart…", "Sleep"])
         #expect(m.handle(cmd(.close)) == .handled)
         #expect(m.state.path.isEmpty)
-        #expect(m.state.selection == 1, "selection restored to System")
+        #expect(m.state.selection == 3, "selection restored to System")
         #expect(m.handle(cmd(.close)) == .dismiss)
     }
 
@@ -78,7 +78,7 @@ import Testing
 
     @Test func typingSearchesScopedThenGlobalFallback() {
         let m = model()
-        m.handle(cmd(.down)); m.handle(cmd(.enter)) // System
+        for _ in 0..<3 { m.handle(cmd(.down)) }; m.handle(cmd(.enter)) // System
         m.handle(.query("sle"))
         #expect(titles(m) == ["Sleep"])
         #expect(!m.isGlobalFallback)
@@ -184,6 +184,6 @@ import Testing
         for ch in "firefox" { q.append(ch); m.handle(.query(q)) }
         for _ in 0..<7 { q.removeLast(); m.handle(.query(q)) }
         #expect(m.state.query.isEmpty)
-        #expect(titles(m) == ["Apps", "System", "Appearance", "Development", "Keybinds"])
+        #expect(titles(m) == ["Applications", "Appearance", "Keybinds", "System"])
     }
 }

@@ -93,7 +93,8 @@ final class RowView: NSTableRowView {
     private func draw(_ text: String, font: NSFont, color: NSColor, in rect: NSRect, align: NSTextAlignment) {
         let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: color, .paragraphStyle: Style.paragraphs[align]!]
         let lineHeight = ceil(font.ascender - font.descender)
-        let r = NSRect(x: rect.minX, y: rect.midY - lineHeight / 2, width: rect.width, height: lineHeight + 2)
+        // Whole device pixels, so text stays sharp on 1x displays.
+        let r = backingAlignedRect(NSRect(x: rect.minX, y: rect.midY - lineHeight / 2, width: rect.width, height: lineHeight + 2), options: .alignAllEdgesNearest)
         (text as NSString).draw(with: r, options: [.usesLineFragmentOrigin, .truncatesLastVisibleLine], attributes: attrs)
     }
 

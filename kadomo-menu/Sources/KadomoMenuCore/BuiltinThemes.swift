@@ -39,16 +39,16 @@ public enum BuiltinThemes {
     warning = "#ffc759"
 
     [font]
-    family = "monospace"
-    size = 17
+    family = "JetBrainsMono Nerd Font"   # install.sh installs it; falls back to SF Mono
+    size = 15
     weight = "regular"
-    search_size = 18
-    subtitle_size = 12
-    hint_size = 13
+    search_size = 16
+    subtitle_size = 11
+    hint_size = 12
     selected_weight = "regular"
 
     [geometry]
-    width = 580
+    width = 500
     max_rows = 10
     row_height = 48
     row_spacing = 4

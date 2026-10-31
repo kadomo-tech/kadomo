@@ -7,15 +7,13 @@ desktop, and works on its own on any Mac.
 ```text
 ╭──────────────────────────────────────────╮
 │  Go…                                     │
-│ ▌ ⊞  Apps                            ›   │
-│   ⧉  Windows                         ›   │
-│   ⏻  System                          ›   │
-│   ⚙  Settings                        ›   │
+│ ▌ ⊞  Applications                    ›   │
 │   🎨 Appearance                      ›   │
-│   </> Development                    ›   │
-│   >_ Commands                        ›   │
 │   ⌨  Keybinds                        ›   │
+│   ☰  Services                        ›   │
+│   >_ Commands                        ›   │
 │   ⓘ  About                           ›   │
+│   ⏻  System                          ›   │
 ╰──────────────────────────────────────────╯
 ```
 
@@ -41,7 +39,9 @@ Needs macOS 14 or later. No Xcode or compiler is needed.
 The repo includes the prebuilt app in `release/`: one build that runs natively
 on Apple silicon and Intel Macs, on macOS 14 and later. The installer checks it
 against its SHA-256, installs `~/Applications/KadomoMenu.app`, links the
-`kadomo-menu` command, and starts the launcher. A checklist opens first (Space
+`kadomo-menu` command, installs the JetBrainsMono Nerd Font the default theme
+uses (a pinned, checksum-verified Nerd Fonts release into `~/Library/Fonts`,
+skipped when it is already there), and starts the launcher. A checklist opens first (Space
 toggles, Enter reviews, q quits); `--yes` skips it. To install a different zip,
 such as one copied from another Mac, run `./install.sh --zip PATH`.
 
@@ -125,7 +125,8 @@ commands along.
 
 `uninstall.sh` lists only what it finds on this Mac and removes it after a
 review: it turns off launch at login and quits the app, then removes the app
-bundle, the `kadomo-menu` command, your config and themes, usage history,
+bundle, the `kadomo-menu` command, the font files the installer added (a copy
+you installed yourself stays), your config and themes, usage history,
 preferences, caches, logs, the build cache, and the Accessibility and
 Automation grants macOS recorded for the app. Pass `--yes` to remove everything
 it finds without the checklist. The repo checkout is never touched.
@@ -208,7 +209,7 @@ kadomo-menu theme set kadomo-terminal
 ```
 
 Or pick one under Appearance › Themes: switching is live. Presets:
-**Kadomo Dark** (default), **Kadomo Minimal** (system font, blur, follows
+**Kadomo Dark** (default, JetBrainsMono Nerd Font), **Kadomo Minimal** (system font, blur, follows
 light/dark), **Kadomo Terminal** (dense, monospaced, no icons), and
 **Kadomo Light**. Make your own in `~/.config/kadomo-menu/themes/<name>.toml`
 with `extends = "kadomo-dark"` and only the tokens you change. Appearance ›
@@ -228,9 +229,8 @@ The same app runs standalone or inside Kadomo. With `[kadomo] mode = "auto"`
 
 Nothing else about Kadomo is assumed. Set `mode = "off"` to ignore both.
 
-Window and workspace commands appear when a supported window manager is
-installed: AeroSpace or yabai are detected; Rift and others plug in through
-command files.
+Window and workspace commands (Rift and others) plug in through command
+files.
 
 ## CLI
 
@@ -286,11 +286,6 @@ limits. Product limits:
 - **Lock Screen** turns the display off (`pmset displaysleepnow`); it locks
   when "Require password after screen saver begins or display is turned off"
   is set to Immediately. macOS has no public lock API.
-- **Window commands** without a tiling window manager are app-level only
-  (hide, show, quit, switch). Moving and resizing windows needs AeroSpace,
-  yabai, or Rift.
-- **Workspaces on yabai** need its scripting addition (yabai's own
-  requirement).
 - System Settings pane links use Apple's documented URL identifiers; Apple
   renames panes between releases, so one may open the top level instead.
 - Fuzzy matching is byte-based on folded text. CJK and other scripts match

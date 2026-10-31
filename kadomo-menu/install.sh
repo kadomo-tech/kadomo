@@ -2,8 +2,9 @@
 # Installs Kadomo Menu from the prebuilt app that ships in this repo, in
 # release/ (one build for Apple silicon and Intel, macOS 14 or later). It checks
 # the zip against a SHA-256, puts KadomoMenu.app in ~/Applications, links the
-# kadomo-menu command into ~/.local/bin, and starts the launcher. No Xcode or
-# compiler is needed. Your config in ~/.config/kadomo-menu is never touched.
+# kadomo-menu command into ~/.local/bin, installs the JetBrainsMono Nerd Font
+# the default theme uses, and starts the launcher. No Xcode or compiler is
+# needed. Your config in ~/.config/kadomo-menu is never touched.
 #
 # Usage: ./install.sh [--yes] [--zip PATH]
 #   --yes         skip the checklist and review, and install the defaults
@@ -27,18 +28,32 @@ WORK=""
 # The bundled build. Update these together when a new version is built into release/.
 RELEASE_VERSION="0.1.0"
 RELEASE_ZIP="$ROOT/release/KadomoMenu-$RELEASE_VERSION-x86_64-arm64.zip"
-RELEASE_SHA256="0ab29e38f9ee9f2580626f6eccb56f3974da12a081fc34a419f76bede540cd01"
+RELEASE_SHA256="0b8063ef0d799fb3b7525150c13b6be57cde2e421d79567ca1c7864d10bbe063"
 ZIP_PATH="$RELEASE_ZIP"
+
+# The default theme's font, pinned to a Nerd Fonts release and checked against its SHA-256.
+FONT_VERSION="3.5.1"
+FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v$FONT_VERSION/JetBrainsMono.tar.xz"
+FONT_SHA256="04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf"
+FONT_GLOB="JetBrainsMonoNerdFont-*.ttf"
+FONT_DIR="$HOME/Library/Fonts"
+# Files this script added, so uninstall.sh removes only those. Follows the app's state dir.
+STATE_DIR="${KADOMO_MENU_STATE_DIR:-$HOME/Library/Application Support/kadomo-menu}"
+FONT_MANIFEST="$STATE_DIR/installed-fonts.txt"
 
 source "$ROOT/lib/tui.sh"
 
-ITEM_LABEL=("Install Kadomo Menu" "Start the launcher")
+font_installed() { [[ -e "$FONT_DIR/JetBrainsMonoNerdFont-Regular.ttf" || -e "/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf" ]]; }
+
+ITEM_LABEL=("Install Kadomo Menu" "Install JetBrainsMono Nerd Font" "Start the launcher")
 ITEM_DETAIL=(
     "~/Applications/KadomoMenu.app and ~/.local/bin/kadomo-menu"
+    "the default theme's font; ~/Library/Fonts, 7 MB download from GitHub"
     "opens it now; it starts at login by default"
 )
-ITEM_ON=(1 1)
-I_INSTALL=0; I_START=1
+ITEM_ON=(1 1 1)
+I_INSTALL=0; I_FONT=1; I_START=2
+if font_installed; then ITEM_DETAIL[I_FONT]="already installed"; ITEM_ON[I_FONT]=0; fi
 
 usage() {
     cat <<EOF
@@ -62,7 +77,7 @@ preflight() {
     [[ -f "$ZIP_PATH" ]] || die "no app zip at $(short_path "$ZIP_PATH"). Is this a complete clone of the repo?"
 }
 
-any_selected() { ((ITEM_ON[I_INSTALL] + ITEM_ON[I_START])); }
+any_selected() { ((ITEM_ON[I_INSTALL] + ITEM_ON[I_FONT] + ITEM_ON[I_START])); }
 
 review() {
     local i
@@ -101,6 +116,26 @@ install_app() {
 link_command() {
     mkdir -p "$(dirname "$BIN")"
     ln -sf "$APP/Contents/MacOS/$APP_NAME" "$BIN"
+}
+
+# Downloads the pinned release, checks it, and copies in the files that are not there yet.
+# Each file it adds is recorded in the manifest; fonts you installed yourself are never listed.
+install_font() {
+    local archive="$WORK/font.tar.xz" unpacked="$WORK/font" actual file name
+    mkdir -p "$unpacked" "$FONT_DIR" "$STATE_DIR"
+    curl -fsSL --retry 2 -o "$archive" "$FONT_URL"
+    actual="$(shasum -a 256 "$archive" | cut -d' ' -f1)"
+    if [[ "$actual" != "$FONT_SHA256" ]]; then
+        echo "font checksum mismatch: expected $FONT_SHA256, got $actual"
+        return 1
+    fi
+    tar -xf "$archive" -C "$unpacked" "$FONT_GLOB"
+    for file in "$unpacked"/$FONT_GLOB; do
+        name="$(basename "$file")"
+        [[ ! -e "$FONT_DIR/$name" ]] || continue
+        cp "$file" "$FONT_DIR/$name"
+        echo "$name" >>"$FONT_MANIFEST"
+    done
 }
 
 start_app() {
@@ -165,5 +200,8 @@ mkdir -p "$LOG_DIR"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/kadomo-menu-install.XXXXXX")"
 printf '\n'
 if ((ITEM_ON[I_INSTALL])); then install_steps; fi
-if ((ITEM_ON[I_START] && FAILED == 0)); then run_step "Start the launcher" start_app; fi
+APP_FAILED=$FAILED
+# A failed font download leaves the app on SF Mono; it still starts.
+if ((ITEM_ON[I_FONT])); then run_step "Install JetBrainsMono Nerd Font" install_font; fi
+if ((ITEM_ON[I_START] && APP_FAILED == 0)); then run_step "Start the launcher" start_app; fi
 finish

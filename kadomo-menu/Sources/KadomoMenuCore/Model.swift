@@ -62,7 +62,7 @@ public struct Item: Sendable, Identifiable, Hashable {
     public var kind: ItemKind
     /// The category this item lives in. `Catalog.rootID` for the home menu.
     public var parent: String
-    /// More categories that also list this item (a terminal app under Development).
+    /// More categories that also list this item (an app under Commands).
     public var alsoIn: [String]
     public var icon: IconRef
     public var keywords: [String]
@@ -116,28 +116,24 @@ public struct Item: Sendable, Identifiable, Hashable {
 /// The built-in top-level structure. Providers attach items under these ids.
 public enum Categories {
     public static let apps = "apps"
-    public static let windows = "windows"
-    public static let workspaces = "workspaces"
-    public static let system = "system"
-    public static let settings = "settings"
     public static let appearance = "appearance"
     public static let themes = "appearance/themes"
-    public static let development = "development"
-    public static let commands = "commands"
     public static let keybinds = "keybinds"
+    public static let services = "services"
+    public static let commands = "commands"
     public static let about = "about"
+    public static let system = "system"
+    public static let settings = "settings"
 
     public static let home: [Item] = [
-        .category(apps, "Apps", subtitle: "Launch and manage applications", icon: "square.grid.2x2", order: 0, keywords: ["applications", "programs"]),
-        .category(windows, "Windows", subtitle: "Switch, hide, and arrange windows", icon: "macwindow.on.rectangle", order: 1, keywords: ["switch", "running"]),
-        .category(workspaces, "Workspaces", subtitle: "Move between desktop spaces", icon: "rectangle.split.3x1", order: 2, keywords: ["spaces", "desktops"]),
-        .category(system, "System", subtitle: "Lock, sleep, sound, power", icon: "power", order: 3, keywords: ["power", "shutdown", "sound"]),
-        .category(settings, "Settings", subtitle: "macOS settings panes", icon: "gearshape", order: 4, keywords: ["preferences", "system settings"]),
-        .category(appearance, "Appearance", subtitle: "Themes, wallpaper, dark mode", icon: "paintpalette", order: 5, keywords: ["theme", "look"]),
+        .category(apps, "Applications", subtitle: "Launch and manage applications", icon: "square.grid.2x2", order: 0, keywords: ["apps", "programs"]),
+        .category(appearance, "Appearance", subtitle: "Themes, wallpaper, dark mode", icon: "paintpalette", order: 1, keywords: ["theme", "look"]),
         .category(themes, "Themes", subtitle: "Launcher themes", icon: "swatchpalette", parent: appearance, order: 0, keywords: ["theme"]),
-        .category(development, "Development", subtitle: "Terminals, editors, and projects", icon: "chevron.left.forwardslash.chevron.right", order: 6, keywords: ["dev", "code"]),
-        .category(commands, "Commands", subtitle: "Your scripts and workflows", icon: "terminal", order: 7, keywords: ["scripts", "custom"]),
-        .category(keybinds, "Keybinds", subtitle: "Keyboard reference", icon: "keyboard", order: 8, keywords: ["shortcuts", "keys", "help"]),
-        .category(about, "About", subtitle: "Kadomo Menu settings and info", icon: "info.circle", order: 9, keywords: ["kadomo", "launcher", "preferences", "reload", "quit"]),
+        .category(keybinds, "Keybinds", subtitle: "Keyboard reference", icon: "keyboard", order: 2, keywords: ["shortcuts", "keys", "help"]),
+        .category(services, "Services", subtitle: "Background services and daemons", icon: "server.rack", order: 3, keywords: ["daemons", "background"]),
+        .category(commands, "Commands", subtitle: "Your scripts and workflows", icon: "terminal", order: 4, keywords: ["scripts", "custom"]),
+        .category(about, "About", subtitle: "Kadomo Menu settings and info", icon: "info.circle", order: 5, keywords: ["kadomo", "launcher", "preferences", "reload", "quit"]),
+        .category(system, "System", subtitle: "Lock, sleep, sound, power, settings", icon: "power", order: 6, keywords: ["power", "shutdown", "sound"]),
+        .category(settings, "Settings", subtitle: "macOS settings panes", icon: "gearshape", parent: system, order: 100, keywords: ["preferences", "system settings"]),
     ]
 }

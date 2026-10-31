@@ -171,7 +171,7 @@ import Testing
         """, file: "dev.toml", source: "user")
         #expect(diags.isEmpty, "\(diags)")
         let byID = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
-        #expect(byID["development/projects"]?.parent == Categories.development)
+        #expect(byID["development/projects"]?.parent == "development")
         let open = byID["cmd:kadomo"]!
         #expect(open.action == .exec(path: "/usr/bin/open", args: ["-a", "Terminal", "~/Code/kadomo"]))
         #expect(open.secondary.first?.title == "Reveal")

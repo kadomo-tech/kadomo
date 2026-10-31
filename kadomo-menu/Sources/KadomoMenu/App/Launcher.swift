@@ -19,7 +19,7 @@ final class Launcher: NSObject, NSTextFieldDelegate {
     private var keymap = KeyMap()
 
     /// Catalog sources. Earlier sources win when ids collide.
-    private static let sourceOrder = ["builtin", "user", "kadomo", "system", "windows", "wm", "running", "meta", "apps"]
+    private static let sourceOrder = ["builtin", "user", "kadomo", "system", "meta", "apps"]
     private var sources: [String: [Item]] = [:]
     private var generation = 0
     private var rebuildScheduled = false
@@ -75,7 +75,6 @@ final class Launcher: NSObject, NSTextFieldDelegate {
 
         sources["builtin"] = Categories.home
         refreshStaticSources()
-        refreshRunningApps()
         rebuild(sync: true)
         scanApps()
 
@@ -91,11 +90,6 @@ final class Launcher: NSObject, NSTextFieldDelegate {
 
     private func observeSystem() {
         let ws = NSWorkspace.shared.notificationCenter
-        for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
-            ws.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated { self?.refreshRunningApps(); self?.scheduleRebuild() }
-            }
-        }
         DistributedNotificationCenter.default().addObserver(forName: .init("AppleInterfaceThemeChangedNotification"), object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.restyle() }
         }
@@ -204,13 +198,10 @@ final class Launcher: NSObject, NSTextFieldDelegate {
     // MARK: Sources
 
     private func refreshStaticSources() {
-        let config = store.config
         let userCommands = store.userItems.filter { $0.source == "user" }
         sources["user"] = userCommands
         sources["kadomo"] = store.userItems.filter { $0.source == "kadomo" }
-        sources["system"] = SystemProvider.system() + SystemProvider.settings() + SystemProvider.appearance() + SystemProvider.development()
-        sources["windows"] = SystemProvider.windows()
-        sources["wm"] = config.windowManager == "off" ? [] : SystemProvider.windowManager(config.windowManager)
+        sources["system"] = SystemProvider.system() + SystemProvider.settings() + SystemProvider.appearance()
         refreshMetaSource()
     }
 
@@ -235,24 +226,6 @@ final class Launcher: NSObject, NSTextFieldDelegate {
         items += SystemProvider.about(version: Launcher.version, loginEnabled: loginItemEnabled, themeName: theme.name,
                                       itemCount: model.catalog.items.count)
         sources["meta"] = items
-    }
-
-    private func refreshRunningApps() {
-        let me = NSRunningApplication.current.processIdentifier
-        sources["running"] = NSWorkspace.shared.runningApplications
-            .filter { $0.activationPolicy == .regular && $0.processIdentifier != me }
-            .map { app in
-                let name = app.localizedName ?? app.bundleIdentifier ?? "App"
-                return Item(id: "run:\(app.bundleIdentifier ?? String(app.processIdentifier))", title: name,
-                            subtitle: app.isHidden ? "Running · hidden" : "Running", parent: Categories.windows,
-                            icon: app.bundleURL.map { .file($0.path) } ?? .symbol("app"), keywords: ["switch", "focus"],
-                            action: .builtin("app.activate:\(app.processIdentifier)"),
-                            secondary: [
-                                SecondaryAction("Hide", .builtin("app.hide:\(app.processIdentifier)"), icon: .symbol("eye.slash")),
-                                SecondaryAction("Quit", .builtin("app.quit:\(app.processIdentifier)"), icon: .symbol("xmark.circle"), confirm: true),
-                            ],
-                            order: 100, source: "running", searchable: false)
-            }
     }
 
     /// Hide and Quit for apps that are running right now.
@@ -734,6 +707,7 @@ final class Launcher: NSObject, NSTextFieldDelegate {
         lines.append("Kadomo Menu \(Launcher.version) · pid \(getpid()) · \(Bundle.main.bundlePath)")
         lines.append("Hotkey: \(HotKey.shared.chord?.symbol ?? store.config.hotkey) \(hotkeyError.map { "— \($0)" } ?? "(registered)")")
         lines.append("Theme: \(theme.name) (\(theme.id))")
+        lines.append("Font: \(style.titleFont.fontName) \(Int(style.titleFont.pointSize))pt (theme asks for \"\(theme.font.family)\")")
         var counts: [String: Int] = [:]
         for item in model.catalog.items { counts[item.source, default: 0] += 1 }
         lines.append("Items: \(model.catalog.items.count) — " + counts.sorted { $0.key < $1.key }.map { "\($0.key) \($0.value)" }.joined(separator: ", "))

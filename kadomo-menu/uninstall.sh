@@ -1,7 +1,7 @@
 #!/bin/bash
 # Removes everything install.sh put on this Mac, plus what the app itself
 # leaves behind: the launch-at-login item, KadomoMenu.app, the kadomo-menu
-# command, config and themes, usage history and sockets, preferences, caches,
+# command, the font files install.sh added, config and themes, usage history and sockets, preferences, caches,
 # saved state, logs, and the build cache. Your checkout is never touched.
 #
 # Usage: ./uninstall.sh [--yes]
@@ -136,6 +136,16 @@ remove_bundles() {
     return "$failed"
 }
 
+# Only the files install.sh recorded, read at scan time, before the state dir can go.
+remove_fonts() {
+    local name
+    for name in "${FONT_FILES[@]}"; do
+        case "$name" in */*|""|.|..) continue ;; esac
+        rm -f -- "$HOME/Library/Fonts/$name"
+    done
+    rm -f -- "$FONT_MANIFEST"
+}
+
 remove_leftovers() {
     local path
     for path in "${LEFTOVERS[@]}"; do remove_path "$path"; done
@@ -164,6 +174,13 @@ scan() {
         "$HOME/Library/Logs/kadomo-menu"
     )
     ITEM_LABEL=(); ITEM_DETAIL=(); ITEM_ON=(); ITEM_FN=(); ITEM_ARG=()
+    FONT_MANIFEST="$state/installed-fonts.txt"
+    FONT_FILES=()
+    if [[ -f "$FONT_MANIFEST" ]]; then
+        while IFS= read -r path; do
+            [[ -n "$path" && -e "$HOME/Library/Fonts/$path" ]] && FONT_FILES+=("$path")
+        done <"$FONT_MANIFEST"
+    fi
 
     if [[ -n "$LAUNCHER_APP" ]] || running; then
         add_item "Stop the launcher" "quits it and turns off launch at login" stop_launcher
@@ -175,6 +192,9 @@ scan() {
         detail=""
         for path in "${BUNDLES[@]}"; do detail="${detail:+$detail, }$(short_path "$path")"; done
         add_item "KadomoMenu.app" "$detail" remove_bundles
+    fi
+    if [[ ${#FONT_FILES[@]} -gt 0 ]]; then
+        add_item "JetBrainsMono Nerd Font" "${#FONT_FILES[@]} file(s) install.sh added to ~/Library/Fonts" remove_fonts
     fi
     if [[ -e "$config" ]]; then
         add_item "Config and themes" "$(short_path "$config") · your edits are deleted" remove_path "$config"

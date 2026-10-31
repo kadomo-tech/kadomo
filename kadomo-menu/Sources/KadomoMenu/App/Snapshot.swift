@@ -66,7 +66,11 @@ enum Snapshot {
             print("rows=\(view.table.numberOfRows) table=\(view.table.frame) scroll=\(view.scroll.frame) rv0=\(String(describing: view.table.rowView(atRow: 0, makeIfNecessary: false)))")
         }
 
-        guard let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
+        // Render at 2x even with no screen attached, where the backing scale is 1.
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * 2), pixelsHigh: Int(view.bounds.height * 2),
+                                         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return }
+        rep.size = view.bounds.size
         view.cacheDisplay(in: view.bounds, to: rep)
 
         // Place it on a desktop-like backdrop, 2x, with a margin.

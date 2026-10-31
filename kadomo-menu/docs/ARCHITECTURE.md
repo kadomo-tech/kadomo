@@ -12,7 +12,7 @@ open.
   theme schema, command model, search/ranking, keyboard state machine, usage
   model, IPC message types, benchmark helpers. All unit-tested.
 - `KadomoMenu`: the AppKit executable. Lifecycle, panel, providers (apps,
-  system, settings, window managers, user commands), executor, hotkey, file
+  system, settings, user commands), executor, hotkey, file
   watching, socket server. The same binary is the CLI: invoked as
   `kadomo-menu` (symlink) it talks to the running app over a Unix socket.
 

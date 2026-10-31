@@ -4,17 +4,6 @@ import KadomoMenuCore
 /// Discovers installed applications. Runs off the main thread at startup and
 /// when FSEvents reports a change in an application folder; never on open.
 nonisolated enum AppProvider {
-    /// Apps that also appear under Development.
-    static let developerApps: Set<String> = [
-        "com.apple.Terminal", "com.googlecode.iterm2", "com.mitchellh.ghostty", "com.github.wez.wezterm", "org.alacritty",
-        "net.kovidgoyal.kitty", "dev.warp.Warp-Stable", "com.microsoft.VSCode", "com.microsoft.VSCodeInsiders",
-        "com.todesktop.230313mzl4w4u92", "dev.zed.Zed", "com.apple.dt.Xcode", "com.sublimetext.4", "com.panic.Nova",
-        "com.jetbrains.intellij", "com.jetbrains.pycharm", "com.jetbrains.goland", "com.jetbrains.rustrover",
-        "com.fournova.Tower3", "com.DanPristupov.Fork", "com.github.GitHubClient", "com.docker.docker",
-        "com.apple.iphonesimulator", "com.postmanlabs.mac", "com.tinyapp.TablePlus", "com.apple.Console",
-        "com.apple.ActivityMonitor", "com.openai.codex", "com.anthropic.claudefordesktop",
-    ]
-
     /// Extra search words for well-known apps people call by another name.
     static let knownAliases: [String: [String]] = [
         "com.microsoft.VSCode": ["vscode", "code"],
@@ -81,7 +70,6 @@ nonisolated enum AppProvider {
         let id = "app:" + (bundleID ?? path)
         return Item(
             id: id, title: title, subtitle: dir, kind: .app, parent: Categories.apps,
-            alsoIn: bundleID.map { developerApps.contains($0) } == true ? [Categories.development] : [],
             icon: .file(path), keywords: keywords, aliases: aliases,
             action: .openApp(path: path, newInstance: false),
             secondary: [

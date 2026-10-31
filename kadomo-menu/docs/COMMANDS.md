@@ -55,8 +55,8 @@ Empty categories are hidden.
 
 ## Built-in ids
 
-Categories: `apps`, `windows`, `workspaces`, `system`, `settings`,
-`appearance`, `appearance/themes`, `development`, `commands`, `keybinds`,
+Categories: `apps`, `appearance`, `appearance/themes`, `keybinds`,
+`services`, `commands`, `system`, `settings` (inside System),
 `about`. Items: `app:<bundle id>`, `sys:lock`, `sys:sleep`, `sys:restart`,
 `set:<pane id>`, `theme:<id>`, … — `kadomo-menu commands list` prints all of
 them. Use ids in `favorites`, `hidden`, and `[aliases]`.

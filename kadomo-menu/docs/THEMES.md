@@ -53,12 +53,12 @@ Colors are `#rgb`, `#rrggbb`, or `#rrggbbaa`.
 
 | Key | Values | Default |
 | --- | --- | --- |
-| `family` | `monospace` (SF Mono), `system`, `rounded`, or any installed family (`"JetBrainsMono Nerd Font"`) | `monospace` |
-| `size` | 8–40 | 17 |
+| `family` | `monospace` (SF Mono), `system`, `rounded`, or any installed family (`"JetBrainsMono Nerd Font"`) | `JetBrainsMono Nerd Font` |
+| `size` | 8–40 | 15 |
 | `weight`, `selected_weight` | `ultralight` … `black` | `regular` |
 | `search_family` | like `family` | `family` |
-| `search_size`, `search_weight` | | 18, `regular` |
-| `subtitle_size`, `hint_size` | | 12, 13 |
+| `search_size`, `search_weight` | | 16, `regular` |
+| `subtitle_size`, `hint_size` | | 11, 12 |
 
 A missing family falls back to the monospaced system font.
 
@@ -66,7 +66,7 @@ A missing family falls back to the monospaced system font.
 
 | Key | Range | Default |
 | --- | --- | --- |
-| `width` | 240–1600 | 580 |
+| `width` | 240–1600 | 500 |
 | `max_rows` | 1–30 | 10 |
 | `row_height`, `row_spacing` | | 48, 4 |
 | `padding`, `gap`, `row_inset` | | 18, 10, 20 |
