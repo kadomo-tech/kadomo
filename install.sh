@@ -1,68 +1,37 @@
 #!/bin/bash
-# Copies the configs in dotfiles/ to where each tool reads them. A file that is
-# already identical is skipped; one that differs is backed up next to itself as
-# <name>.bak.<timestamp> before being replaced.
+# Installs every Kadomo component, each with its own installer:
+#   dotfiles/      configs copied to where each tool reads them
+#   kadomo-menu/   the launcher app, its command, and its font
+# Remove everything again with ./uninstall.sh.
 #
-# Usage: ./install.sh [--dry-run]
-#   --dry-run   show what would change without touching anything
+# Usage: ./install.sh [--yes]
+#   --yes   skip each component's prompts and install its defaults
 #
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES="$ROOT/dotfiles"
-STAMP="$(date +%Y%m%d-%H%M%S)"
-DRY_RUN=0
-
-# Source (relative to dotfiles/) and destination, one pair per line.
-FILES=(
-    "aerospace/aerospace.toml|$HOME/.config/aerospace/aerospace.toml"
-)
+YES=()
 
 case "${1:-}" in
     "") ;;
-    --dry-run) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --yes|-y) YES=(--yes) ;;
+    -h|--help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
 esac
 
-run() { if ((DRY_RUN)); then echo "    would run: $*"; else "$@"; fi; }
+failed=()
+step() {
+    local name="$1"; shift
+    printf '\n== %s\n' "$name"
+    "$@" || failed+=("$name")
+}
 
-changed=()
-for entry in "${FILES[@]}"; do
-    src="$DOTFILES/${entry%%|*}"
-    dest="${entry#*|}"
-    label="${dest/#$HOME/~}"
+step dotfiles "$ROOT/dotfiles/install.sh"
+step kadomo-menu "$ROOT/kadomo-menu/install.sh" ${YES[@]+"${YES[@]}"}
 
-    if [[ ! -f "$src" ]]; then echo "  !  missing ${src#$ROOT/}" >&2; exit 1; fi
-
-    if [[ -f "$dest" ]] && cmp -s "$src" "$dest"; then
-        echo "  =  $label (unchanged)"
-        continue
-    fi
-
-    if [[ -e "$dest" || -L "$dest" ]]; then
-        echo "  ~  $label (backed up to $(basename "$dest").bak.$STAMP)"
-        run mv "$dest" "$dest.bak.$STAMP"
-    else
-        echo "  +  $label"
-    fi
-    run mkdir -p "$(dirname "$dest")"
-    run cp "$src" "$dest"
-    changed+=("${entry%%/*}")
-done
-
-# Tell running tools to pick up their new config.
-for tool in ${changed[@]+"${changed[@]}"}; do
-    case "$tool" in
-        aerospace)
-            if command -v aerospace >/dev/null && pgrep -xq AeroSpace 2>/dev/null; then
-                echo "  ↻  reloading AeroSpace"
-                run aerospace reload-config || echo "  !  aerospace reload-config failed" >&2
-            fi
-            ;;
-    esac
-done
-
-((DRY_RUN)) && echo "Dry run: nothing was changed."
-echo "Done."
+if [[ ${#failed[@]} -gt 0 ]]; then
+    printf '\nFailed: %s\n' "${failed[*]}" >&2
+    exit 1
+fi
+printf '\nKadomo is installed. Remove it with ./uninstall.sh\n'
