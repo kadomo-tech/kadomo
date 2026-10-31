@@ -66,7 +66,7 @@ done <"$MANIFEST"
 
 run rm -f -- "$MANIFEST"
 run rmdir "$STATE_DIR" 2>/dev/null || true
-for tool in ${tools[@]+"${tools[@]}"}; do reload "$tool"; done
+reload_each ${tools[@]+"${tools[@]}"}
 
 ((DRY_RUN)) && echo "Dry run: nothing was changed."
 exit 0

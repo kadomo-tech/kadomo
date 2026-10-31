@@ -1,0 +1,6 @@
+# Use the tmac2k theme from themes/tmac2k next to this file.
+theme = tmac2k
+
+# Translucent, blurred window background.
+background-opacity = 0.75
+background-blur = 20

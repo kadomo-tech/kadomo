@@ -61,7 +61,7 @@ for entry in "${FILES[@]}"; do
     changed+=("${entry%%/*}")
 done
 
-for tool in ${changed[@]+"${changed[@]}"}; do reload "$tool"; done
+reload_each ${changed[@]+"${changed[@]}"}
 
 ((DRY_RUN)) && echo "Dry run: nothing was changed."
 exit 0
