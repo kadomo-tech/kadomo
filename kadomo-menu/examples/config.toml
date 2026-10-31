@@ -1,0 +1,24 @@
+# ~/.config/kadomo-menu/config.toml — an example, not the defaults.
+theme = "kadomo-dark"
+hotkey = "option+space"
+display = "active"
+show_recent = 3
+favorites = ["app:com.mitchellh.ghostty", "sys:lock"]
+hidden = ["sys:screensaver"]
+
+[search.prefixes]
+">" = "commands"
+"@" = "apps"
+"!" = "system"
+"," = "settings"
+
+[keys]
+down = ["down", "ctrl+n", "ctrl+j"]
+up = ["up", "ctrl+p", "ctrl+k"]
+
+[aliases]
+ff = "app:org.mozilla.firefox"
+code = "app:com.microsoft.VSCode"
+
+[apps]
+extra_directories = ["~/Applications/Setapp"]
