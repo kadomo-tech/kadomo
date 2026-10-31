@@ -50,14 +50,14 @@ focus-follows-mouse.enabled = false
 key-mapping.preset = 'qwerty'
 
 # Gaps between windows (inner-*) and between monitor edges (outer-*)
-gaps.inner.horizontal = 8
-gaps.inner.vertical =   8
-gaps.outer.left =       8
-gaps.outer.bottom =     8
-# Top leaves room for SketchyBar: built-in display (bar beside the notch) vs external monitors.
-# Set to your SketchyBar height + ~8.
-gaps.outer.top =        [{ monitor."built-in" = 12 }, 44]
-gaps.outer.right =      8
+gaps.inner.horizontal = 12
+gaps.inner.vertical =   12
+gaps.outer.left =       12
+gaps.outer.bottom =     12
+# Top gap below the menu bar. Raise the external value (SketchyBar height + ~8) if you
+# run SketchyBar with the macOS menu bar hidden on external monitors.
+gaps.outer.top =        [{ monitor."built-in" = 16 }, 16]
+gaps.outer.right =      12
 
 # 'main' binding mode declaration
 # See: https://nikitabobko.github.io/AeroSpace/guide#binding-modes
