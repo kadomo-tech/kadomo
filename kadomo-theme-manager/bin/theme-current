@@ -1,0 +1,16 @@
+#!/bin/bash
+# kadomo:summary=Print the current theme's display name.
+#
+# Usage: theme-current [--name]
+#   --name   print its folder name (rose-pine) instead
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+
+name="$(current_name)" || die "theme-current: no theme set yet"
+case "${1:-}" in
+    "") theme_label "$name"; printf '\n' ;;
+    --name) printf '%s\n' "$name" ;;
+    -h|--help) sed -n '2,5p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "theme-current: unknown option $1" ;;
+esac

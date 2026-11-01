@@ -1,0 +1,44 @@
+# Sora: deep blue-black, cool silver, an ethereal cyan, and one warm gold.
+# From https://github.com/Aejkatappaja/sora (MIT).
+mode = "dark"
+
+accent = "#80c8e0"
+selection = "#1e2430"
+muted = "#4a5468"
+
+background = "#0e1018"
+dark_background = "#0a0c12"
+darker_background = "#07080d"
+lighter_background = "#1e2430"
+
+foreground = "#c8d0e0"
+dark_foreground = "#9aa4b8"
+light_foreground = "#dce4f0"
+bright_foreground = "#dce4f0"
+
+red = "#c46c78"
+yellow = "#d4b878"
+orange = "#d0a888"
+green = "#90c8a0"
+cyan = "#78b8b0"
+blue = "#80c8e0"
+magenta = "#b0a0d8"
+brown = "#d0909c"
+bright_red = "#d88898"
+bright_yellow = "#e0c888"
+bright_green = "#a8d8b4"
+bright_cyan = "#90d0c8"
+bright_blue = "#98d8f0"
+bright_magenta = "#c4b4e8"
+
+cursor = "#80c8e0"
+
+# Editor shades for Vim and Neovim, from Sora's own Neovim palette.
+comment = "#586478"
+shade = "#171a24"
+dim_background = "#0a0c12"
+diff_background = "#101828"
+
+# Window borders: the signature cyan running to Sora's keyword purple.
+hyprland_active_border = "rgba(80c8e0ff) rgba(b0a0d8ff) 45deg"
+inactive_border = "#222838"

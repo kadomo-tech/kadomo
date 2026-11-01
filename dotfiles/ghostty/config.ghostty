@@ -1,0 +1,7 @@
+# Colors come from the current Kadomo theme (theme-set switches it). The ? lets
+# Ghostty start with its own colors when the theme manager is not installed.
+config-file = ?"~/.config/kadomo/current/theme/ghostty.conf"
+
+# Translucent, blurred window background.
+background-opacity = 0.75
+background-blur = 20

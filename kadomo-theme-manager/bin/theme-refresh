@@ -1,0 +1,14 @@
+#!/bin/bash
+# kadomo:summary=Apply the current theme again, keeping the wallpaper; use it after editing a template.
+#
+# Usage: theme-refresh
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+
+case "${1:-}" in -h|--help) sed -n '2,4p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+name="$(current_name)" || die "theme-refresh: no theme set yet (try theme-set tmac2k)"
+if folder="$(external_theme_dir "$name")"; then
+    SKIP_BACKGROUND=1 exec "$KADOMO_THEME_ROOT/bin/theme-set" --external "$folder" "$name" "$(theme_label "$name")"
+fi
+SKIP_BACKGROUND=1 exec "$KADOMO_THEME_ROOT/bin/theme-set" "$name"

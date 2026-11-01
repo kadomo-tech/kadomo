@@ -1,0 +1,34 @@
+# Rosé Pine Dawn, the light variant.
+mode = "light"
+
+accent = "#d7827e"
+selection = "#dfdad9"
+muted = "#9893a5"
+
+background = "#faf4ed"
+dark_background = "#f2e9e1"
+darker_background = "#dfdad9"
+lighter_background = "#fffaf3"
+
+foreground = "#575279"
+dark_foreground = "#797593"
+light_foreground = "#6e6a86"
+bright_foreground = "#464261"
+
+red = "#b4637a"
+yellow = "#ea9d34"
+orange = "#d7827e"
+green = "#286983"
+cyan = "#d7827e"
+blue = "#56949f"
+magenta = "#907aa9"
+brown = "#9a6a54"
+bright_red = "#b4637a"
+bright_yellow = "#ea9d34"
+bright_green = "#286983"
+bright_cyan = "#d7827e"
+bright_blue = "#56949f"
+bright_magenta = "#907aa9"
+
+hyprland_active_border = "rgba(d7827eff) rgba(907aa9ff) 45deg"
+inactive_border = "#cecacd"

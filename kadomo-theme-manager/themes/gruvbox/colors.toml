@@ -1,0 +1,33 @@
+# Gruvbox Dark.
+mode = "dark"
+
+accent = "#d79921"
+selection = "#504945"
+muted = "#928374"
+
+background = "#282828"
+dark_background = "#1d2021"
+darker_background = "#141617"
+lighter_background = "#3c3836"
+
+foreground = "#ebdbb2"
+dark_foreground = "#a89984"
+light_foreground = "#d5c4a1"
+bright_foreground = "#fbf1c7"
+
+red = "#cc241d"
+yellow = "#d79921"
+orange = "#d65d0e"
+green = "#98971a"
+cyan = "#689d6a"
+blue = "#458588"
+magenta = "#b16286"
+brown = "#a96b2c"
+bright_red = "#fb4934"
+bright_yellow = "#fabd2f"
+bright_green = "#b8bb26"
+bright_cyan = "#8ec07c"
+bright_blue = "#83a598"
+bright_magenta = "#d3869b"
+
+hyprland_active_border = "rgba(fabd2fff) rgba(fe8019ff) 45deg"

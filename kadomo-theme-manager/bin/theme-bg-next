@@ -1,0 +1,21 @@
+#!/bin/bash
+# kadomo:summary=Show the current theme's next wallpaper, wrapping around after the last.
+#
+# Usage: theme-bg-next
+#   The wallpapers are the theme's backgrounds/ plus ~/.config/kadomo/backgrounds/<theme>/,
+#   in file name order.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+source "$LIB/apply.sh"
+
+case "${1:-}" in -h|--help) sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+name="$(current_name)" || die "theme-bg-next: no theme set yet"
+[[ -n "$(theme_backgrounds "$name")" ]] || die "theme-bg-next: $(theme_label "$name") has no wallpapers"
+
+trap lock_release_all EXIT
+lock_acquire
+set_background "$name"
+write_menu_commands
+lock_release
+readlink "$BG_LINK"

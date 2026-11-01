@@ -1,0 +1,31 @@
+#!/bin/bash
+# kadomo:summary=Clone a theme from git into your themes and switch to it.
+#
+# Usage: theme-install <git-url>
+#   The theme is named after the repository, without "omarchy-" in front or
+#   "-theme" behind, in lowercase: omarchy-everforest-theme.git -> everforest.
+#   A theme from git is someone else's: only its colors and images are used.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+
+url="${1:-}"
+case "$url" in
+    -h|--help|"") sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; [[ -n "$url" ]]; exit ;;
+    -*) die "theme-install: a URL cannot start with -" ;;
+    ext::*|fd::*) die "theme-install: $url runs a command instead of fetching; refused" ;;
+esac
+command -v git >/dev/null || die "theme-install: needs git (xcode-select --install)"
+
+base="${url%/}"; base="${base%.git}"; base="${base##*/}"; base="${base##*:}"
+name="$(printf '%s' "$base" | tr '[:upper:]' '[:lower:]')"
+name="${name#omarchy-}"; name="${name%-theme}"
+[[ "$name" =~ ^[a-z0-9_][a-z0-9._+-]*$ ]] || die "theme-install: cannot make a theme name from $url"
+dest="$USER_THEMES/$name"
+[[ ! -e "$dest" && ! -L "$dest" ]] || die "theme-install: $name is already installed (theme-remove $name first)"
+
+mkdir -p "$USER_THEMES"
+GIT_TERMINAL_PROMPT=0 git -c protocol.ext.allow=never -c protocol.fd.allow=never \
+    clone --quiet --depth 1 --no-recurse-submodules -- "$url" "$dest" 2>&1 | grep -v 'depth is ignored in local clones' >&2 || true
+[[ -d "$dest/.git" ]] || die "theme-install: could not clone $url"
+exec "$KADOMO_THEME_ROOT/bin/theme-set" "$name"

@@ -1,0 +1,31 @@
+#!/bin/bash
+# kadomo:summary=Pick a theme in the terminal, with previews, and switch to it.
+#
+# Usage: theme-pick
+#   With fzf installed, a filterable list with each theme's palette and
+#   thumbnail (in kitty and Ghostty, or with chafa); otherwise a numbered menu.
+#   Kadomo Menu has the same list under Appearance > Desktop Themes.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+source "$LIB/apply.sh"
+
+case "${1:-}" in -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+warm_previews
+current="$(current_name || true)"
+names=()
+while IFS= read -r name; do names+=("$name"); done < <(theme_names)
+
+if command -v fzf >/dev/null; then
+    position=1
+    for ((i = 0; i < ${#names[@]}; i++)); do [[ "${names[i]}" != "$current" ]] || position=$((i + 1)); done
+    choice="$(for name in "${names[@]}"; do printf '%s\t%s\n' "$name" "$(display_name "$name")"; done \
+        | fzf --delimiter='\t' --with-nth=2 --prompt='Theme > ' --layout=reverse \
+              --bind "load:pos($position)" --preview "$LIB/preview.sh theme {1}" --preview-window=right,60% \
+        | cut -f1)" || exit 0
+else
+    PS3="Theme (current: $(display_name "${current:-none}")): "
+    select choice in "${names[@]}"; do [[ -n "$choice" ]] && break; done
+fi
+[[ -n "${choice:-}" ]] || exit 0
+exec "$KADOMO_THEME_ROOT/bin/theme-set" "$choice"

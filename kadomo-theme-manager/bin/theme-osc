@@ -1,0 +1,25 @@
+#!/bin/bash
+# kadomo:summary=Recolor the terminal you run it in with the current theme, through escape codes.
+#
+# Usage: theme-osc
+#   Writes OSC 4 (colors 0-15), 10 (text), 11 (background), 12 (cursor), 17 and
+#   19 (selection) to this terminal. Ghostty and kitty already follow the
+#   theme on their own; this is for other terminals and for ssh sessions.
+#   It is not sent to other terminals: colors set this way would stop Ghostty
+#   and kitty from taking later theme changes from their configs.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+
+case "${1:-}" in -h|--help) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+[[ -f "$THEME_DIR/colors.toml" ]] || die "theme-osc: the current theme has no colors.toml"
+
+# "#rrggbb" -> "rgb:rr/gg/bb", the form xterm's color sequences take.
+resolve_palette "$THEME_DIR/colors.toml" | awk -F'\t' '
+    function x(c) { return "rgb:" substr(c, 2, 2) "/" substr(c, 4, 2) "/" substr(c, 6, 2) }
+    { P[$1] = $2 }
+    END {
+        for (i = 0; i < 16; i++) printf "\033]4;%d;%s\007", i, x(P["color" i])
+        printf "\033]10;%s\007\033]11;%s\007\033]12;%s\007", x(P["foreground"]), x(P["background"]), x(P["cursor"])
+        printf "\033]17;%s\007\033]19;%s\007", x(P["selection_background"]), x(P["selection_foreground"])
+    }'

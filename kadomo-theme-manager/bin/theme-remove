@@ -1,0 +1,33 @@
+#!/bin/bash
+# kadomo:summary=Delete one of your themes (built-in ones stay).
+#
+# Usage: theme-remove <name>
+#   Removing the current theme switches to the built-in theme of the same
+#   name if there is one, else to tmac2k. A theme that is a symlink to your
+#   own folder loses only the link.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+source "$LIB/apply.sh"
+
+case "${1:-}" in -h|--help|"") sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; [[ -n "${1:-}" ]]; exit ;; esac
+name="$(normalize_name "$1")" || die "theme-remove: not a theme name: '$1'"
+dest="$USER_THEMES/$name"
+if [[ ! -e "$dest" && ! -L "$dest" ]]; then
+    builtin_theme_dir "$name" >/dev/null && die "theme-remove: $name is built in and cannot be removed"
+    die "theme-remove: no theme named $name"
+fi
+
+if [[ -L "$dest" ]]; then rm -f -- "$dest"; else rm -rf -- "$dest"; fi
+printf 'Removed %s\n' "$(display_name "$name")"
+
+if [[ "$(current_name || true)" == "$name" ]]; then
+    if builtin_theme_dir "$name" >/dev/null; then
+        exec "$KADOMO_THEME_ROOT/bin/theme-refresh"
+    fi
+    exec "$KADOMO_THEME_ROOT/bin/theme-set" tmac2k
+fi
+trap lock_release_all EXIT
+lock_acquire
+write_menu_commands
+lock_release

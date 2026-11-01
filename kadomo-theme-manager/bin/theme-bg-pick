@@ -1,0 +1,33 @@
+#!/bin/bash
+# kadomo:summary=Pick one of the current theme's wallpapers in the terminal, with previews.
+#
+# Usage: theme-bg-pick
+#   With fzf installed, a filterable list with thumbnails (in kitty and
+#   Ghostty, or with chafa); otherwise a numbered menu. Kadomo Menu has the
+#   same list under Appearance > Backgrounds.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+
+case "${1:-}" in -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;; esac
+name="$(current_name)" || die "theme-bg-pick: no theme set yet"
+images=()
+while IFS= read -r file; do [[ -z "$file" ]] || images+=("$file"); done < <(theme_backgrounds "$name")
+((${#images[@]})) || die "theme-bg-pick: $(display_name "$name") has no wallpapers"
+current="$(readlink "$BG_LINK" 2>/dev/null || true)"
+
+if command -v fzf >/dev/null; then
+    position=1
+    for ((i = 0; i < ${#images[@]}; i++)); do [[ "${images[i]}" != "$current" ]] || position=$((i + 1)); done
+    choice="$(for file in "${images[@]}"; do printf '%s\t%s\n' "$file" "${file##*/}"; done \
+        | fzf --delimiter='\t' --with-nth=2 --prompt='Wallpaper > ' --layout=reverse \
+              --bind "load:pos($position)" --preview "$LIB/preview.sh image {1}" --preview-window=right,60% \
+        | cut -f1)" || exit 0
+else
+    labels=()
+    for file in "${images[@]}"; do labels+=("${file##*/}"); done
+    PS3="Wallpaper: "
+    select label in "${labels[@]}"; do [[ -n "$label" ]] && { choice="${images[REPLY-1]}"; break; }; done
+fi
+[[ -n "${choice:-}" ]] || exit 0
+exec "$KADOMO_THEME_ROOT/bin/theme-bg-set" "$choice"

@@ -1,0 +1,22 @@
+#!/bin/bash
+# kadomo:summary=Show any image as the wallpaper.
+#
+# Usage: theme-bg-set <image>
+#   The next theme-bg-next goes on from there when the image is one of the
+#   current theme's; otherwise it starts at the theme's first wallpaper.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+source "$LIB/apply.sh"
+
+case "${1:-}" in -h|--help|"") sed -n '2,6p' "$0" | sed 's/^# \{0,1\}//'; [[ -n "${1:-}" ]]; exit ;; esac
+[[ -f "$1" ]] || die "theme-bg-set: no file at $1"
+is_image "$1" || die "theme-bg-set: not an image: $1"
+image="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+
+mkdir -p "$CURRENT"
+trap lock_release_all EXIT
+lock_acquire
+show_background "$image"
+write_menu_commands
+lock_release

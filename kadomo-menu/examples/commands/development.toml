@@ -1,0 +1,49 @@
+# ~/.config/kadomo-menu/commands/development.toml
+
+[[category]]
+id = "development/projects"
+title = "Projects"
+icon = "folder"
+
+[[command]]
+id = "project-kadomo"
+title = "Kadomo"
+subtitle = "Open in Ghostty"
+category = "development/projects"
+keywords = ["dotfiles", "desktop"]
+exec = "/usr/bin/open"
+args = ["-a", "Ghostty", "~/Code/kadomo"]
+
+  [[command.action]]
+  title = "Open in Zed"
+  icon = "pencil"
+  exec = "/usr/bin/open"
+  args = ["-a", "Zed", "~/Code/kadomo"]
+
+  [[command.action]]
+  title = "Reveal in Finder"
+  icon = "folder"
+  open = "~/Code/kadomo"
+
+[[command]]
+id = "edit-kadomo-config"
+title = "Edit Kadomo Config"
+category = "development"
+keywords = ["dotfiles", "settings"]
+exec = "/usr/bin/open"
+args = ["-t", "~/.config/kadomo"]
+
+[[command]]
+id = "brew-upgrade"
+title = "Upgrade Homebrew Packages"
+subtitle = "Runs in the background; failures show here"
+category = "development"
+keywords = ["update", "packages"]
+shell = "brew update && brew upgrade"
+confirm = true
+
+[[command]]
+id = "copy-public-ip"
+title = "Copy Public IP"
+keywords = ["network", "address"]
+shell = "curl -fsS https://api.ipify.org | pbcopy"

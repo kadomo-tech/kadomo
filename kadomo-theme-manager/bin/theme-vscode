@@ -1,0 +1,64 @@
+#!/bin/bash
+# kadomo:summary=VS Code in the theme's colors: status, enable, disable, apply.
+#
+# Usage: theme-vscode [command]
+#   status    where things stand (the default)
+#   enable    VS Code follows the theme from now on, starting with this one
+#   disable   stop: VS Code's color theme from before comes back, and the
+#             Kadomo theme extension and the Marketplace themes Kadomo
+#             installed for a theme are removed
+#   apply     show the current theme in VS Code again
+#
+# Each theme shows as "Kadomo", drawn from its colors. A theme that names a
+# VS Code theme in its vscode.json (most Omarchy themes do) gets that one,
+# installed from the Marketplace; Kadomo's colors show until it is there.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+source "$LIB/vscode.sh"
+
+usage() { sed -n '2,14p' "$self" | sed 's/^# \{0,1\}//'; }
+
+need_theme() { current_name >/dev/null || die "theme-vscode: no theme set yet (try theme-set tmac2k)"; }
+need_vscode() { vscode_cli >/dev/null || die "theme-vscode: VS Code is not installed (developer/install.sh --only vscode installs it)"; }
+
+status() {
+    local cli now line
+    if ! cli="$(vscode_cli)"; then
+        echo "VS Code: not installed"
+        vscode_touched && echo "  Kadomo's theme is still in $(short_path "$VSCODE_EXTENSIONS"); theme-vscode disable removes it"
+        return 0
+    fi
+    echo "VS Code: installed ($(short_path "$cli"))"
+    if app_enabled vscode; then echo "  follows the theme: yes"; else echo "  follows the theme: no (theme-vscode enable)"; fi
+    now="$(vscode_current_theme)" || now="(VS Code's default)"
+    echo "  color theme: $now"
+    if line="$(vscode_descriptor)" && [[ -n "${line#*$'\t'}" ]]; then
+        echo "  this theme's pick: ${line%%$'\t'*} (${line#*$'\t'})"
+    fi
+    [[ -d "$VSCODE_EXTENSIONS/$VSCODE_THEME_ID" ]] && echo "  Kadomo theme extension: $(short_path "$VSCODE_EXTENSIONS/$VSCODE_THEME_ID")"
+    return 0
+}
+
+case "${1:-status}" in
+    status) status ;;
+    enable)
+        need_vscode; need_theme
+        vscode_follow on
+        vscode_apply
+        echo "VS Code: $(vscode_current_theme || echo "$VSCODE_THEME_LABEL"), and it follows each theme from now on"
+        ;;
+    disable)
+        vscode_follow off
+        vscode_remove
+        ;;
+    apply)
+        need_vscode; need_theme
+        vscode_apply
+        echo "VS Code: $(vscode_current_theme || echo "$VSCODE_THEME_LABEL")"
+        ;;
+    # The background half of a theme switch: a Marketplace theme to download.
+    fetch) [[ $# -eq 3 ]] || die "theme-vscode fetch: <extension> <name>"; vscode_fetch "$2" "$3" ;;
+    -h|--help) usage ;;
+    *) usage >&2; exit 2 ;;
+esac

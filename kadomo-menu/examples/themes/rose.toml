@@ -1,0 +1,18 @@
+name = "Rosé"
+extends = "kadomo-dark"
+
+[colors]
+background = "#191724"
+foreground = "#e0def4"
+muted = "#908caa"
+accent = "#ebbcba"
+selection_background = "#26233a"
+selection_foreground = "#ebbcba"
+border = ["#c4a7e7", "#ebbcba"]
+breadcrumb = "#c4a7e7"
+caret = "#ebbcba"
+placeholder = "#6e6a86"
+hint = "#6e6a86"
+
+[effects]
+selection_style = "bar"

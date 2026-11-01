@@ -1,0 +1,15 @@
+#!/bin/bash
+# kadomo:summary=List every theme, built-in and yours, by display name.
+#
+# Usage: theme-list [--names]
+#   --names   print folder names (rose-pine) instead of display names
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+
+case "${1:-}" in
+    "") theme_names | while IFS= read -r name; do display_name "$name"; printf '\n'; done ;;
+    --names) theme_names ;;
+    -h|--help) sed -n '2,5p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "theme-list: unknown option $1" ;;
+esac

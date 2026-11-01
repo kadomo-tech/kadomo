@@ -1,0 +1,256 @@
+#!/bin/bash
+# Kadomo's helper for OmniWM. It is a command, not a background process: it
+# runs, does one job, and exits. OmniWM itself starts at login by its own
+# setting (OmniWM › Settings).
+#
+#   kadomo-omniwm start            start OmniWM (and write the Kadomo Menu entries)
+#   kadomo-omniwm stop             quit OmniWM
+#   kadomo-omniwm status           whether OmniWM runs
+#   kadomo-omniwm theme            put the Kadomo theme's border colors in OmniWM's settings.toml
+#   kadomo-omniwm restore-borders  put back the border colors settings.toml had before Kadomo
+#   kadomo-omniwm menu             rewrite the Kadomo Menu entries (Services › OmniWM, and
+#                                  its keys under Keybinds)
+#
+# The theme's colors come from ~/.config/kadomo/current/theme/omniwm.toml,
+# which theme-set renders; theme-set runs "kadomo-omniwm theme". Only the
+# border colors in settings.toml change ([borders.color] and, for a gradient,
+# [borders.gradient]); the border width, glow, and everything else stay as you
+# set them. OmniWM reloads settings.toml when it changes.
+# Runs on the Bash 3.2 that ships with macOS.
+set -euo pipefail
+
+OMNIWM_ID="com.barut.OmniWM"
+OMNIWM_CASK="omniwm"
+KADOMO_CONFIG="${KADOMO_CONFIG_DIR:-$HOME/.config/kadomo}"
+THEME_FILE="$KADOMO_CONFIG/current/theme/omniwm.toml"
+MENU_FILE="$KADOMO_CONFIG/menu/commands/omniwm.toml"
+SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/settings.toml"
+STATE_DIR="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}"
+BORDERS_BEFORE="$STATE_DIR/omniwm-borders-before.toml"
+SELF="$HOME/.local/bin/kadomo-omniwm"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+die() { echo "kadomo-omniwm: $*" >&2; exit 1; }
+
+app() {
+    local dir
+    for dir in /Applications "$HOME/Applications"; do
+        [[ -d "$dir/OmniWM.app" ]] && { printf '%s' "$dir/OmniWM.app"; return 0; }
+    done
+    return 1
+}
+is_running() { pgrep -xq OmniWM 2>/dev/null; }
+
+quit_omniwm() {
+    local i
+    is_running || return 0
+    osascript -e "tell application id \"$OMNIWM_ID\" to quit" >/dev/null 2>&1 || true
+    for ((i=0; i<20; i++)); do is_running || return 0; sleep 0.25; done
+    pkill -x OmniWM 2>/dev/null || true
+    for ((i=0; i<20; i++)); do is_running || return 0; sleep 0.25; done
+    die "could not quit OmniWM"
+}
+
+start() {
+    local path
+    path="$(app)" || die "OmniWM is not installed: brew install --cask $OMNIWM_CASK"
+    write_menu
+    is_running && return 0
+    open "$path"
+}
+
+# --- the theme's border colors -------------------------------------------------
+
+# Whether a fragment holds only border color tables: comments, blank lines,
+# [borders.color] (required), [borders.darkColor], [borders.gradient...]
+# tables, and their plain values. Nothing else reaches settings.toml.
+valid_fragment() {
+    awk '
+        /^[ \t]*(#.*)?$/ { next }
+        /^\[borders\.color\]$/ { color = 1; next }
+        /^\[borders\.(darkColor|gradient|gradient\.(start|end|dark|dark\.start|dark\.end))\]$/ { next }
+        /^(red|green|blue|alpha) = -?[0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)?$/ { next }
+        /^enabled = (true|false)$/ { next }
+        /^direction = "(topLeftToBottomRight|topRightToBottomLeft)"$/ { next }
+        { bad = 1; exit }
+        END { exit (bad || !color) }' "$1"
+}
+
+# Writes settings.toml ($1) to $3 with its border color tables replaced by
+# the fragment $2, placed right after [borders]. The lines taken out go to $4
+# when given. Fails (status 3) when settings.toml has no [borders] table.
+replace_borders() {
+    awk -v frag="$2" -v removed="${4:-}" '
+        function name(line,   h) {
+            h = line; sub(/^[ \t]*\[+/, "", h); sub(/\]+[ \t]*(#.*)?$/, "", h)
+            gsub(/[ \t"]/, "", h); return h
+        }
+        function ours(h) { return h == "borders.color" || h == "borders.darkColor" || h ~ /^borders\.gradient(\.|$)/ }
+        function take(line) { if (removed != "") print line >> removed }
+        function insert(   l, n) {
+            n = 0
+            while ((getline l < frag) > 0) {
+                if (l ~ /^[ \t]*(#.*)?$/) continue
+                if (l ~ /^\[/ && n > 0) print ""
+                print l; n++
+            }
+            close(frag); done = 1
+        }
+        /^[ \t]*\[/ {
+            h = name($0); array = ($0 ~ /^[ \t]*\[\[/)
+            if (inborders && !done) { insert(); print "" }
+            inborders = (h == "borders" && !array)
+            if (inborders) seen = 1
+            drop = (ours(h) && !array)
+            if (drop) { take($0); next }
+            print; next
+        }
+        drop { take($0); next }
+        # The same colors written inline in [borders] would clash with the tables.
+        inborders && /^[ \t]*(color|darkColor|gradient)[ \t]*=/ { take($0); next }
+        { print }
+        END {
+            if (inborders && !done) { print ""; insert() }
+            if (!seen) exit 3
+        }' "$1" >"$3"
+}
+
+# settings.toml itself, following a link to where it really is.
+settings_target() {
+    local path="$SETTINGS" link
+    while [[ -L "$path" ]]; do
+        link="$(readlink "$path")"
+        case "$link" in /*) path="$link" ;; *) path="$(dirname "$path")/$link" ;; esac
+    done
+    printf '%s' "$path"
+}
+
+# Puts fragment $1 in settings.toml. With "save", the colors there before
+# Kadomo first changed them are kept in $BORDERS_BEFORE. Nothing happens until
+# OmniWM has written settings.toml (it does on its first start).
+apply_fragment() {
+    local fragment="$1" save="${2:-}" target tmp removed=""
+    target="$(settings_target)"
+    [[ -f "$target" ]] || return 0
+    valid_fragment "$fragment" || die "not border colors only, left settings.toml alone: $fragment"
+    tmp="$(dirname "$target")/.settings.toml.kadomo.$$"
+    if [[ "$save" == save && ! -s "$BORDERS_BEFORE" ]]; then removed="$tmp.removed"; : >"$removed"; fi
+    if ! replace_borders "$target" "$fragment" "$tmp" "$removed"; then
+        rm -f -- "$tmp" ${removed:+"$removed"}
+        die "no [borders] table in $target; left it alone"
+    fi
+    if [[ -n "$removed" ]]; then
+        if valid_fragment "$removed"; then
+            mkdir -p "$STATE_DIR"
+            { printf '# Border colors in OmniWM'\''s settings.toml before Kadomo'\''s theme changed them.\n'; cat "$removed"; } >"$BORDERS_BEFORE"
+        fi
+        rm -f -- "$removed"
+    fi
+    if cmp -s "$tmp" "$target"; then rm -f -- "$tmp"; return 0; fi
+    # Same folder, so the rename is atomic; OmniWM sees the new file and reloads it.
+    mv -f "$tmp" "$target"
+}
+
+theme() {
+    [[ -f "$THEME_FILE" ]] || return 0
+    apply_fragment "$THEME_FILE" save
+}
+
+restore_borders() {
+    [[ -s "$BORDERS_BEFORE" ]] || return 0
+    if [[ -f "$(settings_target)" ]]; then apply_fragment "$BORDERS_BEFORE"; fi
+    rm -f -- "$BORDERS_BEFORE"
+}
+
+# --- Kadomo Menu ---------------------------------------------------------------
+
+toml() { local s="${1//\\/\\\\}"; printf '"%s"' "${s//\"/\\\"}"; }
+
+# Kadomo Menu › Keybinds: one key|action|note line per row, or "# Heading" to start a
+# section. OmniWM's own default hotkeys (Kadomo leaves them
+# as they are; you change them in OmniWM's Settings › Hotkeys).
+KEYBINDS='# Getting around
+OPT + ARROWS|Focus left / right / up / down|
+OPT + TAB|Focus the previous window|
+OPT + HOME / END|First / last column|
+CTRL OPT + 1…9|Focus column 1–9|
+OPT SHIFT + O|Overview|All windows at a glance
+# Moving windows
+OPT SHIFT + ARROWS|Move the window|
+# Workspaces
+OPT + 1…9|Go to workspace|
+OPT SHIFT + 1…9|Send the window to workspace|
+CTRL OPT + TAB|Jump back to the last workspace|
+CTRL OPT SHIFT + UP / DOWN|Send the window a workspace up / down|
+# Sizing
+OPT + MINUS / EQUAL|Narrower / wider|
+OPT + COMMA / PERIOD|Cycle column width|
+OPT SHIFT + MINUS / EQUAL|Shorter / taller within a column|
+OPT SHIFT + F|Full width|Toggles
+OPT + RETURN|Fill the free space|
+OPT SHIFT + B|Even out sizes|
+CTRL OPT + R|Reset heights|
+# Layout
+OPT + T|Tabs for this column|
+OPT SHIFT + L|Scrolling or tiles for this workspace|
+OPT SHIFT + R|Bring floating windows to the front|
+# Monitors
+CTRL CMD + TAB|Next monitor|
+CTRL CMD + `|Last monitor used|
+# OmniWM tools
+CTRL OPT + SPACE|Command palette|
+CTRL OPT + M|OmniWM menu|
+OPT + `|Drop-down terminal|'
+
+write_keybinds() {
+    local key title note n=10
+    while IFS='|' read -r key title note; do
+        if [[ "$key" == "# "* ]]; then
+            printf '\n[[keybind]]\nheading = %s\norder = %s\n' "$(toml "${key#\# }")" "$n"
+        else
+            printf '\n[[keybind]]\nkey = %s\ntitle = %s\norder = %s\n' "$(toml "$key")" "$(toml "$title")" "$n"
+            [[ -z "$note" ]] || printf 'subtitle = %s\n' "$(toml "$note")"
+        fi
+        n=$((n + 1))
+    done <<<"$KEYBINDS"
+}
+
+# Kadomo Menu › Services › OmniWM.
+write_menu() {
+    local sub="Scrolling and tiling, borders in the theme's colors" verb title note sym n=1
+    app >/dev/null || sub="Not installed: brew install --cask $OMNIWM_CASK"
+    mkdir -p "$(dirname "$MENU_FILE")"
+    {
+        printf '# Written by kadomo-omniwm; changes here are replaced.\n\n'
+        printf '[[category]]\nid = "services/omniwm"\ntitle = "OmniWM"\nsubtitle = %s\n' "$(toml "$sub")"
+        printf 'icon = "rectangle.split.3x1"\norder = 0\nkeywords = ["omniwm", "window manager", "tiling", "scrolling", "niri"]\n'
+        printf 'running_app = %s\n\n' "$(toml "$OMNIWM_ID")"
+        while IFS='|' read -r verb title note sym; do
+            printf '[[command]]\nid = "kadomo-omniwm-%s"\ntitle = %s\nsubtitle = %s\n' "$verb" "$(toml "$title")" "$(toml "$note")"
+            printf 'category = "services/omniwm"\nicon = %s\norder = %s\nkeywords = ["omniwm", "window manager"]\n' "$(toml "$sym")" "$n"
+            printf 'exec = %s\nargs = ["%s"]\n\n' "$(toml "$SELF")" "$verb"
+            n=$((n + 1))
+        done <<EOF
+start|Start|Start OmniWM|play
+stop|Stop|Quit OmniWM|stop
+theme|Match Theme Borders|Border colors from the current Kadomo theme again|paintpalette
+EOF
+        printf '[[command]]\nid = "kadomo-omniwm-settings"\ntitle = "Edit Settings"\n'
+        printf 'subtitle = "OmniWM'\''s settings.toml; it reloads when saved"\n'
+        printf 'category = "services/omniwm"\nicon = "doc.text"\norder = %s\nkeywords = ["omniwm", "config", "settings"]\n' "$n"
+        printf 'open = %s\n' "$(toml "$SETTINGS")"
+        ! app >/dev/null || write_keybinds
+    } >"$MENU_FILE.tmp.$$"
+    mv -f "$MENU_FILE.tmp.$$" "$MENU_FILE"
+}
+
+case "${1:-}" in
+    start) start ;;
+    stop) quit_omniwm ;;
+    status) echo "omniwm: $(is_running && echo running || echo "not running")" ;;
+    theme) theme ;;
+    restore-borders) restore_borders ;;
+    menu) write_menu ;;
+    -h|--help|"") sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "unknown command: $1 (try --help)" ;;
+esac

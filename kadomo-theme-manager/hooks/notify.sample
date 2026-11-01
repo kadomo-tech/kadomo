@@ -1,0 +1,10 @@
+#!/bin/bash
+# A theme-set hook. Every executable file in ~/.config/kadomo/hooks/theme-set.d
+# runs after a theme change, in name order, with the theme's folder name as $1.
+# Files ending in .sample are skipped: to use this one, copy it without the
+# suffix and make it executable:
+#
+#   cp notify.sample notify && chmod +x notify
+#
+# This one shows a notification with the new theme's name.
+osascript -e 'on run {name}' -e 'display notification ("Theme: " & name) with title "Kadomo"' -e 'end run' "$1"

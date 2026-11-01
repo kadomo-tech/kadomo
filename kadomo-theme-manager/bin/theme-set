@@ -1,0 +1,82 @@
+#!/bin/bash
+# kadomo:summary=Switch every themed app, and the wallpaper, to a theme.
+#
+# Usage: theme-set <name>
+#        theme-set --external <folder> <name> [<label>]
+#        theme-set --native
+#   The name as theme-list shows it ("Rose Pine") or as its folder (rose-pine).
+#   --external applies a theme folder kept elsewhere (Kadomo Menu's Omarchy
+#   themes) as someone else's: only its colors, btop.theme, and images are
+#   used, in place. <name> must not be one of Kadomo's themes.
+#   --native goes back to the last of Kadomo's own themes; nothing happens when
+#   one is already showing.
+#   SKIP_BACKGROUND=1 keeps the current wallpaper (theme-refresh sets it).
+#
+# The theme is staged in ~/.config/kadomo/current/next-theme, its configs are
+# rendered there, and it is moved into current/theme in one step. Then each
+# app is told to reload, and the hooks in ~/.config/kadomo/hooks/theme-set.d run.
+# Quick repeated calls queue up, and the last one asked for wins.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+source "$LIB/apply.sh"
+
+case "${1:-}" in
+    -h|--help|"") sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; [[ -n "${1:-}" ]]; exit ;;
+esac
+EXTERNAL_FOLDER=""
+case "$1" in
+    --external)
+        [[ $# -ge 3 ]] || die "usage: theme-set --external <folder> <name> [<label>]"
+        EXTERNAL_FOLDER="$2"; name="$3"; THEME_LABEL="${4:-}"
+        [[ "$EXTERNAL_FOLDER" == /* ]] || die "theme-set: --external needs an absolute folder path"
+        [[ -d "$EXTERNAL_FOLDER" && ! -L "${EXTERNAL_FOLDER%/}" ]] || die "theme-set: no theme folder at $EXTERNAL_FOLDER (symlinks are refused)"
+        [[ "$EXTERNAL_FOLDER" != *$'\t'* && "$EXTERNAL_FOLDER" != *$'\n'* ]] || die "theme-set: that folder name cannot be used"
+        [[ "$name" =~ ^[a-z0-9][a-z0-9._+-]*$ ]] || die "theme-set: not a theme name: '$name'"
+        theme_exists "$name" && die "theme-set: $name is one of Kadomo's themes; an external theme needs another name"
+        THEME_LABEL="$(printf '%s' "${THEME_LABEL:-$(display_name "$name")}" | tr -d '\000-\037' | cut -c1-80)"
+        export THEME_LABEL
+        ;;
+    --native)
+        current_is_external || { printf 'Theme: %s (already one of Kadomo'"'"'s)\n' "$(display_name "$(current_name || echo tmac2k)")"; exit 0; }
+        name="$(head -n 1 "$NATIVE_FILE" 2>/dev/null || true)"
+        [[ -n "$name" ]] && theme_exists "$name" || name=tmac2k
+        ;;
+    *)
+        name="$(normalize_name "$1")" || die "theme-set: not a theme name: '$1'"
+        theme_exists "$name" || die "theme-set: no theme named $name (theme-list shows them)"
+        ;;
+esac
+
+mkdir -p "$STATE" "$CURRENT"
+trap lock_release_all EXIT
+# Take a numbered ticket before waiting. state/request holds the newest
+# "<ticket> <pid>", state/applied the last ticket applied.
+lock_acquire "$STATE/request.lock"
+last=0
+[[ ! -s "$STATE/request" ]] || read -r last _ <"$STATE/request"
+ticket=$(( ${last:-0} + 1 ))
+printf '%s %s\n' "$ticket" "$$" >"$STATE/request"
+lock_release "$STATE/request.lock"
+
+lock_acquire
+read -r latest latest_pid <"$STATE/request"
+applied=0
+[[ ! -s "$STATE/applied" ]] || read -r applied <"$STATE/applied"
+# A newer choice that is still waiting, or already applied, wins: step aside.
+if ((latest > ticket)) && { kill -0 "${latest_pid:-0}" 2>/dev/null || ((applied >= latest)); }; then
+    exit 0
+fi
+
+if [[ -n "$EXTERNAL_FOLDER" ]]; then stage_external "$EXTERNAL_FOLDER" "${THEME_LABEL:-$name}"; else stage_theme "$name"; fi
+render_templates "$NEXT_DIR" "$name"
+swap_theme "$name"
+[[ "${SKIP_BACKGROUND:-0}" == 1 ]] || set_background "$name"
+write_menu_commands
+printf '%s\n' "$ticket" >"$STATE/applied"
+lock_release
+
+run_reloaders
+run_hooks "$name"
+( warm_previews >/dev/null 2>&1 & )
+printf 'Theme: %s\n' "$(theme_label "$name")"

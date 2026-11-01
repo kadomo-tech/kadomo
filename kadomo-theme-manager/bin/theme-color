@@ -1,0 +1,33 @@
+#!/bin/bash
+# kadomo:summary=Print a color of the current theme, or its whole resolved palette.
+#
+# Usage: theme-color [--file colors.toml] <key>     one value: theme-color accent
+#        theme-color [--file colors.toml] --all     every key<TAB>value line
+#   Without --file, the current theme's colors.toml. Keys include the
+#   aliases (bg, fg, purple, cursor, ...) and color0 to color15.
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+
+file="$THEME_DIR/colors.toml"
+key=""
+while (($#)); do
+    case "$1" in
+        --file) shift; [[ $# -gt 0 ]] || die "theme-color: --file needs a path"; file="$1" ;;
+        --all) key="--all" ;;
+        -h|--help) sed -n '2,7p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -*) die "theme-color: unknown option $1" ;;
+        *) key="$1" ;;
+    esac
+    shift
+done
+[[ -n "$key" ]] || die "usage: theme-color [--file colors.toml] <key> | --all"
+[[ -f "$file" ]] || die "theme-color: no colors.toml at $file"
+
+if [[ "$key" == --all ]]; then
+    resolve_palette "$file"
+else
+    value="$(resolve_palette "$file" | awk -F'\t' -v k="$key" '$1 == k { print $2; found = 1; exit } END { exit !found }')" \
+        || die "theme-color: no color named $key"
+    printf '%s\n' "$value"
+fi

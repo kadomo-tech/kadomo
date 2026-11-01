@@ -1,0 +1,118 @@
+#!/bin/bash
+# kadomo:summary=Starship for zsh in the theme's colors: status, enable, preview, match.
+#
+# Usage: theme-starship [command]
+#   status                    where things stand (the default)
+#   enable [--use-kadomo] [--edit-symlinked]
+#                             turn Starship on for zsh, in the theme's colors
+#   disable                   take Kadomo's lines out again (Starship stays installed)
+#   match on|off              on: the prompt follows the Kadomo theme
+#   set <theme>               show this theme's prompt whatever the Kadomo theme (match off)
+#   icons nerd|plain          Nerd Font symbols, or none (for any font)
+#   preview [<theme>|--all]   sample prompts; nothing changes
+#   list                      every theme's prompt colors
+#   apply                     write the prompt config again (retry after a failed switch)
+#
+# Exit status: 0 done, 1 failed, 3 your setup needs a decision (see the message).
+set -euo pipefail
+self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
+source "$(dirname "$self")/../lib/common.sh"
+source "$LIB/apply.sh"
+source "$LIB/starship.sh"
+
+usage() { sed -n '2,17p' "$self" | sed 's/^# \{0,1\}//'; }
+
+theme_arg() {
+    local name
+    name="$(normalize_name "$1")" || die "theme-starship: not a theme name: '$1'"
+    theme_exists "$name" || die "theme-starship: no theme named $name (theme-list shows them)"
+    printf '%s' "$name"
+}
+
+# After a settings change: rewrite the config when on, else say it is saved.
+reapply() {
+    if starship_on; then
+        starship_apply || exit 1
+        echo "Prompt: $(display_name "$(starship_theme)") ($(starship_icons) icons); shows at the next prompt"
+    else
+        echo "Saved; used once Starship is on (theme-starship enable)"
+    fi
+}
+
+status() {
+    local state bin version match name
+    starship_state
+    state="$STARSHIP_STATE"
+    bin="$(starship_bin || true)"
+    version=""; [[ -z "$bin" ]] || version="$(starship_version "$bin")"
+    match="$(starship_setting match on)"
+    name="$(starship_theme 2>/dev/null)"
+    case "$state" in
+        not-installed)
+            echo "Starship: not installed"
+            echo "  Install Starship: brew install starship, or developer/install.sh --only starship"
+            echo "  in Kadomo (it turns it on too). Without Homebrew: https://starship.rs/guide/"
+            ;;
+        installed)
+            echo "Starship: installed, not on for zsh"
+            echo "  version  $version ($(short_path "$bin"))"
+            echo "  Enable for zsh: theme-starship enable"
+            ;;
+        enabled|attention)
+            [[ "$state" == enabled ]] && echo "Starship: on for zsh" || echo "Starship: needs attention"
+            [[ -z "$STARSHIP_PROBLEM" ]] || { echo "  problem  $STARSHIP_PROBLEM"; echo "  fix      $STARSHIP_FIX"; }
+            [[ -z "$bin" ]] || echo "  version  ${version:-?} ($(short_path "$bin"))"
+            echo "  zsh      $(short_path "$(starship_record zshrc)") ($( [[ "$(starship_record mode)" == config ]] && echo "your starship init, Kadomo's config" || echo "Kadomo's block"))"
+            if [[ "$match" == off ]]; then echo "  prompt   $(display_name "$name") (match off: stays when the Kadomo theme changes)"
+            else echo "  prompt   $(display_name "$name") (matches the Kadomo theme)"; fi
+            echo "  icons    $(starship_icons)$( [[ "$(starship_icons)" == nerd ]] && echo " (needs a Nerd Font in the terminal; theme-starship icons plain for none)")"
+            echo "  config   $(short_path "$STARSHIP_TOML")"
+            echo "  Controls: match on|off · set <theme> · icons nerd|plain · preview · disable"
+            ;;
+    esac
+}
+
+cmd="${1:-status}"
+[[ $# -eq 0 ]] || shift
+case "$cmd" in
+    status) status ;;
+    enable) starship_enable "$@" ;;
+    disable) starship_disable ;;
+    match)
+        case "${1:-}" in
+            on) starship_set_setting match on ;;
+            off)
+                # Keeps what shows now, so turning matching off changes nothing by itself.
+                [[ -n "$(starship_setting theme)" ]] || starship_set_setting theme "$(starship_theme)"
+                starship_set_setting match off ;;
+            *) die "theme-starship match: on or off" ;;
+        esac
+        reapply ;;
+    set)
+        [[ $# -eq 1 ]] || die "theme-starship set: give one theme name"
+        name="$(theme_arg "$1")"
+        starship_set_setting theme "$name"
+        starship_set_setting match off
+        reapply ;;
+    icons)
+        case "${1:-}" in nerd|plain) starship_set_setting icons "$1" ;; *) die "theme-starship icons: nerd or plain" ;; esac
+        reapply ;;
+    preview)
+        icons="$(starship_icons)"
+        case "${1:-}" in
+            "") starship_preview "$(starship_theme)" "$icons" ;;
+            --all) while IFS= read -r name; do starship_preview "$name" "$icons" || true; done < <(theme_names) ;;
+            *) starship_preview "$(theme_arg "$1")" "$icons" ;;
+        esac ;;
+    list)
+        printf '%-20s %s\n' "THEME" "$STARSHIP_ROLES"
+        while IFS= read -r name; do
+            palette="$(starship_palette "$name" 2>/dev/null)" || { printf '%-20s (no prompt colors)\n' "$name"; continue; }
+            printf '%-20s %s\n' "$name" "$(printf '%s\n' "$palette" | sed 's/.*"\(#[0-9a-f]*\)"/\1/' | paste -sd' ' -)"
+        done < <(theme_names) ;;
+    apply)
+        starship_on || die "theme-starship: Starship is not on (theme-starship enable)"
+        starship_apply && echo "Prompt: $(display_name "$(starship_theme)"); shows at the next prompt" ;;
+    -h|--help|help) usage ;;
+    *) die "theme-starship: unknown command $cmd (try --help)" ;;
+esac
