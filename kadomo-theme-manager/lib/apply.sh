@@ -3,15 +3,12 @@
 
 source "$LIB/reloaders.sh"
 
-# Files a theme cloned from git may bring: color data and images, nothing
-# that runs. The one exception is vscode.json, which names a VS Code theme
-# from the Marketplace (Omarchy themes ship one); lib/vscode.sh checks the
-# name and id before VS Code installs it.
+# Files someone else's theme (git, or another provider) may bring: color data
+# and images, nothing that runs or makes anything install. A vscode.json
+# (Omarchy themes ship one, naming a Marketplace extension) is ignored.
 untrusted_allowed() {
     case "$1" in
         colors.toml|alacritty.toml|btop.theme|kadomo-menu.toml|kadomo-menu.*.toml) return 0 ;;
-        # Names a VS Code theme to install from the Marketplace; checked before use (lib/vscode.sh).
-        vscode.json) return 0 ;;
         preview.*) is_image "$1" ;;
         *) return 1 ;;
     esac

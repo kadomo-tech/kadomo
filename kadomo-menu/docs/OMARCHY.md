@@ -53,7 +53,7 @@ which treats the folder as someone else's theme and uses it in place:
 | --- | --- |
 | Ghostty, kitty, Terminal, the window borders, Neovim and Vim (the `kadomo` colorscheme), the Starship prompt | rendered from its `colors.toml` by the theme manager's templates, like any Kadomo theme |
 | btop | its own `btop.theme` when it ships one, else rendered |
-| VS Code | the VS Code theme its `vscode.json` names, installed from the Marketplace the first time (most official themes have one: Tokyo Night is `enkia.tokyo-night`), else the Kadomo color theme rendered from its `colors.toml`. See the theme manager's [VS Code](../../kadomo-theme-manager/README.md#vs-code) |
+| VS Code | the Kadomo color theme rendered from its `colors.toml`. Its `vscode.json` (a Marketplace extension to install) is ignored: Kadomo never installs an extension for a theme. See the theme manager's [VS Code](../../kadomo-theme-manager/README.md#vs-code) |
 | Wallpaper | its `backgrounds/` (still images), first one first; `theme-bg-next` and Appearance › Backgrounds cycle through them. A theme with none (or only videos or Git LFS files) gets one drawn from its background and accent colors, so the wallpaper always changes |
 | macOS light or dark mode | its `mode`, or a `light.mode` file |
 | The launcher | the Omarchy theme's own look, from its `[launcher]` colors (below) |

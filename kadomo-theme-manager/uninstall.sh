@@ -6,7 +6,7 @@
 # "kadomo" colorscheme links, Kadomo's Starship block in .zshrc and its
 # config (Starship itself stays installed), btop's old theme, Neovim's theme link,
 # VS Code's color theme from before (and the Kadomo theme extension and any
-# Marketplace themes Kadomo installed for a theme),
+# Marketplace themes an older Kadomo installed for a theme),
 # and the wallpaper (on every Space and display still showing Kadomo's, from
 # the copy of macOS's wallpaper store taken at first install) and light/dark
 # mode from before, when the theme still shows them. Your own themes,

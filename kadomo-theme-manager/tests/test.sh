@@ -94,7 +94,7 @@ check "mix fills in" has "$THEME/ghostty.conf" "mixed = #8a826d"
 check "a theme's own ghostty.conf still wins over it" same "$(cat "$THEME/ghostty.conf")" "background = #123456"
 rm "$HOME/.config/kadomo/themes/catppuccin/ghostty.conf"
 
-echo "6. theme-install: a theme from git gives only colors and images"
+echo "6. a theme cloned from git gives only colors and images"
 repo="$WORK/omarchy-evil-theme"
 mkdir -p "$repo/backgrounds" "$HOME/.ssh"
 printf 'secret\n' >"$HOME/.ssh/id_ed25519"
@@ -113,22 +113,21 @@ ln -s "$HOME/.ssh/id_ed25519" "$repo/unlock.png"
 ln -s "$HOME/.ssh/id_ed25519" "$repo/backgrounds/0-key.png"
 cp "$ROOT/themes/gruvbox/backgrounds/0-glow.png" "$repo/backgrounds/1-real.png"
 (cd "$repo" && git init -q && git add -A && git -c user.name=t -c user.email=t@t commit -qm theme)
-"$BIN/theme-install" "$repo" >"$WORK/out" 2>"$WORK/err"
-check "installed as evil" same "$(cat "$CUR/theme.name")" evil
-for name in neovim.lua ghostty.conf borders.conf unlock.png backgrounds/0-key.png; do
+git clone -q "$repo" "$HOME/.config/kadomo/themes/evil"
+"$BIN/theme-set" evil >"$WORK/out" 2>"$WORK/err"
+check "applied as evil" same "$(cat "$CUR/theme.name")" evil
+for name in neovim.lua ghostty.conf vscode.json borders.conf unlock.png backgrounds/0-key.png; do
     check "  reports $name as ignored" has "$WORK/err" "$name"
 done
 check "  no symlink in the current theme" [ -z "$(find "$THEME" -type l)" ]
-check "  its vscode.json is kept, for VS Code to check" [ -f "$THEME/vscode.json" ]
+check "  its vscode.json is not kept" [ ! -e "$THEME/vscode.json" ]
 check "  its ghostty.conf is not used" lacks "$THEME/ghostty.conf" "command"
 check "  its neovim.lua is not used" lacks "$THEME/neovim.lua" "kadomo-pwned"
 check "  its colors are" has "$THEME/kitty.conf" "background #101010"
 check "  values that are not colors are dropped" has "$WORK/err" "ignored red"
 check "  the real wallpaper is used" same "$(bg)" 1-real.png
 check "  nothing ran" [ ! -e /tmp/kadomo-pwned ]
-check "URLs starting with - are refused" bash -c "! '$BIN/theme-install' -- 2>/dev/null"
-check "ext:: URLs are refused" bash -c "! '$BIN/theme-install' 'ext::sh -c touch% /tmp/kadomo-pwned' 2>/dev/null"
-check "  nothing ran" [ ! -e /tmp/kadomo-pwned ]
+check "there is no theme-install command (Kadomo Menu installs from git)" [ ! -e "$BIN/theme-install" ]
 
 echo "7. five quick theme-sets: the last wins and nothing is half-applied"
 for round in 1 2 3 4 5; do
@@ -326,7 +325,7 @@ for name in $("$BIN/theme-list" --names); do
     check "  light or dark like the theme" has "$THEME/vscode-theme.json" "\"type\": \"$(key "$THEME" mode)\""
 done
 # A stand-in VS Code: its CLI installs an extension by adding it to the
-# registry, as the real one does. FAIL_EXT makes installing fail (offline).
+# registry, as the real one does, and logs every call.
 VS="$WORK/vscode"
 VSUSER="$HOME/Library/Application Support/Code/User"
 VSEXT="$HOME/.vscode/extensions"
@@ -336,7 +335,7 @@ cat >"$VS/code" <<EOF
 J='$ROOT/lib/vscode.js' E='$VSEXT'
 echo "code \$*" >>'$VS/log'
 case "\$1" in
-    --install-extension) [[ -z "\${FAIL_EXT:-}" ]] || exit 1; mkdir -p "\$E/\$2"; osascript -l JavaScript "\$J" register "\$E" "\$2" 1.0.0 ;;
+    --install-extension) mkdir -p "\$E/\$2"; osascript -l JavaScript "\$J" register "\$E" "\$2" 1.0.0 ;;
     --uninstall-extension) osascript -l JavaScript "\$J" unregister "\$E" "\$2" >/dev/null; rm -rf "\$E/\$2" ;;
 esac
 EOF
@@ -356,7 +355,7 @@ ln -s "$WORK/dotfiles/settings.json" "$VSUSER/settings.json"
 check "enable: VS Code shows Kadomo" same "$(vs_theme)" Kadomo
 check "  the rest of settings.json stays as you wrote it" bash -c "grep -q '// my settings' '$VSUSER/settings.json' && grep -q '\"editor.fontSize\": 13,' '$VSUSER/settings.json'"
 check "  settings.json is still your symlink" same "$(readlink "$VSUSER/settings.json")" "$WORK/dotfiles/settings.json"
-check "  the Kadomo extension is registered" osascript -l JavaScript "$ROOT/lib/vscode.js" installed "$VSEXT" kadomo.kadomo-theme
+check "  the Kadomo extension is registered" has "$VSEXT/extensions.json" '"id":"kadomo.kadomo-theme"'
 check "  with Catppuccin's colors" cmp -s "$THEME/vscode-theme.json" "$VSEXT/kadomo.kadomo-theme/themes/kadomo-color-theme.json"
 check "  as a dark theme" has "$VSEXT/kadomo.kadomo-theme/package.json" '"uiTheme": "vs-dark"'
 check "  theme.conf now lists vscode" bash -c "grep '^apps' '$HOME/.config/kadomo/theme.conf' 2>/dev/null | grep -qw vscode || [ ! -e '$HOME/.config/kadomo/theme.conf' ]"
@@ -365,36 +364,23 @@ KADOMO_THEME_APPS=vscode "$BIN/theme-set" catppuccin-latte >/dev/null
 check "a switch updates the colors" cmp -s "$THEME/vscode-theme.json" "$VSEXT/kadomo.kadomo-theme/themes/kadomo-color-theme.json"
 check "  light now" has "$VSEXT/kadomo.kadomo-theme/package.json" '"uiTheme": "vs"'
 
-# An Omarchy theme that names its VS Code theme.
+# An Omarchy theme whose vscode.json names a Marketplace theme: ignored.
 om="$WORK/app support/omarchy/themes/tokyo-vs"
 mkdir -p "$om"
 cp "$ROOT/themes/catppuccin/colors.toml" "$om/"
 printf '{\n  "name": "Tokyo Night",\n  "extension": "enkia.tokyo-night"\n}\n' >"$om/vscode.json"
-FAIL_EXT=1 "$BIN/theme-set" --external "$om" omarchy-tokyo-vs "Tokyo VS" >/dev/null 2>&1
-FAIL_EXT=1 "$BIN/theme-vscode" apply >"$WORK/out" 2>&1
-check "offline: says the Marketplace theme could not be installed" has "$WORK/out" "could not install enkia.tokyo-night"
-check "  and keeps Kadomo's colors for it" same "$(vs_theme)" Kadomo
-check "  nothing recorded as installed" lacks "$HOME/.local/state/kadomo/vscode.txt" "extension|"
 : >"$VS/log"
 KADOMO_THEME_APPS=vscode "$BIN/theme-set" --external "$om" omarchy-tokyo-vs "Tokyo VS" >/dev/null 2>&1
-for _ in $(seq 100); do [[ "$(vs_theme)" == "Tokyo Night" ]] && break; sleep 0.1; done
-check "a switch installs the theme's own pick in the background" same "$(vs_log)" "code --install-extension enkia.tokyo-night"
-check "  and VS Code shows it" same "$(vs_theme)" "Tokyo Night"
-check "  recorded as Kadomo's" has "$HOME/.local/state/kadomo/vscode.txt" "extension|enkia.tokyo-night"
-KADOMO_THEME_APPS=vscode "$BIN/theme-set" --external "$om" omarchy-tokyo-vs "Tokyo VS" >/dev/null 2>&1
-check "  once: installed already the next time" same "$(vs_log | wc -l | tr -d ' ')" 1
-printf '{"name": "Evil", "extension": "x.y; touch /tmp/kadomo-pwned"}\n' >"$om/vscode.json"
-"$BIN/theme-set" --external "$om" omarchy-tokyo-vs "Tokyo VS" >/dev/null 2>&1; "$BIN/theme-vscode" apply >/dev/null 2>&1
-check "a vscode.json with a bad id is not used" same "$(vs_theme)" Kadomo
-check "  nothing installed for it" same "$(vs_log | wc -l | tr -d ' ')" 1
-printf '{"name": "Solarized \\"Light", "extension": "a.b"}\n' >"$om/vscode.json"
-"$BIN/theme-set" --external "$om" omarchy-tokyo-vs "Tokyo VS" >/dev/null 2>&1; "$BIN/theme-vscode" apply >/dev/null 2>&1
-check "  nor one with quotes in its name" same "$(vs_theme)" Kadomo
-printf '{"name": "Solarized Light"}\n' >"$om/vscode.json"
-"$BIN/theme-set" --external "$om" omarchy-tokyo-vs "Tokyo VS" >/dev/null 2>&1; "$BIN/theme-vscode" apply >/dev/null 2>&1
-check "a name alone picks a theme VS Code has" same "$(vs_theme)" "Solarized Light"
-check "  with nothing to install" same "$(vs_log | wc -l | tr -d ' ')" 1
-check "theme-vscode status" bash -c "'$BIN/theme-vscode' status | grep -q 'color theme: Solarized Light'"
+"$BIN/theme-vscode" apply >/dev/null 2>&1
+check "a theme's vscode.json installs nothing" same "$(vs_log)" ""
+check "  VS Code shows Kadomo's colors for it" same "$(vs_theme)" Kadomo
+check "  its colors, not the last theme's" cmp -s "$THEME/vscode-theme.json" "$VSEXT/kadomo.kadomo-theme/themes/kadomo-color-theme.json"
+check "  nothing recorded as installed" lacks "$HOME/.local/state/kadomo/vscode.txt" "extension|"
+check "theme-vscode status" bash -c "'$BIN/theme-vscode' status | grep -q 'color theme: Kadomo'"
+# A Marketplace theme an older Kadomo installed is still removed on disable.
+"$VS/code" --install-extension enkia.tokyo-night >/dev/null
+printf 'extension|enkia.tokyo-night\n' >>"$HOME/.local/state/kadomo/vscode.txt"
+: >"$VS/log"
 "$BIN/theme-set" --native >/dev/null
 
 "$BIN/theme-vscode" disable >"$WORK/out" 2>&1
@@ -402,7 +388,7 @@ check "disable: your color theme from before comes back" bash -c "grep -q 'Defau
 check "  settings.json exactly as it was" cmp -s "$WORK/vs-settings-before" "$WORK/dotfiles/settings.json"
 check "  still a symlink" [ -L "$VSUSER/settings.json" ]
 check "  the Kadomo extension is gone" [ ! -e "$VSEXT/kadomo.kadomo-theme" ]
-check "  the Marketplace theme Kadomo installed too" has "$VS/log" "code --uninstall-extension enkia.tokyo-night"
+check "  the Marketplace theme an older Kadomo installed too" has "$VS/log" "code --uninstall-extension enkia.tokyo-night"
 check "  and ~/.vscode, which Kadomo made" [ ! -e "$HOME/.vscode" ]
 check "  and its record" [ ! -e "$HOME/.local/state/kadomo/vscode.txt" ]
 check "  theme.conf no longer lists vscode" bash -c "! grep '^apps' '$HOME/.config/kadomo/theme.conf' 2>/dev/null | grep -qw vscode"
@@ -485,7 +471,10 @@ check "Neovim starts in tmac2k" same "$(XDG_STATE_HOME="$WORK/nvim-state" XDG_DA
 check "a ~/.vimrc is made" has "$HOME/.vimrc" "silent! colorscheme kadomo"
 check "  that keeps Vim's defaults" has "$HOME/.vimrc" "source \$VIMRUNTIME/defaults.vim"
 check "Vim starts in tmac2k" same "$(/usr/bin/vim -u "$HOME/.vimrc" -i NONE -es -c 'put =g:colors_name' -c '%p' -c 'q!' 2>&1 | grep -x kadomo)" kadomo
+# The theme-install link an older install made.
+ln -s "$HOME/.local/share/kadomo/theme-manager/bin/theme-install" "$HOME/.local/bin/theme-install"
 "$ROOT/install.sh" --only themes,btop >/dev/null 2>&1
+check "installing again removes the old theme-install link" [ ! -L "$HOME/.local/bin/theme-install" ]
 check "installing again adds nothing twice" same "$(grep -c 'kadomo/current' "$HOME/.config/ghostty/config")" 1
 "$HOME/.local/bin/theme-set" gruvbox >/dev/null
 "$ROOT/install.sh" --only themes,btop >/dev/null 2>&1

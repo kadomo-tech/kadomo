@@ -3,17 +3,17 @@
 #
 # Every theme gets a VS Code color theme rendered from its palette
 # (themed/vscode-theme.json.tpl, ported from Omarchy), installed as a local
-# extension, "Kadomo", in ~/.vscode/extensions/kadomo.kadomo-theme. A theme
-# whose vscode.json names a Marketplace theme (most Omarchy themes do: Tokyo
-# Night is enkia.tokyo-night) gets that one: it is installed in the
-# background, and Kadomo's colors show until it is there. Either way only
-# workbench.colorTheme in settings.json changes; the rest stays as written.
+# extension, "Kadomo", in ~/.vscode/extensions/kadomo.kadomo-theme. Nothing
+# comes from the Marketplace: an extension is code, so a theme's vscode.json
+# (Omarchy themes ship one) is ignored. Only workbench.colorTheme in
+# settings.json changes; the rest stays as written.
 #
 # What Kadomo did is in $STATE/vscode.txt, one line each, so theme-vscode
 # disable (and uninstalling the theme manager) undoes exactly that:
 #   before|<theme>      workbench.colorTheme before Kadomo (empty: unset)
 #   set|<theme>         a theme Kadomo set
-#   extension|<id>      a Marketplace extension Kadomo installed
+#   extension|<id>      a Marketplace extension an older Kadomo installed for a
+#                       theme; still removed, nothing new is added
 #   created|<path>      a file or folder Kadomo made (settings.json, the registry)
 
 VSCODE_USER="${KADOMO_VSCODE_USER:-$HOME/Library/Application Support/Code/User}"
@@ -91,16 +91,6 @@ vscode_set_theme() {
     vscode_edit_settings set "$name"
 }
 
-# Whether a Marketplace extension is installed: VS Code's registry, else
-# (no registry yet) VS Code itself.
-vscode_has_extension() { # <cli> <id>
-    if [[ -f "$VSCODE_EXTENSIONS/extensions.json" ]]; then
-        vscode_js installed "$VSCODE_EXTENSIONS" "$2" 2>/dev/null
-    else
-        "$1" --list-extensions 2>/dev/null | grep -Fixq -- "$2"
-    fi
-}
-
 # The current theme's colors as the "Kadomo" extension. Its version comes
 # from the colors, so VS Code reloads it when they change and keeps its cache
 # when they do not.
@@ -136,58 +126,12 @@ EOF
     vscode_js register "$VSCODE_EXTENSIONS" "$VSCODE_THEME_ID" "$version"
 }
 
-# The theme's own VS Code pick from its vscode.json, checked: "<name>\t<id>"
-# (the id empty for a theme VS Code has built in), or nothing.
-vscode_descriptor() {
-    [[ -f "$THEME_DIR/vscode.json" && ! -L "$THEME_DIR/vscode.json" ]] || return 1
-    vscode_js descriptor "$THEME_DIR/vscode.json" 2>/dev/null
-}
-
-# Shows the current theme in VS Code. With "background" (theme-set), a
-# Marketplace theme still to download is fetched by a process of its own, so
-# the switch never waits on the network; otherwise it is fetched here.
+# Shows the current theme in VS Code: the Kadomo extension, rewritten from
+# its colors, selected in workbench.colorTheme.
 vscode_apply() {
-    local mode="${1:-}" cli line name="" ext=""
-    cli="$(vscode_cli)" || return 0
+    vscode_cli >/dev/null || return 0
     vscode_install_generated || { warn "theme: VS Code: the current theme has no vscode-theme.json (try theme-refresh)"; return 1; }
-    if line="$(vscode_descriptor)"; then
-        name="${line%%$'\t'*}"; ext="${line#*$'\t'}"
-    fi
-    if [[ -z "$name" ]]; then
-        vscode_set_theme "$VSCODE_THEME_LABEL"
-    elif [[ -z "$ext" ]] || vscode_has_extension "$cli" "$ext"; then
-        vscode_set_theme "$name"
-    else
-        # Kadomo's colors for this theme while its own downloads.
-        vscode_set_theme "$VSCODE_THEME_LABEL"
-        if [[ "$mode" == background ]]; then
-            nohup "$KADOMO_THEME_ROOT/bin/theme-vscode" fetch "$ext" "$name" </dev/null >/dev/null 2>&1 &
-        else
-            vscode_fetch "$ext" "$name"
-        fi
-    fi
-}
-
-# Installs Marketplace extension $1 and, when the theme showing still wants
-# it, switches VS Code to its theme $2. One at a time.
-vscode_fetch() {
-    local ext="$1" name="$2" cli status=0
-    cli="$(vscode_cli)" || return 0
-    lock_acquire "$STATE/vscode.lock"
-    if ! vscode_has_extension "$cli" "$ext"; then
-        mkdir -p "$STATE"
-        if with_timeout 180 "$cli" --install-extension "$ext" >>"$VSCODE_LOG" 2>&1 && vscode_has_extension "$cli" "$ext"; then
-            vscode_record "extension|$ext"
-        else
-            warn "theme: VS Code: could not install $ext from the Marketplace (offline?); it shows Kadomo's colors for this theme"
-            status=1
-        fi
-    fi
-    if ((status == 0)) && [[ "$(vscode_descriptor)" == "$name"$'\t'"$ext" ]]; then
-        vscode_set_theme "$name" || status=1
-    fi
-    lock_release "$STATE/vscode.lock"
-    return "$status"
+    vscode_set_theme "$VSCODE_THEME_LABEL"
 }
 
 # Whether Kadomo has left anything in VS Code.
@@ -222,7 +166,7 @@ vscode_remove() {
     cli="$(vscode_cli || true)"
     while IFS= read -r ext; do
         [[ -n "$ext" ]] || continue
-        echo "  -  VS Code extension $ext (Kadomo installed it for a theme)"
+        echo "  -  VS Code extension $ext (an older Kadomo installed it for a theme)"
         ((dry)) && continue
         if [[ -n "$cli" ]] && "$cli" --uninstall-extension "$ext" >/dev/null 2>&1; then continue; fi
         # VS Code is gone already: its registry entry and folder go by hand.

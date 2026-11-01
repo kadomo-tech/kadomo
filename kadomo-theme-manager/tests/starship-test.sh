@@ -136,7 +136,8 @@ mkdir -p "$repo"
 printf 'background = "#101010"\nforeground = "#e0e0e0"\n' >"$repo/colors.toml"
 printf 'text = "#ffffff"\n[custom.x]\ncommand = "touch /tmp/kadomo-pwned"\n' >"$repo/starship-palette.toml"
 (cd "$repo" && git init -q && git add -A && git -c user.name=t -c user.email=t@t commit -qm t)
-"$BIN/theme-install" "$repo" >/dev/null 2>"$WORK/err"
+git clone -q "$repo" "$HOME/.config/kadomo/themes/sneaky"
+"$BIN/theme-set" sneaky >/dev/null 2>"$WORK/err"
 check "its starship-palette.toml is reported as ignored" has "$WORK/err" "starship-palette.toml"
 check "  the palette comes from its colors" bash -c "! grep -q custom '$HOME/.config/kadomo/current/theme/starship-palette.toml'"
 "$BIN/theme-set" catppuccin >/dev/null 2>&1

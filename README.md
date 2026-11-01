@@ -99,7 +99,7 @@ Options go after a `_`. Put `KADOMO_REF` in front to choose a version:
 # Kadomo Core only, no questions
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)" _ --yes
 
-# A specific version or branch
+# A specific release (installs come from releases only, never a branch)
 KADOMO_REF=0.1.1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
 ```
 

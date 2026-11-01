@@ -183,8 +183,8 @@ if selected starship && { dev_present starship || ((DRY_RUN)); }; then
 fi
 
 # --- VS Code: in the theme's colors -----------------------------------------
-# Each theme shows as Kadomo's own VS Code theme, drawn from its colors, or
-# the Marketplace theme an Omarchy theme names (see theme-vscode).
+# Each theme shows as Kadomo's own VS Code theme, drawn from its colors;
+# nothing is installed from the Marketplace (see theme-vscode).
 
 enable_vscode() {
     local tv

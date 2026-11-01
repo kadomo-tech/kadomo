@@ -41,7 +41,7 @@ Each is a small script in `bin/` with a `# kadomo:summary=` line on top and
 | Command | Does |
 | --- | --- |
 | `theme-set <name>` | switch to a theme |
-| `theme-set --external <folder> <name> [<label>]` | show a theme kept elsewhere (Kadomo Menu's Omarchy themes), in place, with the rules for themes from git ([below](#themes-from-other-providers)) |
+| `theme-set --external <folder> <name> [<label>]` | show a theme kept elsewhere (Kadomo Menu's Omarchy themes), in place, with the rules for someone else's theme ([below](#themes-from-other-providers)) |
 | `theme-set --native` | back to the last of Kadomo's own themes (nothing when one is showing) |
 | `theme-refresh` | apply the current theme again, keeping the wallpaper (after editing a template) |
 | `theme-list` | every theme, built-in and yours, by display name (`--names` for folder names) |
@@ -49,7 +49,6 @@ Each is a small script in `bin/` with a `# kadomo:summary=` line on top and
 | `theme-bg-next` | the current theme's next wallpaper, wrapping around |
 | `theme-bg-set <image>` | any image as the wallpaper |
 | `theme-pick`, `theme-bg-pick` | pick in the terminal: fzf with previews when installed, else a numbered menu |
-| `theme-install <git-url>` | clone a theme into your themes and switch to it |
 | `theme-remove <name>` | delete one of your themes |
 | `theme-color <key>` | a color of the current theme; `--all` for the whole palette, `--file` for any colors.toml |
 | `theme-osc` | recolor the terminal you run it in through escape codes |
@@ -162,7 +161,7 @@ app is not installed or not running.
 | Neovim | the `kadomo` colorscheme: `~/.config/nvim/colors/kadomo.lua` links to the theme's `neovim-colors.lua`, and a block in `init.lua` (or `init.vim`) selects it | every running Neovim showing it loads it again |
 | Neovim with LazyVim | `~/.config/nvim/lua/plugins/theme.lua` links to the theme's `neovim.lua`: `kadomo`, or a colorscheme plugin the theme names | the next time it starts |
 | Vim | the `kadomo` colorscheme: `~/.vim/colors/kadomo.vim` links to the theme's `vim-colors.vim`, and a block in `~/.vimrc` selects it (a new vimrc also keeps Vim's defaults) | the next time it starts: the Vim that comes with macOS cannot be reached while it runs |
-| VS Code | the **Kadomo** color theme, a local extension in `~/.vscode/extensions/kadomo.kadomo-theme` rendered from the theme, or the Marketplace theme the theme's `vscode.json` names; selected in `workbench.colorTheme` | the extension's colors are rewritten and VS Code reloads them in open windows; a Marketplace theme is installed in the background the first time ([below](#vs-code)) |
+| VS Code | the **Kadomo** color theme, a local extension in `~/.vscode/extensions/kadomo.kadomo-theme` rendered from the theme; selected in `workbench.colorTheme` | the extension's colors are rewritten and VS Code reloads them in open windows ([below](#vs-code)) |
 | macOS appearance | the theme's `mode` | System Events sets dark or light |
 | Wallpaper | `current/background` | set on every display through NSWorkspace |
 | htop | draws with the terminal's 16 colors | follows the terminal |
@@ -305,7 +304,7 @@ every other app.
 theme-vscode           # status: installed, following the theme, the color theme showing
 theme-vscode enable    # VS Code follows the theme (adds vscode to theme.conf) and shows it now
 theme-vscode apply     # show the current theme again
-theme-vscode disable   # your color theme from before comes back; Kadomo's extensions go
+theme-vscode disable   # your color theme from before comes back; Kadomo's extension goes
 ```
 
 **Which VS Code theme.** Each theme renders `themed/vscode-theme.json.tpl`
@@ -313,28 +312,13 @@ theme-vscode disable   # your color theme from before comes back; Kadomo's exten
 palette, like any template. It is installed as a local extension, **Kadomo**,
 in `~/.vscode/extensions/kadomo.kadomo-theme` and listed in VS Code's
 `extensions.json`. Its version comes from the colors, and VS Code watches the
-file, so a switch recolors open windows without a reload. A theme can name a
-VS Code theme of its own in `vscode.json`, as most of Omarchy's official
-themes do:
+file, so a switch recolors open windows without a reload.
 
-```json
-{ "name": "Tokyo Night", "extension": "enkia.tokyo-night" }
-```
-
-Then VS Code shows that one: `code --install-extension` fetches it from the
-Marketplace the first time, by a process of its own (`theme-vscode fetch`) so
-the switch never waits on the network. Kadomo's colors show until it is there,
-and stay if it cannot be downloaded. A `name` without an `extension` picks a
-theme VS Code already has.
-
-**Trust.** `vscode.json` is the one file from someone else's theme (git, or
-Kadomo Menu's Omarchy themes) that makes something install: VS Code installs the
-Marketplace extension it names. Before that, the `name` must be printable with
-no quotes or backslashes, and the `extension` a plain `publisher.name` (letters,
-digits, `.`, `_`, `-`). A file that fails either is ignored, and the theme shows
-in Kadomo's colors. The id is passed to VS Code's own command line tool as one
-argument and never reaches a shell. Remove a theme's `vscode.json` to keep it on
-Kadomo's colors.
+**Nothing from the Marketplace.** A VS Code extension is code that runs in
+VS Code, so Kadomo never installs one for a theme. Omarchy's themes ship a
+`vscode.json` naming a Marketplace theme (`enkia.tokyo-night` for Tokyo
+Night); it is ignored, and VS Code shows the Kadomo theme drawn from the
+theme's colors, like every other app.
 
 **What changes.** Only `workbench.colorTheme` in
 `~/Library/Application Support/Code/User/settings.json`. That file may have
@@ -343,23 +327,26 @@ else stays as written; a `settings.json` that is a symlink stays one. VS Code
 Insiders, VSCodium, and Cursor are not touched.
 
 **Disable and uninstall** put back the color theme you had before Kadomo, unless
-you picked another since. They also remove the Kadomo extension, the Marketplace
-themes Kadomo installed (VS Code uninstalls them, or Kadomo takes them out of
-its registry when VS Code is gone already), and a `settings.json` or folders
-Kadomo made that hold nothing else.
+you picked another since. They also remove the Kadomo extension, any
+Marketplace theme an older Kadomo installed for a theme (VS Code uninstalls it,
+or Kadomo takes it out of its registry when VS Code is gone already), and a
+`settings.json` or folders Kadomo made that hold nothing else.
 
 ## Themes from git
 
-`theme-install` names the theme after the repository, without `omarchy-` in
-front or `-theme` behind (`omarchy-everforest-theme` is `everforest`), and
-refuses URLs that start with `-` or use `ext::`/`fd::`. A theme folder with a
-`.git` in it (that is not a symlink to your own working copy) is someone
-else's, so only its colors and images are used: `colors.toml`,
-`alacritty.toml` (its palette, then it is dropped), `btop.theme`,
-`kadomo-menu*.toml`, `preview.*`, the images in `backgrounds/`, and
-`vscode.json` (the VS Code theme to install, checked first: [VS Code](#vs-code)).
-Lua, terminal configs, scripts, and every symlink are skipped and listed on
-stderr. Themes you wrote yourself are used in full.
+Install a theme from a Git URL in Kadomo Menu (Appearance › Omarchy Themes ›
+Install from Git), which clones over HTTPS only, with hooks, submodules, and
+symlinks off; see [Omarchy themes](../kadomo-menu/docs/OMARCHY.md). There is
+no command line installer.
+
+A folder in `~/.config/kadomo/themes` with a `.git` in it (that is not a
+symlink to your own working copy), such as one an older Kadomo's
+`theme-install` cloned, is someone else's, so only its colors and images are
+used: `colors.toml`, `alacritty.toml` (its palette, then it is dropped),
+`btop.theme`, `kadomo-menu*.toml`, `preview.*`, and the images in
+`backgrounds/`. Lua, terminal configs, `vscode.json`, scripts, and every
+symlink are skipped and listed on stderr. Themes you wrote yourself are used
+in full.
 
 ## Themes from other providers
 
@@ -367,7 +354,7 @@ Kadomo Menu keeps Omarchy themes in a library of its own and shows one with
 `theme-set --external <folder> <name> <label>`. The folder is used where it
 is, always as someone else's theme: only `colors.toml` (or the palette of an
 `alacritty.toml`), `btop.theme`, `kadomo-menu*.toml`, `preview.*`, the
-images in `backgrounds/`, and `vscode.json` are used, and a `light.mode` file makes it light.
+images in `backgrounds/` are used, and a `light.mode` file makes it light.
 Every template renders from its palette as for any theme, so every app,
 light/dark mode, and the wallpaper follow it. It is not listed among your
 themes, cannot take the name of one, and Kadomo Menu keeps showing the

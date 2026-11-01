@@ -7,8 +7,8 @@
 #   OmniWM              its focus border colors in settings.toml (kadomo-omniwm)
 #   Neovim and Vim      a "kadomo" colorscheme in tmac2k's style, selected in
 #                       init.lua (or LazyVim's plugins) and ~/.vimrc
-#   VS Code             a "Kadomo" color theme (or the Marketplace theme an
-#                       Omarchy theme names), in workbench.colorTheme
+#   VS Code             a "Kadomo" color theme drawn from the theme, in
+#                       workbench.colorTheme (nothing from the Marketplace)
 #   Starship (zsh)      theme-starship; nothing changes until you run
 #                       theme-starship enable (developer/ does)
 #   btop                color_theme "current", linked to the theme  (btop)
@@ -72,6 +72,13 @@ for cmd in "${COMMANDS[@]}"; do
     [[ -L "$link" ]] || echo "  +  $(short_path "$link")"
     run ln -sfh "$SHARE/bin/$cmd" "$link"
     record "link|$link"
+done
+for cmd in "${RETIRED_COMMANDS[@]}"; do
+    link="$BIN_DIR/$cmd"
+    if [[ -L "$link" && "$(readlink "$link")" == "$SHARE/bin/$cmd" ]]; then
+        echo "  -  $(short_path "$link") (no longer part of Kadomo)"
+        run rm -f -- "$link"
+    fi
 done
 
 # Yours to fill, and the folders theme-set writes to.

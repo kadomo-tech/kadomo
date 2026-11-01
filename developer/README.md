@@ -45,21 +45,17 @@ VS Code takes its colors from the theme manager, so install that too (it is in
 the top-level checklist). The installer then runs `theme-vscode enable`, and
 from then on every theme switch reaches VS Code, Omarchy themes included:
 
-- **Kadomo's themes, and Omarchy themes without a VS Code theme of their own**
-  show as the **Kadomo** color theme, drawn from the theme's palette (a local
-  extension in `~/.vscode/extensions/kadomo.kadomo-theme`). An open window
-  changes at once.
-- **An Omarchy theme that names its VS Code theme** in `vscode.json` (Tokyo
-  Night, Catppuccin, Gruvbox, Nord, Everforest, Kanagawa, Rosé Pine, and most
-  of the other official themes) gets that theme, installed from the VS Code
-  Marketplace in the background the first time. Kadomo's colors for it show
-  until the download is done, and stay if it cannot be downloaded (offline).
+Every theme, Kadomo's and Omarchy's, shows as the **Kadomo** color theme,
+drawn from the theme's palette (a local extension in
+`~/.vscode/extensions/kadomo.kadomo-theme`). An open window changes at once.
+Nothing is installed from the VS Code Marketplace: an extension is code, so the
+`vscode.json` Omarchy themes ship is ignored.
 
 Only `workbench.colorTheme` in your `settings.json` changes; comments and
 everything else stay as you wrote them, and a `settings.json` that is a symlink
 stays one. `theme-vscode disable` (and the uninstaller) puts back the color
 theme you had, unless you picked another since, and removes the Kadomo extension
-and the Marketplace themes Kadomo installed. See
+and any Marketplace theme an older Kadomo installed. See
 [the theme manager's README](../kadomo-theme-manager/README.md#vs-code).
 
 ## Starship

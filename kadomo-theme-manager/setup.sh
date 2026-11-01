@@ -5,7 +5,10 @@
 SHARE="$HOME/.local/share/kadomo/theme-manager"
 BIN_DIR="$HOME/.local/bin"
 COMMANDS=(theme-set theme-refresh theme-list theme-current theme-bg-next theme-bg-set theme-bg-pick
-          theme-pick theme-install theme-remove theme-color theme-osc theme-starship theme-vscode)
+          theme-pick theme-remove theme-color theme-osc theme-starship theme-vscode)
+# Commands an older install linked that are gone now. install.sh removes
+# their links; uninstall.sh removes them with the rest of what it recorded.
+RETIRED_COMMANDS=(theme-install)
 
 # What install.sh changed, so uninstall.sh can undo exactly that.
 STATE_DIR="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}"

@@ -62,12 +62,14 @@ kadomo_fetch_and_run() {
     if [[ ! -f "$dir/uninstall.sh" || ! -f "$dir/lib/tui.sh" ]]; then
         if [[ -z "$ref" ]]; then
             latest="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$KADOMO_REPO/releases/latest" 2>/dev/null || true)"
-            case "$latest" in */releases/tag/*) ref="${latest##*/releases/tag/}" ;; *) ref=main ;; esac
+            case "$latest" in
+                */releases/tag/*) ref="${latest##*/releases/tag/}" ;;
+                *) fail "could not find a Kadomo release to download (offline, or none published yet)." ;;
+            esac
         fi
-        case "$ref" in
-            v[0-9]*|[0-9]*) url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz" ;;
-            *) url="https://github.com/$KADOMO_REPO/archive/refs/heads/$ref.tar.gz" ;;
-        esac
+        # Releases only: a version tag, never a branch.
+        [[ "$ref" =~ ^v?[0-9]+(\.[0-9]+)*$ ]] || fail "KADOMO_REF must be a released version, such as 0.1.1 (got $ref)."
+        url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz"
         printf '\n  Downloading Kadomo (%s) to remove it...\n' "$ref"
         mkdir -p "$(dirname "$dir")"
         rm -rf -- "$dir.download"

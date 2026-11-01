@@ -97,7 +97,7 @@ public struct OmarchyLibrary: Sendable {
 
     /// 1: palette and preview only. 2: also wallpapers and btop.theme, so the
     /// whole desktop can follow the theme. 3: also vscode.json, the VS Code
-    /// theme the theme names.
+    /// theme the theme names (no longer used: nothing is installed for it).
     public static let filesVersion = 3
 
     public var themesDirectory: String { root + "/themes" }
@@ -282,8 +282,8 @@ public struct OmarchyLibrary: Sendable {
 public enum SafeThemeCopy {
     /// Color data only. `btop.theme` is the one app config kept: it is a list
     /// of colors, and the theme manager checks it again when it is applied.
-    /// `vscode.json` names the VS Code theme to install from the Marketplace;
-    /// the theme manager checks its name and id before VS Code installs it.
+    /// `vscode.json` names a VS Code Marketplace theme; it is kept but unused,
+    /// since the theme manager never installs an extension for a theme.
     static let limits: [String: Int] = ["colors.toml": OmarchyPalette.maxBytes, "shell.toml": OmarchyShellStyle.maxBytes,
                                         "light.mode": 4096, "btop.theme": 64 * 1024, "vscode.json": 4096]
     static let previewNames = ["preview.png", "preview.jpg", "preview.jpeg", "preview.webp"]

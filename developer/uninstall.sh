@@ -48,8 +48,8 @@ fi
 
 failed=0
 
-# VS Code's colors first, while VS Code is still there to uninstall the
-# Marketplace themes Kadomo installed for a theme.
+# VS Code's colors first, while VS Code is still there to uninstall any
+# Marketplace theme an older Kadomo installed for a theme.
 if dev_recorded "enabled|vscode"; then
     if tv="$(theme_vscode_cmd)"; then
         if ((DRY_RUN)); then echo "  -  VS Code's Kadomo colors (theme-vscode disable)"

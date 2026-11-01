@@ -26,4 +26,4 @@ Keyboard-first macOS launcher. Swift 6 + AppKit, SwiftPM, no dependencies.
 - Presentation values come from `Theme`/`Style`, never literals in views.
 - New behavior in the state machine gets a test in `ModelTests`.
 - User commands run with argument arrays; only an explicit `shell` key uses a shell.
-- Omarchy themes are untrusted data: only the allowlist in `SafeThemeCopy` is copied, nothing from a theme runs, and an external theme can change only what `ThemeAppearance` carries. The one exception is `vscode.json`: it names a VS Code Marketplace theme that the theme manager (`theme-vscode`) checks and has VS Code install.
+- Omarchy themes are untrusted data: only the allowlist in `SafeThemeCopy` is copied, nothing from a theme runs, and an external theme can change only what `ThemeAppearance` carries. `vscode.json` is still copied (files version 3) but nothing reads it: the theme manager never installs a VS Code extension for a theme.

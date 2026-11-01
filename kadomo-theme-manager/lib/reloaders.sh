@@ -123,10 +123,9 @@ reload_neovim() {
 reload_vim() { :; }
 
 # VS Code shows the "Kadomo" color theme, a local extension rendered from
-# the theme (or the Marketplace theme its vscode.json names, fetched in the
-# background), through workbench.colorTheme. It watches the theme file, so
+# the theme, through workbench.colorTheme. It watches the theme file, so
 # an open window changes at once. See lib/vscode.sh.
-reload_vscode() { vscode_apply background; }
+reload_vscode() { vscode_apply; }
 
 # Starship (zsh): Kadomo's starship.toml is written again from the theme's
 # starship-palette.toml (or, with matching off, the theme you picked), and

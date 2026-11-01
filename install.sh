@@ -20,8 +20,9 @@
 #                 core, developer, gaming, other
 #   --version     print the Kadomo version (from VERSION) and exit
 #
-# Without a checkout, like Homebrew's installer (KADOMO_REF picks a version
-# such as 0.1.1, or a branch; the default is the latest release, else main):
+# Without a checkout, like Homebrew's installer (KADOMO_REF picks a released
+# version such as 0.1.1; the default is the latest release, and there is no
+# installing from a branch):
 #   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
 # It downloads Kadomo to ~/.local/share/kadomo/source and runs this from
 # there; that copy's uninstall.sh removes everything again, the copy too.
@@ -46,12 +47,14 @@ kadomo_fetch_and_run() {
     if [[ -z "$ref" ]]; then
         # The latest release redirects to its tag; without one, to the releases page.
         latest="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$KADOMO_REPO/releases/latest" 2>/dev/null || true)"
-        case "$latest" in */releases/tag/*) ref="${latest##*/releases/tag/}" ;; *) ref=main ;; esac
+        case "$latest" in
+            */releases/tag/*) ref="${latest##*/releases/tag/}" ;;
+            *) fail "could not find a Kadomo release to install (offline, or none published yet)." ;;
+        esac
     fi
-    case "$ref" in
-        v[0-9]*|[0-9]*) url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz" ;;
-        *) url="https://github.com/$KADOMO_REPO/archive/refs/heads/$ref.tar.gz" ;;
-    esac
+    # Releases only: a version tag, never a branch.
+    [[ "$ref" =~ ^v?[0-9]+(\.[0-9]+)*$ ]] || fail "KADOMO_REF must be a released version, such as 0.1.1 (got $ref)."
+    url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz"
     printf '\n  Downloading Kadomo (%s)...\n' "$ref"
     mkdir -p "$(dirname "$dir")"
     rm -rf -- "$dir.download"

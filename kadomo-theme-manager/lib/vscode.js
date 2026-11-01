@@ -1,10 +1,8 @@
 // VS Code's files, edited for lib/vscode.sh. JavaScript for Automation, so
 // nothing beyond macOS is needed. Run as: osascript -l JavaScript vscode.js <command> ...
 //
-//   descriptor <vscode.json>             "<theme name>\t<extension id>", checked; exit 1 if unusable
 //   register <extensions dir> <id> <version>   list a local extension folder <dir>/<id> in extensions.json
 //   unregister <extensions dir> <id>     take it out again; prints the folder names it had
-//   installed <extensions dir> <id>      exit 0 when the extension is installed and not on its way out
 //   get <settings.json>                  workbench.colorTheme; exit 1 when it is not set
 //   set <settings.json> <name>           prints settings.json with workbench.colorTheme set
 //   unset <settings.json>                prints settings.json without it
@@ -24,8 +22,6 @@ const INLINE = new RegExp('(' + KEY.replace('.', '\\.') + '\\s*:\\s*)(' + VALUE 
 
 // A theme's label: printable, and nothing that would need escaping in JSON.
 const NAME_OK = /^[^\x00-\x1f\x7f"\\]{1,100}$/;
-// A Marketplace id, publisher.name, and nothing a shell or a path could use.
-const ID_OK = /^[A-Za-z0-9][A-Za-z0-9-]{0,99}\.[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
 
 function abs(path) {
     return path.charAt(0) === '/' ? path : $.NSFileManager.defaultManager.currentDirectoryPath.js + '/' + path;
@@ -65,16 +61,6 @@ function find(text) {
 function registry(dir) { return dir + '/extensions.json'; }
 
 const commands = {
-    descriptor(file) {
-        const d = parse(file, null);
-        if (!d || typeof d.name !== 'string' || !NAME_OK.test(d.name)) return 1;
-        // A name alone is a theme VS Code has already; a bad id spoils the lot.
-        if (d.extension !== undefined && (typeof d.extension !== 'string' || !ID_OK.test(d.extension))) return 1;
-        const ext = d.extension || '';
-        out(d.name + '\t' + ext + '\n');
-        return 0;
-    },
-
     register(dir, id, version) {
         const list = parse(registry(dir), []).filter(e => !(e.identifier && String(e.identifier.id).toLowerCase() === id.toLowerCase()));
         const path = dir + '/' + id;
@@ -109,18 +95,6 @@ const commands = {
             if (rel && rel.indexOf('/') < 0 && rel !== '.' && rel !== '..') out(rel + '\n');
         }
         return 0;
-    },
-
-    installed(dir, id) {
-        const list = parse(registry(dir), null);
-        if (!list) return 1;
-        const obsolete = parse(dir + '/.obsolete', {}) || {};
-        for (const e of list) {
-            if (!e.identifier || String(e.identifier.id).toLowerCase() !== id.toLowerCase()) continue;
-            const rel = e.relativeLocation || String((e.location && (e.location.path || e.location.fsPath)) || '').split('/').pop();
-            if (rel && !obsolete[rel] && exists(dir + '/' + rel)) return 0;
-        }
-        return 1;
     },
 
     get(file) {
