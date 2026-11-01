@@ -20,7 +20,7 @@ restyles all of it at once. Removing it is just as easy.
 Open **Terminal** (the one that comes with macOS) and paste:
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)"
 ```
 
 You don't need to clone anything or install git. Choose what you want, check
@@ -37,7 +37,7 @@ In **Terminal**, run either of these:
 ```
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/uninstall.sh)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/uninstall.sh)"
 ```
 
 You'll see a list of everything Kadomo set up, all checked. Uncheck anything
@@ -94,13 +94,13 @@ Options go after a `_`. Put `KADOMO_REF` in front to choose a version:
 
 ```sh
 # Install categories without any questions
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)" _ --only core,developer
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)" _ --only core,developer
 
 # Kadomo Core only, no questions
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)" _ --yes
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)" _ --yes
 
 # A specific release (installs come from releases only, never a branch)
-KADOMO_REF=0.1.1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
+KADOMO_REF=0.1.1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)"
 ```
 
 | Option | What it does |
@@ -117,8 +117,8 @@ installs anything new.
 <summary><b>Working from a clone</b> (for contributors)</summary>
 
 ```sh
-git clone https://github.com/kadomo-tech/kadomo-alpha.git
-cd kadomo-alpha
+git clone https://github.com/kadomo-tech/kadomo.git
+cd kadomo
 
 ./install.sh                          # menus
 ./install.sh --yes                    # Kadomo Core, no questions

@@ -23,14 +23,14 @@
 # Without a checkout, like Homebrew's installer (KADOMO_REF picks a released
 # version such as 0.1.1; the default is the latest release, and there is no
 # installing from a branch):
-#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)"
 # It downloads Kadomo to ~/.local/share/kadomo/source and runs this from
 # there; that copy's uninstall.sh removes everything again, the copy too.
 #
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
 
-KADOMO_REPO="kadomo-tech/kadomo-alpha"
+KADOMO_REPO="kadomo-tech/kadomo"
 KADOMO_SOURCE_DIR="${KADOMO_SOURCE_DIR:-$HOME/.local/share/kadomo/source}"
 
 # Run from curl rather than a checkout: there is nothing next to this script,

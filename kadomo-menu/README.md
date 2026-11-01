@@ -100,8 +100,8 @@ The other Mac needs Xcode 26 or later (Swift 6.2+), which needs macOS 15.6
 or later. On a 2018 Mac mini that means macOS 15 Sequoia.
 
 ```bash
-git clone git@github.com:kadomo-tech/kadomo-alpha.git
-cd kadomo-alpha/kadomo-menu
+git clone git@github.com:kadomo-tech/kadomo.git
+cd kadomo/kadomo-menu
 ./build.sh --open
 ```
 

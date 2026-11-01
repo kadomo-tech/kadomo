@@ -36,7 +36,7 @@
 #   --yes   ask nothing, and remove everything found
 #
 # Without a checkout, like Homebrew's uninstaller:
-#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/uninstall.sh)"
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/uninstall.sh)"
 # It runs the copy the curl installer left in ~/.local/share/kadomo/source
 # (downloading one when there is none), and once everything is removed, that
 # copy goes too.
@@ -44,7 +44,7 @@
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
 
-KADOMO_REPO="kadomo-tech/kadomo-alpha"
+KADOMO_REPO="kadomo-tech/kadomo"
 KADOMO_SOURCE_DIR="${KADOMO_SOURCE_DIR:-$HOME/.local/share/kadomo/source}"
 
 # Run from curl rather than a checkout: there is nothing next to this script,
