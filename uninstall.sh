@@ -35,10 +35,80 @@
 # Usage: ./uninstall.sh [--yes]
 #   --yes   ask nothing, and remove everything found
 #
+# Without a checkout, like Homebrew's uninstaller:
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/uninstall.sh)"
+# It runs the copy the curl installer left in ~/.local/share/kadomo/source
+# (downloading one when there is none), and once everything is removed, that
+# copy goes too.
+#
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
 
+KADOMO_REPO="kadomo-tech/kadomo-alpha"
+KADOMO_SOURCE_DIR="${KADOMO_SOURCE_DIR:-$HOME/.local/share/kadomo/source}"
+
+# Run from curl rather than a checkout: there is nothing next to this script,
+# so run the uninstall.sh in KADOMO_SOURCE_DIR, the version that installed
+# Kadomo, and download one first when it is not there. Everything happens in
+# this function, called on its last line, so a download of this script cut
+# off partway runs nothing.
+kadomo_fetch_and_run() {
+    local ref="${KADOMO_REF:-}" latest url dir="$KADOMO_SOURCE_DIR" short tty=/dev/stdin
+    fail() { printf '\n  ✗ %s\n\n' "$*" >&2; exit 1; }
+    [[ "$(uname -s)" == Darwin ]] || fail "Kadomo is for macOS."
+    ((EUID != 0)) || fail "run this as your own user, not with sudo."
+    case "$dir" in /|"$HOME"|"$HOME"/|"") fail "KADOMO_SOURCE_DIR cannot be $dir." ;; esac
+    [[ ! -e "$dir/.git" ]] || fail "$dir is a git checkout; run its ./uninstall.sh instead."
+    if [[ ! -f "$dir/uninstall.sh" || ! -f "$dir/lib/tui.sh" ]]; then
+        if [[ -z "$ref" ]]; then
+            latest="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$KADOMO_REPO/releases/latest" 2>/dev/null || true)"
+            case "$latest" in */releases/tag/*) ref="${latest##*/releases/tag/}" ;; *) ref=main ;; esac
+        fi
+        case "$ref" in
+            v[0-9]*|[0-9]*) url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz" ;;
+            *) url="https://github.com/$KADOMO_REPO/archive/refs/heads/$ref.tar.gz" ;;
+        esac
+        printf '\n  Downloading Kadomo (%s) to remove it...\n' "$ref"
+        mkdir -p "$(dirname "$dir")"
+        rm -rf -- "$dir.download"
+        mkdir "$dir.download"
+        if ! curl -fsSL "$url" | tar -xzf - -C "$dir.download" --strip-components 1; then
+            rm -rf -- "$dir.download"
+            fail "could not download Kadomo $ref from $url"
+        fi
+        [[ -f "$dir.download/uninstall.sh" && -f "$dir.download/lib/tui.sh" ]] || { rm -rf -- "$dir.download"; fail "the download of Kadomo $ref is not complete."; }
+        rm -rf -- "$dir"
+        mv "$dir.download" "$dir"
+    fi
+    short="$dir"; [[ "$dir" != "$HOME"/* ]] || short="~${dir#"$HOME"}"
+    export KADOMO_INSTALL_CMD="/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/$KADOMO_REPO/main/install.sh)\""
+    export KADOMO_UNINSTALL_CMD="$short/uninstall.sh"
+    # Piped to bash, stdin is this script: the menus read the terminal instead.
+    if [[ ! -t 0 ]] && { : </dev/tty; } 2>/dev/null; then tty=/dev/tty; fi
+    exec /bin/bash "$dir/uninstall.sh" ${1+"$@"} <"$tty"
+}
+if [[ -z "${BASH_SOURCE[0]:-}" || ! -f "$(dirname "${BASH_SOURCE[0]}")/lib/tui.sh" ]]; then kadomo_fetch_and_run ${1+"$@"}; fi
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export KADOMO_INSTALL_CMD="${KADOMO_INSTALL_CMD:-./install.sh}" KADOMO_UNINSTALL_CMD="${KADOMO_UNINSTALL_CMD:-./uninstall.sh}"
+# Whether this runs from the copy the curl installer downloaded, rather than a checkout.
+FROM_SOURCE_COPY=0
+[[ "$ROOT" != "$(cd "$KADOMO_SOURCE_DIR" 2>/dev/null && pwd || true)" ]] || FROM_SOURCE_COPY=1
+if ((FROM_SOURCE_COPY)) && [[ "$KADOMO_UNINSTALL_CMD" == ./uninstall.sh ]]; then
+    KADOMO_UNINSTALL_CMD="$(cd "$ROOT" && pwd)/uninstall.sh"
+    [[ "$KADOMO_UNINSTALL_CMD" != "$HOME"/* ]] || KADOMO_UNINSTALL_CMD="~${KADOMO_UNINSTALL_CMD#"$HOME"}"
+fi
+
+# Removes the copy the curl installer downloaded, once nothing of Kadomo is
+# left for its uninstall.sh to remove. Prints what it did, or nothing.
+remove_source_copy() {
+    local dir="$KADOMO_SOURCE_DIR"
+    [[ -d "$dir" && -f "$dir/uninstall.sh" && ! -e "$dir/.git" ]] || return 0
+    case "$dir" in /|"$HOME"|"$HOME"/) return 0 ;; esac
+    rm -rf -- "$dir" "$dir.download" "$dir.old" || return 0
+    rmdir "$(dirname "$dir")" 2>/dev/null || true
+    printf '%s' "$(short_path "$dir")"
+}
 ASSUME_YES=0
 
 source "$ROOT/lib/tui.sh"
@@ -49,7 +119,7 @@ source "$ROOT/homebrew/homebrew.sh"
 case "${1:-}" in
     "") ;;
     --yes|-y) ASSUME_YES=1 ;;
-    -h|--help) sed -n '2,36p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,44p' "$ROOT/uninstall.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 
@@ -75,7 +145,8 @@ if host_app="$(kadomo_terminal_host)"; then
     wrap_text 74 "The uninstaller quits and removes the apps Kadomo installed, $host_app included. Quitting $host_app would end this uninstall partway through and leave Kadomo half removed, and a running app cannot be removed anyway. Its shell also uses Kadomo's prompt and theme, which go during the uninstall." | sed 's/^/  /' >&2
     printf '\n  Run it from the Terminal app that comes with macOS instead:\n' >&2
     printf '    1. Open Terminal (Applications > Utilities > Terminal, or Spotlight: "Terminal")\n' >&2
-    printf '    2. Run:  cd %q && ./uninstall.sh\n\n' "$ROOT" >&2
+    if [[ "$KADOMO_UNINSTALL_CMD" == ./uninstall.sh ]]; then printf '    2. Run:  cd %q && ./uninstall.sh\n\n' "$ROOT" >&2
+    else printf '    2. Run:  %s\n\n' "$KADOMO_UNINSTALL_CMD" >&2; fi
     exit 1
 fi
 
@@ -163,7 +234,10 @@ done
 [[ ! -t 1 ]] || printf '\r\033[2K'
 N=${#ITEM_COMPONENT[@]}
 if ((N == 0)); then
-    printf '\n  Nothing to remove: Kadomo is not set up on this Mac.\n\n'
+    printf '\n  Nothing to remove: Kadomo is not set up on this Mac.\n'
+    copy="$(remove_source_copy)"
+    [[ -z "$copy" ]] || printf '  %sRemoved%s   the copy of Kadomo the installer downloaded, %s\n' "$DIM" "$RESET" "$copy"
+    printf '\n'
     exit 0
 fi
 LABEL_WIDTH=0
@@ -222,7 +296,7 @@ ask_password() {
         if ! sudo -v -p "  Password for $(id -un): " </dev/tty; then
             printf '
   Nothing was changed. Without your password these cannot be removed;
-  run ./uninstall.sh again and leave them unchecked to remove the rest.
+  run $KADOMO_UNINSTALL_CMD again and leave them unchecked to remove the rest.
 
 '
             exit 1
@@ -310,7 +384,11 @@ review() {
     if [[ -n "$reasons" ]]; then
         fields+=("Asks you${TAB}$(wrap_list "$width" "your Mac password, once, right after you confirm" "it removes things in system folders")")
     fi
-    fields+=("Stays${TAB}$(wrap_list "$width" "anything that was here before Kadomo" "each app's own data" "this checkout")")
+    if ((FROM_SOURCE_COPY)); then
+        fields+=("Stays${TAB}$(wrap_list "$width" "anything that was here before Kadomo" "each app's own data")")
+    else
+        fields+=("Stays${TAB}$(wrap_list "$width" "anything that was here before Kadomo" "each app's own data" "this checkout")")
+    fi
     ((kept == 0)) || fields+=("Not selected${TAB}$kept $( ((kept == 1)) && echo part || echo parts) (left installed)")
     while :; do
         clear_screen; logo
@@ -393,12 +471,21 @@ done
 printf '\n'
 if ((${#failed[@]})); then
     printf '  %s✗ %s of the steps failed:%s %s\n' "$RED" "${#failed[@]}" "$RESET" "$(IFS=';'; echo "${failed[*]}" | sed 's/;/; /g')"
-    printf '  %sRun ./uninstall.sh again to retry; what is gone already is skipped.%s\n' "$DIM" "$RESET"
+    printf '  %sRun %s again to retry; what is gone already is skipped.%s\n' "$DIM" "$KADOMO_UNINSTALL_CMD" "$RESET"
 else
     printf '  %s✓ Kadomo is removed%s\n' "$CYAN" "$RESET"
 fi
 printf '\n  %sLog%s       %s\n' "$DIM" "$RESET" "$(short_path "$STEP_LOG")"
-printf '  %sKept%s      this checkout, %s; delete it yourself if you want it gone\n' "$DIM" "$RESET" "$(short_path "$ROOT")"
+# The copy the curl installer downloaded goes once all of Kadomo is gone; while
+# a part is left, it stays, since its uninstall.sh is what removes that part.
+copy=""
+(($(selected_count) == N && ${#failed[@]} == 0)) && copy="$(remove_source_copy)"
+if [[ -n "$copy" ]]; then
+    printf '  %sRemoved%s   the copy of Kadomo the installer downloaded, %s\n' "$DIM" "$RESET" "$copy"
+elif ((FROM_SOURCE_COPY)); then
+    printf '  %sKept%s      %s, to remove what is left with its uninstall.sh\n' "$DIM" "$RESET" "$(short_path "$ROOT")"
+fi
+((FROM_SOURCE_COPY)) || printf '  %sKept%s      this checkout, %s; delete it yourself if you want it gone\n' "$DIM" "$RESET" "$(short_path "$ROOT")"
 if ((${#todos[@]})); then
     printf '\n  %sStill needs you%s\n' "$BOLD" "$RESET"
     for ((i=0; i<${#todos[@]}; i++)); do

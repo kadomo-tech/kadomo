@@ -20,10 +20,64 @@
 #                 core, developer, gaming, other
 #   --version     print the Kadomo version (from VERSION) and exit
 #
+# Without a checkout, like Homebrew's installer (KADOMO_REF picks a version
+# such as 0.1.1, or a branch; the default is the latest release, else main):
+#   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
+# It downloads Kadomo to ~/.local/share/kadomo/source and runs this from
+# there; that copy's uninstall.sh removes everything again, the copy too.
+#
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
 
+KADOMO_REPO="kadomo-tech/kadomo-alpha"
+KADOMO_SOURCE_DIR="${KADOMO_SOURCE_DIR:-$HOME/.local/share/kadomo/source}"
+
+# Run from curl rather than a checkout: there is nothing next to this script,
+# so download Kadomo into KADOMO_SOURCE_DIR and run the install.sh in it.
+# Everything happens in this function, called on its last line, so a
+# download of this script cut off partway runs nothing.
+kadomo_fetch_and_run() {
+    local ref="${KADOMO_REF:-}" latest url dir="$KADOMO_SOURCE_DIR" short tty=/dev/stdin
+    fail() { printf '\n  ✗ %s\n\n' "$*" >&2; exit 1; }
+    [[ "$(uname -s)" == Darwin ]] || fail "Kadomo is for macOS."
+    ((EUID != 0)) || fail "run this as your own user, not with sudo."
+    case "$dir" in /|"$HOME"|"$HOME"/|"") fail "KADOMO_SOURCE_DIR cannot be $dir." ;; esac
+    [[ ! -e "$dir/.git" ]] || fail "$dir is a git checkout; run its ./install.sh instead."
+    if [[ -z "$ref" ]]; then
+        # The latest release redirects to its tag; without one, to the releases page.
+        latest="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$KADOMO_REPO/releases/latest" 2>/dev/null || true)"
+        case "$latest" in */releases/tag/*) ref="${latest##*/releases/tag/}" ;; *) ref=main ;; esac
+    fi
+    case "$ref" in
+        v[0-9]*|[0-9]*) url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz" ;;
+        *) url="https://github.com/$KADOMO_REPO/archive/refs/heads/$ref.tar.gz" ;;
+    esac
+    printf '\n  Downloading Kadomo (%s)...\n' "$ref"
+    mkdir -p "$(dirname "$dir")"
+    rm -rf -- "$dir.download"
+    mkdir "$dir.download"
+    if ! curl -fsSL "$url" | tar -xzf - -C "$dir.download" --strip-components 1; then
+        rm -rf -- "$dir.download"
+        fail "could not download Kadomo $ref from $url"
+    fi
+    [[ -f "$dir.download/install.sh" && -f "$dir.download/VERSION" ]] || { rm -rf -- "$dir.download"; fail "the download of Kadomo $ref is not complete."; }
+    # Replaces the copy an earlier install left, so its uninstall.sh matches what is installed.
+    rm -rf -- "$dir.old"
+    [[ ! -e "$dir" ]] || mv "$dir" "$dir.old"
+    mv "$dir.download" "$dir"
+    rm -rf -- "$dir.old"
+    short="$dir"; [[ "$dir" != "$HOME"/* ]] || short="~${dir#"$HOME"}"
+    printf '  Kadomo %s is in %s\n' "$(cat "$dir/VERSION")" "$short"
+    export KADOMO_INSTALL_CMD="/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/$KADOMO_REPO/main/install.sh)\""
+    export KADOMO_UNINSTALL_CMD="$short/uninstall.sh"
+    # Piped to bash, stdin is this script: the menus read the terminal instead.
+    if [[ ! -t 0 ]] && { : </dev/tty; } 2>/dev/null; then tty=/dev/tty; fi
+    exec /bin/bash "$dir/install.sh" ${1+"$@"} <"$tty"
+}
+if [[ -z "${BASH_SOURCE[0]:-}" || ! -f "$(dirname "${BASH_SOURCE[0]}")/lib/tui.sh" ]]; then kadomo_fetch_and_run ${1+"$@"}; fi
+
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+export KADOMO_INSTALL_CMD="${KADOMO_INSTALL_CMD:-./install.sh}" KADOMO_UNINSTALL_CMD="${KADOMO_UNINSTALL_CMD:-./uninstall.sh}"
 KADOMO_VERSION="$(cat "$ROOT/VERSION")"
 ASSUME_YES=0
 ONLY_CATS=""
@@ -55,7 +109,7 @@ case "${1:-}" in
         done
         ;;
     --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
-    -h|--help) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,29p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 
@@ -375,7 +429,7 @@ review() {
     ! item_on developer java || asks+=("Java 25 (it installs in /Library/Java)")
     ((${#asks[@]} == 0)) || fields+=("Asks you${TAB}your Mac password, for $(wrap_list "$width" "${asks[@]}" | sed 's/, \([^,]*\)$/ and \1/')")
     ! item_on homebrew homebrew || fields+=("Homebrew${TAB}installs first; it adds the Xcode Command Line Tools"$'\n'"if they are missing, which can take a few minutes")
-    ! component_on dotfiles || fields+=("Backups${TAB}a config that differs is backed up next to itself;"$'\n'"./uninstall.sh puts it back")
+    ! component_on dotfiles || fields+=("Backups${TAB}a config that differs is backed up next to itself;"$'\n'"$KADOMO_UNINSTALL_CMD puts it back")
     ((off == 0)) || fields+=("Not selected${TAB}$off $( ((off == 1)) && echo item || echo items)")
     while :; do
         clear_screen; logo
@@ -445,7 +499,7 @@ finish() {
     printf '\n'
     if ((${#failed[@]})); then
         printf '  %s✗ %s of the steps failed:%s %s\n' "$RED" "${#failed[@]}" "$RESET" "$(IFS=';'; echo "${failed[*]}" | sed 's/;/; /g')"
-        printf '  %sRun ./install.sh again to retry; what is done already is skipped.%s\n' "$DIM" "$RESET"
+        printf '  %sRun %s again to retry; what is done already is skipped.%s\n' "$DIM" "$KADOMO_INSTALL_CMD" "$RESET"
     else
         printf '  %s✓ Kadomo is set up%s\n' "$CYAN" "$RESET"
     fi
@@ -453,7 +507,7 @@ finish() {
         printf '\n  %sLaunch%s    press ⌥Space (Option-Space) for Kadomo Menu\n' "$DIM" "$RESET"
     fi
     printf '  %sLog%s       %s\n' "$DIM" "$RESET" "$(short_path "$STEP_LOG")"
-    printf '  %sRemove%s    ./uninstall.sh\n' "$DIM" "$RESET"
+    printf '  %sRemove%s    %s\n' "$DIM" "$RESET" "$KADOMO_UNINSTALL_CMD"
     if ((${#todos[@]})); then
         printf '\n  %sStill needs you%s\n' "$BOLD" "$RESET"
         for ((i=0; i<${#todos[@]}; i++)); do

@@ -147,7 +147,7 @@ enable_starship() {
     local ts args=() out status tries=0 flag question answer
     if ! ts="$(theme_starship_cmd)"; then
         echo "  !  Starship needs the theme manager for its colors; it is not installed" >&2
-        todo+=("Install the theme manager (./install.sh, \"Theme manager and themes\"), then run: theme-starship enable")
+        todo+=("Install the theme manager (${KADOMO_INSTALL_CMD:-./install.sh}, \"Theme manager and themes\"), then run: theme-starship enable")
         return 0
     fi
     ((USE_KADOMO)) && args+=(--use-kadomo)
@@ -190,7 +190,7 @@ enable_vscode() {
     local tv
     if ! tv="$(theme_vscode_cmd)"; then
         echo "  !  VS Code takes its colors from the theme manager; it is not installed" >&2
-        todo+=("Install the theme manager (./install.sh, \"Theme manager and themes\"), then run: theme-vscode enable")
+        todo+=("Install the theme manager (${KADOMO_INSTALL_CMD:-./install.sh}, \"Theme manager and themes\"), then run: theme-vscode enable")
         return 0
     fi
     if ((DRY_RUN)); then echo "  ▶  would run: theme-vscode enable"; return 0; fi

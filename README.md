@@ -1,99 +1,213 @@
-# kadomo-alpha
-Early version of Kadomo
+<div align="center">
 
-Version: see [`VERSION`](VERSION) (currently 0.1.1), or run `./install.sh --version`.
-Kadomo follows [Semantic Versioning](https://semver.org); while it is 0.x,
-any release can change how things behave or install. Each release is tagged
-`vX.Y.Z`.
+# Kadomo
 
-## Install
+**A themed, keyboard-first desktop for macOS, set up with one command.**
+
+A launcher, a tiling window manager, good terminals, and one theme that
+restyles all of it at once. Removing it is just as easy.
+
+![version](https://img.shields.io/badge/version-0.1.1-7aa2f7)
+![macOS](https://img.shields.io/badge/macOS-26%2B-black?logo=apple)
+![status](https://img.shields.io/badge/status-alpha-e0af68)
+
+</div>
+
+---
+
+## Quick start
+
+Open **Terminal** (the one that comes with macOS) and paste:
 
 ```sh
-./install.sh                          # pick categories (or every item), review, install
-./install.sh --yes                    # Kadomo Core, no questions
-./install.sh --only core,developer    # these categories, no questions
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
 ```
 
-The installer asks what to set up by category. Kadomo Core is on; the others
-start off. The window manager is OmniWM; it starts at login once you turn that
-on in its own settings, and nothing of Kadomo's runs in the background for it.
-Updating from an older Kadomo removes the AeroSpace it installed (Kadomo's
-build, its commands and login agents, its config, and JankyBorders):
+You don't need to clone anything or install git. Choose what you want, check
+the summary, and confirm. Nothing is installed until you confirm.
 
-| Category | What it sets up |
-| --- | --- |
-| Kadomo Core | Homebrew (when it is not on the Mac yet), Kadomo Menu and its font, the [OmniWM](https://github.com/BarutSRB/OmniWM) window manager (its focus border follows the theme), Ghostty and kitty with their configs, btop, htop, the Starship prompt, and the theme manager with its themes (btop, the wallpaper, and light/dark mode follow the theme; Terminal.app is left alone) |
-| Developer | Neovim and Kadomo's Vim and Neovim settings, Node.js, Java 25 (Temurin JDK), Rancher Desktop, and Visual Studio Code in the theme's colors (an Omarchy theme's own VS Code theme when it names one) |
-| Gaming | Moonlight, and Moonlight Mouse Optimization (LinearMouse) |
-| Other | Firefox |
-
-OmniWM needs macOS 26 or later on Apple silicon; on another Mac, Kadomo installs no window manager.
-
-Something already on the Mac is left as it is. **Advanced** lists every item
-under its category, so you can turn each one on or off. Nothing is installed
-until you confirm the review. Each part then installs as one step, with its
-output in a log, and anything that still needs you (an Accessibility
-permission, say) is listed at the end. Java 25 asks for your password, so the
-developer tools install in the open when it is selected.
-
-Most apps come from [Homebrew](https://brew.sh). When it is not on the Mac,
-Kadomo Core installs it first, with Homebrew's own installer: it asks for your
-password once, needs an administrator account, and adds the Xcode Command Line
-Tools if they are missing (that can take a few minutes). On Apple silicon a
-marked block in `~/.zprofile` puts `brew` on your PATH. Run from zsh, the
-installer ends by starting a new zsh in the same window, so `brew` and the
-Starship prompt work right away (windows already open get them in a new
-one). A Homebrew that is already there is used as it is.
-
-| Component | What it installs |
-| --- | --- |
-| `homebrew/` | Homebrew, with its own installer, when it is not on the Mac yet, and the PATH block in `~/.zprofile` (Apple silicon) |
-| `kadomo-menu/` | the launcher app, the `kadomo-menu` command, and its font. Besides Kadomo's own themes it can install Omarchy themes, which style the launcher and, through the theme manager, every app and the wallpaper (Appearance › Omarchy Themes; see [kadomo-menu/docs/OMARCHY.md](kadomo-menu/docs/OMARCHY.md)) |
-| `omniwm/` | OmniWM from Homebrew (unless it is already on the Mac), `kadomo-omniwm`, a command that puts the theme's colors on its focus border and writes Kadomo Menu › Services › OmniWM and its keys under Keybinds, and `remove-aerospace.sh`, which removes what an older Kadomo installed for AeroSpace. See [omniwm/README.md](omniwm/README.md) |
-| `dotfiles/` | configs copied to where each tool reads them (files they replace are backed up) |
-| `apps/` | Ghostty, kitty, btop, htop, Neovim, Moonlight, and Firefox from Homebrew; an app already on the Mac is skipped |
-| `moonlight-mouse/` | LinearMouse from Homebrew (unless it is already on the Mac) and one LinearMouse profile that applies only to a mouse in Moonlight: no pointer or scroll acceleration, no smoothing, 3 lines per wheel step, Windows-style direction. Your other LinearMouse settings are kept. See [moonlight-mouse/README.md](moonlight-mouse/README.md) |
-| `kadomo-theme-manager/` | `theme-set` and its themes (tmac2k, Catppuccin, Catppuccin Latte, Gruvbox, Rosé Pine, Sora): one command switches Ghostty, kitty, OmniWM's border, Kadomo Menu, btop, Neovim, Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, live |
-| `developer/` | Node.js, Java 25 (Temurin JDK), Rancher Desktop, and VS Code (in the theme's colors) from Homebrew, and the Starship prompt for zsh in the theme's colors (one marked block in `.zshrc`; a prompt setup of your own is left alone). A tool already on the Mac is used as it is. See [developer/README.md](developer/README.md) |
-
-Each component also has its own `install.sh` and `uninstall.sh`; the installers
-with more than one item take `--only` to install just some of them.
+When it finishes, press **⌥ Space** (Option-Space) to open Kadomo Menu.
 
 ## Uninstall
 
+In **Terminal**, run either of these:
+
 ```sh
-./uninstall.sh        # lists what Kadomo set up, review, remove
-./uninstall.sh --yes  # removes everything found, no questions
+~/.local/share/kadomo/source/uninstall.sh
 ```
 
-The uninstaller finds what Kadomo put on this Mac and lists it, all checked;
-`d` shows exactly what each part removes or puts back. Before anything is
-removed, the apps and services about to go are stopped: their login agents
-are unloaded and the apps quit (an app that does not quit in time is stopped),
-so nothing is removed while it runs. When something you chose is in a system
-folder (Java 25, Rancher Desktop's helper files, Homebrew and the Command Line
-Tools it added), it asks for your Mac password once, right after you confirm,
-and lists why. Run it from the Terminal app that comes
-with macOS: started in a terminal Kadomo installed (Ghostty or kitty), it
-stops before changing anything and says why. It would have to quit that
-terminal, which ends the uninstall halfway, and a running app cannot be
-removed. When it turns off Kadomo's Starship prompt (or removes Homebrew's
-PATH block), the zsh you ran it from still has Starship loaded, so at the
-end it starts a new zsh in that window that reads your startup files as they
-are now, with the prompt from before Kadomo. Neovim is left open, so no unsaved work is lost. This removes everything `install.sh` put in place and restores the configs the
-dotfiles replaced. What an older Kadomo installed for AeroSpace goes; a regular AeroSpace you installed stays. OmniWM goes only if Kadomo installed it (its settings stay), and its border gets back the colors it had before Kadomo. btop, Kadomo Menu, the wallpaper, and light/dark mode go back to what they were. A
-config you edited after installing is kept as `<name>.bak.<timestamp>`. The
-kadomo-menu uninstaller also deletes its config, usage history, and
-preferences. The apps uninstaller removes only the apps Kadomo installed
-(recorded in `~/Library/Application Support/kadomo/apps-installed.txt`), asks
-running ones to quit first, and leaves their own data, such as Firefox
-profiles, in place. The moonlight-mouse uninstaller takes out only Kadomo's
-Moonlight profile (your other LinearMouse profiles stay) and the launch agent
-that opens LinearMouse at login, and uninstalls LinearMouse only when Kadomo installed it and
-nothing else is set up in it. The developer uninstaller turns Kadomo's Starship
-prompt off (your `.zshrc` goes back to how it was), puts back VS Code's color
-theme from before, and removes only the developer tools Kadomo installed. Homebrew goes last, and only when Kadomo
-installed it and nothing of yours is in it: Homebrew's own uninstaller removes
-it, along with its PATH block and the Xcode Command Line Tools if its installer
-added them. A Homebrew you have installed your own packages with stays. This
-checkout is left alone.
+```sh
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/uninstall.sh)"
+```
+
+You'll see a list of everything Kadomo set up, all checked. Uncheck anything
+you want to keep, then confirm. Everything you leave checked is removed, and
+the configs Kadomo replaced come back. Once nothing of Kadomo is left, its
+downloaded copy is deleted too.
+
+> [!IMPORTANT]
+> Uninstall from macOS's own **Terminal** app, not Ghostty or kitty. The
+> uninstaller has to quit those apps, which would stop it partway through.
+
+---
+
+## What you get
+
+Pick any mix of these when you install. **Kadomo Core** is on by default.
+
+| Category | Includes |
+| --- | --- |
+| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
+| 🛠 **Developer** | Neovim with Kadomo's Vim/Neovim settings, Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
+| 🎮 **Gaming** | Moonlight, plus a mouse profile with no acceleration that applies only inside Moonlight (LinearMouse) |
+| 🌐 **Other** | Firefox |
+
+**Advanced** in the installer lists every item separately, so you can turn
+each one on or off.
+
+### One theme for everything
+
+```sh
+theme-set catppuccin
+```
+
+Switches Ghostty, kitty, OmniWM's focus border, Kadomo Menu, btop, Neovim,
+Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, all
+live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
+`rose-pine`, `sora`. Kadomo Menu can also install
+[Omarchy themes](kadomo-menu/docs/OMARCHY.md)
+(Appearance › Omarchy Themes).
+
+---
+
+## Requirements
+
+- **macOS**. OmniWM needs **macOS 26 or later on Apple silicon**. On any other
+  Mac, Kadomo installs everything except the window manager.
+- **An administrator account**, if Homebrew isn't installed yet. Homebrew's
+  installer asks for your password once, and may add the Xcode Command Line
+  Tools, which can take a few minutes.
+
+## Install options
+
+Options go after a `_`. Put `KADOMO_REF` in front to choose a version:
+
+```sh
+# Install categories without any questions
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)" _ --only core,developer
+
+# Kadomo Core only, no questions
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)" _ --yes
+
+# A specific version or branch
+KADOMO_REF=0.1.1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo-alpha/main/install.sh)"
+```
+
+| Option | What it does |
+| --- | --- |
+| *(none)* | Menus: pick categories or single items, review, install |
+| `--yes` | Installs Kadomo Core without asking anything |
+| `--only LIST` | Installs these categories without asking: `core`, `developer`, `gaming`, `other` |
+| `--version` | Prints the Kadomo version |
+
+To update, run the install command again. It downloads the new version and
+installs anything new.
+
+<details>
+<summary><b>Working from a clone</b> (for contributors)</summary>
+
+```sh
+git clone https://github.com/kadomo-tech/kadomo-alpha.git
+cd kadomo-alpha
+
+./install.sh                          # menus
+./install.sh --yes                    # Kadomo Core, no questions
+./install.sh --only core,developer    # these categories, no questions
+
+./uninstall.sh                        # review and remove
+./uninstall.sh --yes                  # remove everything found
+```
+
+Uninstalling leaves the clone itself in place.
+
+</details>
+
+---
+
+## How it behaves
+
+<details>
+<summary><b>Installing</b></summary>
+
+- **Your existing setup is respected.** An app that's already on your Mac is
+  left as it is. A config Kadomo replaces is backed up next to itself first.
+- **Each part installs as one step**, and its output goes to a log. Anything
+  that still needs you at the end, such as an Accessibility permission, is
+  listed for you.
+- **Java 25 asks for your password**, so when it's selected the developer
+  tools install in the foreground.
+- **Homebrew on Apple silicon.** A marked block in `~/.zprofile` puts `brew`
+  on your PATH. When you run the installer from zsh, it ends by starting a new
+  zsh, so `brew` and the prompt work right away.
+- **OmniWM starts itself** once you turn on "start at login" in its own
+  settings. Kadomo runs nothing in the background for it.
+- **Upgrading from an older Kadomo** removes the AeroSpace setup it installed
+  (Kadomo's build, its commands and login agents, its config, and
+  JankyBorders). An AeroSpace you installed yourself stays.
+
+</details>
+
+<details>
+<summary><b>Uninstalling</b></summary>
+
+- **It removes only what Kadomo added.** Anything that was on your Mac before
+  stays, and so does each app's own data (Firefox profiles, for example).
+- **Configs are restored.** A config you edited after installing is kept as
+  `<name>.bak.<timestamp>`.
+- **Apps are quit first.** Their login agents are stopped and the apps are
+  quit before anything is deleted. Neovim is left open so you don't lose
+  unsaved work.
+- **Your password is asked for once**, and only when something is in a
+  system folder (Java 25, Rancher Desktop's helper files, Homebrew, the
+  Command Line Tools).
+- **Everything goes back to how it was.** btop, Kadomo Menu, VS Code's colors,
+  the wallpaper, light/dark mode, and OmniWM's border colors all return to
+  their settings from before Kadomo. Your `.zshrc` loses Kadomo's Starship
+  block, and a new zsh starts with your old prompt.
+- **OmniWM and LinearMouse** are removed only if Kadomo installed them. OmniWM
+  keeps its settings, and your other LinearMouse profiles stay.
+- **Homebrew goes last**, and only if Kadomo installed it and you haven't
+  installed anything else with it. Press `d` on any item in the list to see
+  exactly what it removes.
+
+</details>
+
+<details>
+<summary><b>Project layout</b></summary>
+
+Each folder has its own `install.sh` and `uninstall.sh`. The top-level
+scripts run them in order.
+
+| Folder | What it does |
+| --- | --- |
+| [`homebrew/`](homebrew) | Installs Homebrew if it's missing, and adds the PATH block to `~/.zprofile` |
+| [`kadomo-menu/`](kadomo-menu) | The launcher app, the `kadomo-menu` command, and its font |
+| [`omniwm/`](omniwm/README.md) | OmniWM, plus `kadomo-omniwm` for themed borders and the menu's keybinds |
+| [`dotfiles/`](dotfiles) | Configs, copied to where each tool reads them |
+| [`apps/`](apps) | Ghostty, kitty, btop, htop, Neovim, Moonlight, and Firefox |
+| [`moonlight-mouse/`](moonlight-mouse/README.md) | The LinearMouse profile for Moonlight |
+| [`kadomo-theme-manager/`](kadomo-theme-manager) | `theme-set` and the themes |
+| [`developer/`](developer/README.md) | Node.js, Java 25, Rancher Desktop, VS Code, and the Starship prompt |
+
+The curl installer keeps its copy of Kadomo in `~/.local/share/kadomo/source`.
+
+</details>
+
+---
+
+## Versioning
+
+Kadomo follows [Semantic Versioning](https://semver.org). The current
+version is in [`VERSION`](VERSION) (0.1.1), and releases are tagged `vX.Y.Z`.
+While Kadomo is at **0.x**, any release can change how things behave or
+install.

@@ -78,7 +78,7 @@ if [[ -n "$brew" ]]; then
             # Only Kadomo's are left: a part that was not selected, or one that could not remove them.
             echo "  =  Homebrew left in place: Kadomo's $list is still installed with it"
             printf '\n  Still needs you:\n'
-            printf '  1. Homebrew was left in place too, since Kadomo'\''s %s still uses it. Running ./uninstall.sh again once %s can go (from Terminal, say) removes both.\n' "$list" "$list"
+            printf '  1. Homebrew was left in place too, since Kadomo'\''s %s still uses it. Running %s again once %s can go (from Terminal, say) removes both.\n' "$list" "${KADOMO_UNINSTALL_CMD:-./uninstall.sh}" "$list"
             exit 0
         fi
         list="$(printf '%s\n' "$others" | paste -sd, - | sed 's/,/, /g')"
