@@ -1,0 +1,140 @@
+#!/bin/bash
+# Kadomo's helper for AeroSpace Kadomo. A command, not a background process:
+# it does one job and exits. kadomo-wm uses it to switch window managers.
+#
+#   kadomo-aerospace start    start AeroSpace Kadomo and its borders (and write the
+#                             Kadomo Menu entries). A regular AeroSpace that runs is
+#                             quit first: two would fight over the windows.
+#   kadomo-aerospace stop     quit AeroSpace Kadomo and its borders
+#   kadomo-aerospace status   whether AeroSpace Kadomo runs
+#   kadomo-aerospace menu     rewrite the Kadomo Menu entries (Services › AeroSpace,
+#                             and its keys under Keybinds)
+#
+# Runs on the Bash 3.2 that ships with macOS.
+set -euo pipefail
+
+APP="${KADOMO_AEROSPACE_APP:-/Applications/AeroSpace Kadomo.app}"
+APP_ID="tech.kadomo.aerospace"
+REGULAR_ID="bobko.aerospace"
+KADOMO_CONFIG="${KADOMO_CONFIG_DIR:-$HOME/.config/kadomo}"
+MENU_FILE="$KADOMO_CONFIG/menu/commands/aerospace-kadomo.toml"
+CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/aerospace/aerospace.toml"
+SELF="$HOME/.local/bin/kadomo-aerospace"
+BORDERS="$HOME/.local/bin/kadomo-borders"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+die() { echo "kadomo-aerospace: $*" >&2; exit 1; }
+
+# Kadomo's build runs from its app; a regular AeroSpace runs from AeroSpace.app.
+is_running() { pgrep -f "^$APP/Contents/MacOS/" >/dev/null 2>&1; }
+regular_running() { pgrep -f '/AeroSpace\.app/Contents/MacOS/' >/dev/null 2>&1; }
+
+quit_app() { # <bundle id> <test function>
+    local i
+    "$2" || return 0
+    osascript -e "tell application id \"$1\" to quit" >/dev/null 2>&1 || true
+    for ((i=0; i<20; i++)); do "$2" || return 0; sleep 0.25; done
+    return 1
+}
+
+start() {
+    [[ -d "$APP" ]] || die "AeroSpace Kadomo is not installed; run Kadomo's installer"
+    write_menu
+    if regular_running; then
+        quit_app "$REGULAR_ID" regular_running || pkill -f '/AeroSpace\.app/Contents/MacOS/' 2>/dev/null || true
+    fi
+    is_running || open "$APP"
+    # AeroSpace starts borders too (after-startup-command); a second ask is harmless.
+    [[ ! -x "$BORDERS" ]] || "$BORDERS" start || true
+}
+
+stop() {
+    if ! quit_app "$APP_ID" is_running; then
+        pkill -f "^$APP/Contents/MacOS/" 2>/dev/null || true
+        sleep 0.5
+        ! is_running || die "could not quit AeroSpace Kadomo"
+    fi
+    [[ ! -x "$BORDERS" ]] || "$BORDERS" stop || true
+}
+
+# --- Kadomo Menu ---------------------------------------------------------------
+
+toml() { local s="${1//\\/\\\\}"; printf '"%s"' "${s//\"/\\\"}"; }
+
+# Kadomo Menu › Keybinds: one key|action|note line per row, or "# Heading".
+# The keys of Kadomo's aerospace.toml; edit that file to change them.
+KEYBINDS='# Getting around
+OPT + ARROWS|Focus left / right / up / down|
+CTRL OPT + LEFT / RIGHT|Previous / next column|Scrolling layout only
+OPT + TAB|Jump back to the last workspace|
+# Moving windows
+OPT SHIFT + ARROWS|Move the window|
+# Workspaces
+OPT + 1…9|Go to workspace|
+OPT SHIFT + 1…9|Send the window to workspace|
+# Sizing
+OPT + MINUS / EQUAL|Smaller / bigger|
+OPT SHIFT + B|Even out sizes|Scrolling: every column back to half the screen
+OPT + F|Fullscreen|Toggles
+# Layout of the workspace
+OPT SHIFT + T|Tiles|
+OPT SHIFT + A|Accordion|
+OPT SHIFT + D|Dwindle|Each new window splits the focused one
+OPT SHIFT + S|Scrolling|Columns side by side, scrolling with focus
+OPT SHIFT + F|Float or tile the window|
+# Service mode
+OPT SHIFT + ;|Service mode|Then R: flatten, F: float, Esc: reload config'
+
+write_keybinds() {
+    local key title note n=10
+    while IFS='|' read -r key title note; do
+        if [[ "$key" == "# "* ]]; then
+            printf '\n[[keybind]]\nheading = %s\norder = %s\n' "$(toml "${key#\# }")" "$n"
+        else
+            printf '\n[[keybind]]\nkey = %s\ntitle = %s\norder = %s\n' "$(toml "$key")" "$(toml "$title")" "$n"
+            [[ -z "$note" ]] || printf 'subtitle = %s\n' "$(toml "$note")"
+        fi
+        n=$((n + 1))
+    done <<<"$KEYBINDS"
+}
+
+# Kadomo Menu › Services › AeroSpace.
+write_menu() {
+    local sub="Tiles, accordion, dwindle and scrolling; borders in the theme's colors" verb title note sym n=1
+    [[ -d "$APP" ]] || sub="Not installed: run Kadomo's installer"
+    mkdir -p "$(dirname "$MENU_FILE")"
+    {
+        printf '# Written by kadomo-aerospace; changes here are replaced.\n\n'
+        printf '[[category]]\nid = "services/aerospace"\ntitle = "AeroSpace"\nsubtitle = %s\n' "$(toml "$sub")"
+        printf 'icon = "rectangle.split.2x2"\norder = 0\nkeywords = ["aerospace", "window manager", "tiling", "scrolling", "dwindle"]\n'
+        printf 'running_app = %s\n\n' "$(toml "$APP_ID")"
+        while IFS='|' read -r verb title note sym; do
+            printf '[[command]]\nid = "kadomo-aerospace-%s"\ntitle = %s\nsubtitle = %s\n' "$verb" "$(toml "$title")" "$(toml "$note")"
+            printf 'category = "services/aerospace"\nicon = %s\norder = %s\nkeywords = ["aerospace", "window manager"]\n' "$(toml "$sym")" "$n"
+            printf 'exec = %s\nargs = ["%s"]\n\n' "$(toml "$SELF")" "$verb"
+            n=$((n + 1))
+        done <<LIST
+stop|Stop|Quit AeroSpace and its borders until you start it again|stop
+LIST
+        # Starting goes through kadomo-wm, so OmniWM never runs at the same time.
+        printf '[[command]]\nid = "kadomo-aerospace-use"\ntitle = "Start (Use AeroSpace)"\n'
+        printf 'subtitle = "Quits OmniWM; AeroSpace runs now and at login"\n'
+        printf 'category = "services/aerospace"\nicon = "play"\norder = 0\nkeywords = ["aerospace", "omniwm", "switch", "start"]\n'
+        printf 'exec = %s\nargs = ["use", "aerospace"]\n\n' "$(toml "$HOME/.local/bin/kadomo-wm")"
+        printf '[[command]]\nid = "kadomo-aerospace-settings"\ntitle = "Edit Settings"\n'
+        printf 'subtitle = "aerospace.toml; run Reload Config from AeroSpace'\''s menu after saving"\n'
+        printf 'category = "services/aerospace"\nicon = "doc.text"\norder = %s\nkeywords = ["aerospace", "config", "settings"]\n' "$n"
+        printf 'open = %s\n' "$(toml "$CONFIG")"
+        [[ ! -d "$APP" ]] || write_keybinds
+    } >"$MENU_FILE.tmp.$$"
+    mv -f "$MENU_FILE.tmp.$$" "$MENU_FILE"
+}
+
+case "${1:-}" in
+    start) start ;;
+    stop) stop ;;
+    status) echo "aerospace: $(is_running && echo running || echo "not running")" ;;
+    menu) write_menu ;;
+    -h|--help|"") sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "unknown command: $1 (try --help)" ;;
+esac

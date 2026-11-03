@@ -57,7 +57,7 @@ Pick any mix of these when you install. **Kadomo Core** is on by default.
 
 | Category | Includes |
 | --- | --- |
-| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
+| 🧩 **Kadomo Core** | Kadomo Menu (launcher), the [AeroSpace Kadomo](aerospace/README.md) tiling window manager with JankyBorders (or [OmniWM](https://github.com/BarutSRB/OmniWM) instead), Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
 | 🛠 **Developer** | Neovim with Kadomo's Vim/Neovim settings, Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
 | 🎮 **Gaming** | Moonlight, plus a mouse profile with no acceleration that applies only inside Moonlight (LinearMouse) |
 | 🌐 **Other** | Firefox |
@@ -71,7 +71,7 @@ each one on or off.
 theme-set catppuccin
 ```
 
-Switches Ghostty, kitty, OmniWM's focus border, Kadomo Menu, btop, Neovim,
+Switches Ghostty, kitty, the window borders (JankyBorders, or OmniWM's), Kadomo Menu, btop, Neovim,
 Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, all
 live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
 `rose-pine`, `sora`. Kadomo Menu can also install
@@ -82,8 +82,8 @@ live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
 
 ## Requirements
 
-- **macOS**. OmniWM needs **macOS 26 or later on Apple silicon**. On any other
-  Mac, Kadomo installs everything except the window manager.
+- **macOS**. AeroSpace Kadomo needs **macOS 13 or later**. OmniWM, the
+  alternative, needs **macOS 26 or later on Apple silicon**.
 - **An administrator account**, if Homebrew isn't installed yet. Homebrew's
   installer asks for your password once, and may add the Xcode Command Line
   Tools, which can take a few minutes.
@@ -149,11 +149,16 @@ Uninstalling leaves the clone itself in place.
 - **Homebrew on Apple silicon.** A marked block in `~/.zprofile` puts `brew`
   on your PATH. When you run the installer from zsh, it ends by starting a new
   zsh, so `brew` and the prompt work right away.
-- **OmniWM starts itself** once you turn on "start at login" in its own
-  settings. Kadomo runs nothing in the background for it.
-- **Upgrading from an older Kadomo** removes the AeroSpace setup it installed
-  (Kadomo's build, its commands and login agents, its config, and
-  JankyBorders). An AeroSpace you installed yourself stays.
+- **One window manager runs.** AeroSpace Kadomo is the default; pick OmniWM
+  instead under Advanced, or with `--window-manager omniwm`. Accepting the
+  defaults on a Mac that runs OmniWM switches it to AeroSpace: OmniWM is quit
+  and stays installed. A manager you picked with the installer stays picked.
+  Switch any time from Kadomo Menu › Services, or with `kadomo-wm use omniwm`.
+- **Kadomo's login agent starts the window manager you picked**, and quits the
+  other one if its own setting starts it.
+- **Upgrading from an older Kadomo** removes what its AeroSpace 0.21.3-kadomo.1
+  and .2 builds installed (their commands, login agents and scrolling
+  settings). An AeroSpace you installed yourself stays.
 
 </details>
 
@@ -174,6 +179,8 @@ Uninstalling leaves the clone itself in place.
   the wallpaper, light/dark mode, and OmniWM's border colors all return to
   their settings from before Kadomo. Your `.zshrc` loses Kadomo's Starship
   block, and a new zsh starts with your old prompt.
+- **AeroSpace Kadomo** goes, with JankyBorders if Kadomo installed it. Your
+  own `aerospace.toml` and `bordersrc` come back.
 - **OmniWM and LinearMouse** are removed only if Kadomo installed them. OmniWM
   keeps its settings, and your other LinearMouse profiles stay.
 - **Homebrew goes last**, and only if Kadomo installed it and you haven't
@@ -192,7 +199,9 @@ scripts run them in order.
 | --- | --- |
 | [`homebrew/`](homebrew) | Installs Homebrew if it's missing, and adds the PATH block to `~/.zprofile` |
 | [`kadomo-menu/`](kadomo-menu) | The launcher app, the `kadomo-menu` command, and its font |
+| [`aerospace/`](aerospace/README.md) | AeroSpace Kadomo and JankyBorders, plus `kadomo-aerospace` and `kadomo-borders` |
 | [`omniwm/`](omniwm/README.md) | OmniWM, plus `kadomo-omniwm` for themed borders and the menu's keybinds |
+| [`wm/`](wm) | `kadomo-wm`, which picks the window manager that runs, and its login agent |
 | [`dotfiles/`](dotfiles) | Configs, copied to where each tool reads them |
 | [`apps/`](apps) | Ghostty, kitty, btop, htop, Neovim, Moonlight, and Firefox |
 | [`moonlight-mouse/`](moonlight-mouse/README.md) | The LinearMouse profile for Moonlight |

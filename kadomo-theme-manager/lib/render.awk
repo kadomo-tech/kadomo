@@ -17,6 +17,9 @@
 #   {{ omniwm_borders key fallback }}   OmniWM's [borders.color] table (the
 #                        first color), and a [borders.gradient] when there
 #                        are two or more
+#   {{ borders_color key fallback }}    a JankyBorders color: 0xAARRGGBB, or
+#                        gradient(top_left=0x...,bottom_right=0x...) from the
+#                        first and last colors when there are two or more
 #
 # A gradient helper reads key as "colors... angle" (hyprland_active_border);
 # when the theme has no such key it uses fallback, another key or a color.
@@ -160,6 +163,14 @@ function evaluate(expr,   n, w, i, out, a, b, form, base, sfx) {
             return out "\n\n[borders.gradient]\ndirection = \"" (a > 90 ? "topRightToBottomLeft" : "topLeftToBottomRight") \
                 "\"\nenabled = true\n\n" omniwm_color("borders.gradient.end", G[GN], GA[GN]) \
                 "\n\n" omniwm_color("borders.gradient.start", G[1], GA[1])
+        }
+        if (w[1] == "borders_color") {
+            if (GN == 1) return argb(G[1], GA[1])
+            # JankyBorders draws two-color diagonal gradients: more colors keep
+            # the first and the last, and the angle picks the diagonal (as for OmniWM).
+            a = (GANGLE == "") ? 45 : GANGLE % 180
+            if (a > 90) return "gradient(top_right=" argb(G[1], GA[1]) ",bottom_left=" argb(G[GN], GA[GN]) ")"
+            return "gradient(top_left=" argb(G[1], GA[1]) ",bottom_right=" argb(G[GN], GA[GN]) ")"
         }
         if (w[1] == "toml_gradient") {
             if (GN == 1) return "\"" G[1] "\""

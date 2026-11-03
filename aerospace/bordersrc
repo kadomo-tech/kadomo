@@ -1,0 +1,15 @@
+#!/bin/bash
+# Kadomo's JankyBorders config (installed by Kadomo; uninstall puts back what was here before).
+# The active_color and inactive_color lines follow the Kadomo theme:
+# kadomo-borders rewrites those two lines when the theme changes, and nothing else.
+# Change the width or style here freely; they stay as you set them.
+# Reference: https://github.com/FelixKratz/JankyBorders
+options=(
+    style=round
+    width=6.0
+    hidpi=on
+    active_color="0xffba5aff"
+    inactive_color="0xff2f2f2f"
+)
+
+borders "${options[@]}"

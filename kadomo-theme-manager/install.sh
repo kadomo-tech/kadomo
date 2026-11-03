@@ -95,13 +95,19 @@ fi
 apps="ghostty kitty borders omniwm kadomo-menu neovim vim vscode starship"
 selected btop && apps="$apps btop"
 selected desktop && apps="$apps appearance wallpaper"
-echo "  +  $(short_path "$SETTINGS") (apps = $apps)"
+# "borders = off" is your choice to keep JankyBorders out of the theme, so it
+# outlives this file being written again.
+borders_line=""
+if borders_opted_out; then borders_line="borders = off"; fi
+echo "  +  $(short_path "$SETTINGS") (apps = $apps${borders_line:+; $borders_line})"
 if ! ((DRY_RUN)); then
     cat >"$SETTINGS" <<EOF
 # Apps that follow the Kadomo theme. Take a name out to leave that app alone,
 # then run theme-refresh. All of them: $ALL_APPS
-# install.sh writes this file again.
+# install.sh writes this file again: to keep the window borders (JankyBorders)
+# out of the theme for good, add a line "borders = off".
 apps = $apps
+${borders_line}
 EOF
 fi
 

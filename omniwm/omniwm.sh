@@ -42,6 +42,7 @@ omniwm_app() {
 omniwm_up_to_date() {
     [[ -n "${OMNIWM_SOURCE_BIN:-}" ]] || return 1
     omniwm_app >/dev/null && cmp -s "$OMNIWM_SOURCE_BIN/kadomo-omniwm" "$OMNIWM_BIN" \
+        && cmp -s "$OMNIWM_SOURCE_BIN/../../wm/bin/kadomo-wm" "$HOME/.local/bin/kadomo-wm" \
         && [[ -f "$OMNIWM_MENU_FILE" && ! -e "$OMNIWM_AGENT_PLIST" ]]
 }
 
@@ -66,8 +67,11 @@ omniwm_recorded() {
 # dotfiles/uninstall.sh --retired remove them.
 aerospace_leftovers() {
     local state="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}" path
-    for path in "/Applications/AeroSpace Kadomo.app" "$HOME/.local/bin/kadomo-aerospace" \
-        "$HOME/.local/bin/kadomo-workspace-layout" "$HOME/Library/LaunchAgents/tech.kadomo.aerospace-login.plist" \
+    # The renewed AeroSpace Kadomo (0.21.3-kadomo.3 and later) uses the same app and
+    # helper names: only the older builds and scripts count.
+    [[ "$(/usr/bin/plutil -extract CFBundleShortVersionString raw -o - "/Applications/AeroSpace Kadomo.app/Contents/Info.plist" 2>/dev/null)" =~ -kadomo\.[12]$ ]] && return 0
+    if [[ -f "$HOME/.local/bin/kadomo-aerospace" ]] && ! grep -q "Kadomo's helper for AeroSpace Kadomo" "$HOME/.local/bin/kadomo-aerospace"; then return 0; fi
+    for path in "$HOME/.local/bin/kadomo-workspace-layout" "$HOME/Library/LaunchAgents/tech.kadomo.aerospace-login.plist" \
         "$HOME/Library/LaunchAgents/tech.kadomo.aerospace-scrolling.plist" \
         "${KADOMO_CONFIG:-$HOME/.config/kadomo}/menu/commands/aerospace.toml" \
         "${XDG_STATE_HOME:-$HOME/.local/state}/kadomo/window-manager" \

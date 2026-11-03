@@ -1,7 +1,7 @@
 #!/bin/bash
 # Removes what install.sh put in place: kadomo-omniwm and the Kadomo Menu
 # entries, and the OmniWM login agent older installs left. (What they
-# installed for AeroSpace is remove-aerospace.sh's.) OmniWM's border goes back to
+# installed for AeroSpace is aerospace/'s.) OmniWM's border goes back to
 # the colors it had before Kadomo's theme. OmniWM itself is quit and
 # uninstalled only when Kadomo installed it; one you installed yourself stays,
 # and so does its settings.toml.
@@ -17,6 +17,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/omniwm.sh"
+source "$HERE/../wm/wm.sh"
 DRY_RUN=0
 STOP_ONLY=0
 
@@ -89,6 +90,16 @@ if [[ -n "$cask" ]]; then
     fi
 else
     omniwm_app >/dev/null && echo "  =  OmniWM (you installed it; it stays)"
+fi
+
+# kadomo-wm and its agent stay while AeroSpace Kadomo is Kadomo's; the choice of OmniWM goes.
+if [[ -e "$HOME/.local/bin/kadomo-aerospace" ]]; then
+    if [[ "$(wm_choice || true)" == omniwm ]]; then
+        echo "  -  ${KADOMO_WM_CHOICE/#$HOME/~} (OmniWM was the window manager; start AeroSpace from Kadomo Menu › Services › AeroSpace)"
+        run rm -f -- "$KADOMO_WM_CHOICE"
+    fi
+else
+    wm_remove_switcher "$DRY_RUN"
 fi
 
 run rm -f -- "$OMNIWM_MANIFEST"

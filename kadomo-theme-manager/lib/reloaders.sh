@@ -64,6 +64,16 @@ reload_omniwm() {
     "$bin" theme || warn "theme: could not update OmniWM's border colors"
 }
 
+# JankyBorders draws the borders around AeroSpace's windows. kadomo-borders
+# puts current/theme/borders.conf's colors in ~/.config/borders/bordersrc (for
+# its next start) and on the running borders. Without borders installed it
+# does nothing, and it never installs anything.
+reload_borders() {
+    local bin="$HOME/.local/bin/kadomo-borders"
+    [[ -x "$bin" ]] || return 0
+    "$bin" theme || warn "theme: could not update the window borders' colors"
+}
+
 # Kadomo Menu watches current/theme/kadomo-menu.toml and restyles itself
 # while its theme is "kadomo"; a launcher set to another theme, or showing an
 # Omarchy theme (omarchy:<id>), is put back on "kadomo": picking a Kadomo theme

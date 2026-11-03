@@ -1,0 +1,9 @@
+# The AeroSpace Kadomo build install.sh installs: one zip from the fork's
+# release, holding "AeroSpace Kadomo.app" with its aerospace command inside
+# (Contents/Helpers/aerospace), so the app and the command are always the same
+# build. Fork: https://github.com/kadomo-tech/kadomo-aerospace
+# A release updates all three lines; sha256 is the zip's (shasum -a 256).
+# Until a build is published, sha256 is empty and install.sh says so.
+version=0.21.3-kadomo.3
+url=https://github.com/kadomo-tech/kadomo-aerospace/releases/download/v0.21.3-kadomo.3/AeroSpace-Kadomo-v0.21.3-kadomo.3.zip
+sha256=

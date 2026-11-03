@@ -34,16 +34,15 @@ Kadomo Menu › Keybinds lists OmniWM's default hotkeys, which Kadomo leaves
 as they are. If you change one in OmniWM's Settings › Hotkeys, edit
 `KEYBINDS` in `bin/kadomo-omniwm` to match.
 
-## AeroSpace from an older Kadomo
+## OmniWM and AeroSpace Kadomo
 
-Kadomo used to ship AeroSpace with Scrolling as a second window manager.
-`remove-aerospace.sh` removes what it installed: Kadomo's build of the app,
-`kadomo-aerospace` and `kadomo-workspace-layout`, the `~/.local/bin/aerospace`
-link, the login agents, the scrolling settings, the menu entries, and the
-saved choices. A regular AeroSpace you installed yourself stays, but is quit.
-The top-level `install.sh` and `uninstall.sh` and this folder's `install.sh`
-run it; `dotfiles/uninstall.sh --retired` removes AeroSpace's config and
-JankyBorders.
+AeroSpace Kadomo ([`aerospace/`](../aerospace/README.md)) is Kadomo's default
+window manager; OmniWM is the alternative. Both may be installed, but only
+the one picked runs: `kadomo-wm use omniwm` (or Kadomo Menu › Services ›
+OmniWM › Start) quits AeroSpace and its borders and starts OmniWM, and
+Kadomo's login agent starts the one picked at login. This folder's
+`install.sh` makes OmniWM the one that runs (`--install-only` leaves the
+choice alone).
 
 ## Border colors from the theme
 

@@ -36,7 +36,7 @@ PREVIEWS="$CACHE/theme-selector/previews"
 
 # Every app the installer can wire. theme.conf's apps line picks the ones that
 # follow the theme; KADOMO_THEME_APPS overrides it (tests set it to none).
-ALL_APPS="ghostty kitty btop omniwm kadomo-menu neovim vim vscode starship appearance wallpaper"
+ALL_APPS="ghostty kitty btop borders omniwm kadomo-menu neovim vim vscode starship appearance wallpaper"
 
 IMAGE_EXTENSIONS="jpg jpeg png webp heic gif tif tiff bmp"
 
@@ -47,9 +47,17 @@ PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
 warn() { printf '%s\n' "$*" >&2; }
 die() { printf '%s\n' "$*" >&2; exit 1; }
 
-# The apps that follow the theme. borders (JankyBorders, which only AeroSpace
-# used) and terminal (Terminal.app, which Kadomo leaves alone now) are no
-# longer ones; an older theme.conf that lists them is read without them.
+# Whether theme.conf turns JankyBorders off for good: a "borders = off" line.
+# Unlike taking borders out of the apps line, it survives install.sh writing
+# theme.conf again.
+borders_opted_out() {
+    [[ -f "$SETTINGS" ]] && grep -Eq '^[[:space:]]*borders[[:space:]]*=[[:space:]]*off[[:space:]]*$' "$SETTINGS"
+}
+
+# The apps that follow the theme. terminal (Terminal.app, which Kadomo leaves
+# alone now) is no longer one; an older theme.conf that lists it is read
+# without it. borders (JankyBorders, around AeroSpace's windows) follows the
+# theme unless theme.conf says "borders = off".
 enabled_apps() {
     local apps
     if [[ -n "${KADOMO_THEME_APPS+set}" ]]; then
@@ -60,7 +68,7 @@ enabled_apps() {
         apps="$ALL_APPS"
     fi
     apps=" $apps "
-    apps="${apps// borders / }"
+    if borders_opted_out; then apps="${apps// borders / }"; fi
     apps="${apps// terminal / }"
     apps="${apps# }"
     printf '%s' "${apps% }"

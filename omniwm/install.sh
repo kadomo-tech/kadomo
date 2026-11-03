@@ -10,28 +10,39 @@
 #                                             Kadomo Menu › Services › OmniWM (start, stop,
 #                                             match theme borders, edit settings) and
 #                                             OmniWM's keys under Keybinds
-# Nothing of Kadomo's runs at login: OmniWM starts itself, once you turn that on
-# in its settings. What an older Kadomo installed for AeroSpace, and its OmniWM
-# login agent, are removed (remove-aerospace.sh). macOS asks once to allow
-# OmniWM in Privacy & Security › Accessibility (and Input Monitoring).
+#   ~/.local/bin/kadomo-wm and tech.kadomo.window-manager.plist
+#                                             Kadomo's window manager switch, and the login
+#                                             agent that starts the chosen one at login
+# Then kadomo-wm makes OmniWM the window manager: AeroSpace Kadomo, if it runs,
+# is quit and no longer started at login (it stays installed). If OmniWM does
+# not start, what ran before runs again. What an older Kadomo installed for
+# AeroSpace, and its OmniWM login agent, are removed
+# (aerospace/remove-legacy.sh). macOS asks once to allow OmniWM in Privacy &
+# Security › Accessibility (and Input Monitoring).
 # OmniWM needs macOS 26 or later on Apple silicon.
 #
-# Usage: ./install.sh [--dry-run]
+# Usage: ./install.sh [--dry-run] [--install-only]
+#   --install-only   install, but leave the window manager choice as it is
 #
 # Runs on the Bash 3.2 that ships with macOS. Undo it with ./uninstall.sh.
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd "$HERE/.." && pwd)"
 OMNIWM_SOURCE_BIN="$HERE/bin"
 source "$HERE/omniwm.sh"
+source "$ROOT/wm/wm.sh"
 DRY_RUN=0
+ACTIVATE=1
 
-case "${1:-}" in
-    "") ;;
-    --dry-run) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
-esac
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run) DRY_RUN=1 ;;
+        --install-only) ACTIVATE=0 ;;
+        -h|--help) sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) echo "Unknown option: $arg (try --help)" >&2; exit 2 ;;
+    esac
+done
 
 run() { if ((DRY_RUN)); then echo "    would run: $*"; else "$@"; fi; }
 
@@ -70,28 +81,35 @@ if [[ -e "$OMNIWM_AGENT_PLIST" ]]; then
     run rm -f -- "$OMNIWM_AGENT_PLIST"
 fi
 
+wm_install_switcher "$ROOT/wm/bin" "$DRY_RUN"
+
 # Before OmniWM starts: an AeroSpace from an older Kadomo would fight it.
 remove_args=()
 ((DRY_RUN == 0)) || remove_args=(--dry-run)
-"$HERE/remove-aerospace.sh" ${remove_args[@]+"${remove_args[@]}"} \
+"$ROOT/aerospace/remove-legacy.sh" ${remove_args[@]+"${remove_args[@]}"} \
     || echo "  !  could not remove everything an older Kadomo installed for AeroSpace" >&2
 
-# Writes the menu and starts OmniWM.
 if ((DRY_RUN)); then
-    echo "  ▶  would start OmniWM"
-    echo "    would run: ${OMNIWM_BIN/#$HOME/~} start"
+    echo "    would run: ${OMNIWM_BIN/#$HOME/~} menu"
+    ((ACTIVATE == 0)) || echo "  ▶  would make OmniWM the window manager (AeroSpace Kadomo is quit if it runs)"
 else
-    echo "  ▶  starting OmniWM (allow it in Privacy & Security › Accessibility if macOS asks)"
-    "$OMNIWM_BIN" start || echo "  !  could not start OmniWM; open it from Applications" >&2
-    # OmniWM writes settings.toml on its first start; then the border gets the theme's colors.
-    for ((i=0; i<40; i++)); do [[ -f "$OMNIWM_SETTINGS" ]] && break; sleep 0.25; done
+    "$OMNIWM_BIN" menu || echo "  !  could not write the Kadomo Menu entries" >&2
+    if ((ACTIVATE)); then
+        echo "  ▶  making OmniWM the window manager (allow it in Privacy & Security › Accessibility if macOS asks)"
+        if "$KADOMO_WM_BIN" use omniwm; then
+            # OmniWM writes settings.toml on its first start; then the border gets the theme's colors.
+            for ((i=0; i<40; i++)); do [[ -f "$OMNIWM_SETTINGS" ]] && break; sleep 0.25; done
+        else
+            todo+=("Allow OmniWM in System Settings › Privacy & Security › Accessibility and Input Monitoring, then start it from Kadomo Menu › Services › OmniWM.")
+            exit_status=1
+        fi
+    else
+        echo "  =  the window manager stays $(wm_label "$(wm_choice || echo none)")"
+    fi
     if [[ -f "$OMNIWM_SETTINGS" ]]; then
         "$OMNIWM_BIN" theme || echo "  !  could not put the theme's colors on OmniWM's border" >&2
     fi
-    pgrep -xq OmniWM 2>/dev/null \
-        || todo+=("Allow OmniWM in System Settings › Privacy & Security › Accessibility and Input Monitoring, then start it from Kadomo Menu › Services › OmniWM.")
 fi
-todo+=("To have OmniWM start at login, turn that on in OmniWM's settings (its menu bar icon › Settings). macOS may ask you to allow it in System Settings › General › Login Items.")
 if [[ "$(defaults read com.apple.spaces spans-displays 2>/dev/null || true)" == 1 ]]; then
     todo+=("Turn on \"Displays have separate Spaces\" in System Settings › Desktop & Dock (OmniWM needs it), then log out and back in.")
 fi
@@ -103,4 +121,4 @@ if ((${#todo[@]})); then
     done
 fi
 ((DRY_RUN)) && echo "Dry run: nothing was changed."
-exit 0
+exit "${exit_status:-0}"

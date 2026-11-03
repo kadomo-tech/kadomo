@@ -231,10 +231,14 @@ write_menu() {
             printf 'exec = %s\nargs = ["%s"]\n\n' "$(toml "$SELF")" "$verb"
             n=$((n + 1))
         done <<EOF
-start|Start|Start OmniWM|play
-stop|Stop|Quit OmniWM|stop
+stop|Stop|Quit OmniWM until you start it again|stop
 theme|Match Theme Borders|Border colors from the current Kadomo theme again|paintpalette
 EOF
+        # Starting goes through kadomo-wm, so AeroSpace never runs at the same time.
+        printf '[[command]]\nid = "kadomo-omniwm-use"\ntitle = "Start (Use OmniWM)"\n'
+        printf 'subtitle = "Quits AeroSpace; OmniWM runs now and at login"\n'
+        printf 'category = "services/omniwm"\nicon = "play"\norder = 0\nkeywords = ["omniwm", "aerospace", "switch", "start"]\n'
+        printf 'exec = %s\nargs = ["use", "omniwm"]\n\n' "$(toml "$HOME/.local/bin/kadomo-wm")"
         printf '[[command]]\nid = "kadomo-omniwm-settings"\ntitle = "Edit Settings"\n'
         printf 'subtitle = "OmniWM'\''s settings.toml; it reloads when saved"\n'
         printf 'category = "services/omniwm"\nicon = "doc.text"\norder = %s\nkeywords = ["omniwm", "config", "settings"]\n' "$n"

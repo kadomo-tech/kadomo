@@ -1,0 +1,113 @@
+#!/bin/bash
+# Kadomo's helper for JankyBorders, the borders around AeroSpace's windows. A
+# command, not a background process: it does one job and exits.
+#
+#   kadomo-borders start    start borders, unless one already runs (AeroSpace runs
+#                           this at startup; there is never a second one)
+#   kadomo-borders stop     quit borders
+#   kadomo-borders status   whether borders runs
+#   kadomo-borders theme    put the Kadomo theme's colors in bordersrc and on the
+#                           running borders
+#
+# The colors come from ~/.config/kadomo/current/theme/borders.conf, which
+# theme-set renders and then runs "kadomo-borders theme". Only the
+# active_color and inactive_color lines of ~/.config/borders/bordersrc change;
+# width, style and everything else stay as you set them. borders not being
+# installed is not an error, and nothing is ever installed from here.
+# Runs on the Bash 3.2 that ships with macOS.
+set -euo pipefail
+
+KADOMO_CONFIG="${KADOMO_CONFIG_DIR:-$HOME/.config/kadomo}"
+THEME_FILE="$KADOMO_CONFIG/current/theme/borders.conf"
+RC="${XDG_CONFIG_HOME:-$HOME/.config}/borders/bordersrc"
+LOCK="${TMPDIR:-/tmp}/kadomo-borders.$(id -u).lock"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+die() { echo "kadomo-borders: $*" >&2; exit 1; }
+borders_cmd() { command -v borders 2>/dev/null; }
+is_running() { pgrep -xq borders 2>/dev/null; }
+
+# One start at a time: AeroSpace's startup and kadomo-aerospace may both ask.
+with_lock() {
+    local i
+    for ((i=0; i<40; i++)); do
+        if mkdir "$LOCK" 2>/dev/null; then
+            trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+            "$@"; return
+        fi
+        # A lock left by a process that died long ago does not wedge it.
+        if [[ -n "$(find "$LOCK" -maxdepth 0 -mmin +1 2>/dev/null)" ]]; then rmdir "$LOCK" 2>/dev/null || true; fi
+        sleep 0.25
+    done
+    die "another kadomo-borders is busy"
+}
+
+start_locked() {
+    local i
+    is_running && return 0
+    if [[ -x "$RC" ]]; then
+        nohup "$RC" </dev/null >/dev/null 2>&1 &
+    else
+        nohup "$(borders_cmd)" </dev/null >/dev/null 2>&1 &
+    fi
+    for ((i=0; i<20; i++)); do is_running && return 0; sleep 0.25; done
+    die "borders did not start"
+}
+start() {
+    borders_cmd >/dev/null || { echo "kadomo-borders: borders is not installed; nothing to start" >&2; return 0; }
+    with_lock start_locked
+}
+
+stop() {
+    local i
+    is_running || return 0
+    pkill -x borders 2>/dev/null || true
+    for ((i=0; i<20; i++)); do is_running || return 0; sleep 0.25; done
+    pkill -9 -x borders 2>/dev/null || true
+}
+
+# The value of one key (active_color, inactive_color) in borders.conf. Only a
+# JankyBorders color gets through: 0xAARRGGBB, or gradient(...) of those.
+theme_value() {
+    sed -n "s/^$1=//p" "$THEME_FILE" | head -n 1 \
+        | grep -E '^(0x[0-9a-fA-F]{8}|gradient\((top_left|top_right)=0x[0-9a-fA-F]{8},(bottom_right|bottom_left)=0x[0-9a-fA-F]{8}\))$' || true
+}
+
+# bordersrc with its color lines set; everything else as it was.
+write_rc() { # <active> <inactive>
+    local target="$RC" tmp
+    while [[ -L "$target" ]]; do
+        case "$(readlink "$target")" in /*) target="$(readlink "$target")" ;; *) target="$(dirname "$target")/$(readlink "$target")" ;; esac
+    done
+    [[ -f "$target" ]] || return 0
+    tmp="$(dirname "$target")/.bordersrc.kadomo.$$"
+    awk -v a="$1" -v i="$2" '
+        /^[ \t]*active_color=/ { match($0, /^[ \t]*/); print substr($0, 1, RLENGTH) "active_color=\"" a "\""; next }
+        /^[ \t]*inactive_color=/ { match($0, /^[ \t]*/); print substr($0, 1, RLENGTH) "inactive_color=\"" i "\""; next }
+        { print }' "$target" >"$tmp"
+    if cmp -s "$tmp" "$target"; then rm -f -- "$tmp"; return 0; fi
+    chmod "$(stat -f '%Lp' "$target")" "$tmp"
+    mv -f "$tmp" "$target"
+}
+
+theme() {
+    local active inactive
+    [[ -f "$THEME_FILE" ]] || return 0
+    active="$(theme_value active_color)"; inactive="$(theme_value inactive_color)"
+    [[ -n "$active" && -n "$inactive" ]] || die "no usable colors in $THEME_FILE; left borders alone"
+    write_rc "$active" "$inactive"
+    # A running borders takes new settings from a second borders call.
+    if is_running && borders_cmd >/dev/null; then
+        "$(borders_cmd)" "active_color=$active" "inactive_color=$inactive" >/dev/null 2>&1 \
+            || die "could not give the running borders its new colors"
+    fi
+}
+
+case "${1:-}" in
+    start) start ;;
+    stop) stop ;;
+    status) echo "borders: $(is_running && echo running || echo "not running")" ;;
+    theme) theme ;;
+    -h|--help|"") sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "unknown command: $1 (try --help)" ;;
+esac

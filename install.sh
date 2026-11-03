@@ -2,23 +2,30 @@
 # Installs Kadomo. Pick what to set up by category, or go through every item
 # under Advanced; nothing is installed until you confirm the review.
 #   Kadomo Core   Homebrew (when it is not here yet), Kadomo Menu and its
-#                 font, the OmniWM window manager, Ghostty, kitty, btop, htop,
-#                 the Starship prompt, and the theme manager with its themes
+#                 font, the AeroSpace Kadomo window manager with JankyBorders
+#                 (or OmniWM instead), Ghostty, kitty, btop, htop, the
+#                 Starship prompt, and the theme manager with its themes
 #                                                             (on by default)
 #   Developer     Neovim and Kadomo's Vim and Neovim settings, Node.js,
 #                 Java 25, Rancher Desktop, and VS Code in the theme's colors
 #   Gaming        Moonlight, and a Windows-style mouse in it (LinearMouse)
 #   Other         Firefox
-# Each component's own installer does the work: homebrew/, kadomo-menu/, omniwm/,
-# dotfiles/, apps/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
-# older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now) is removed
-# first. Remove everything again with ./uninstall.sh.
+# Each component's own installer does the work: homebrew/, kadomo-menu/,
+# aerospace/, omniwm/, dotfiles/, apps/, moonlight-mouse/, kadomo-theme-manager/,
+# developer/. What an older Kadomo installed for AeroSpace (its 0.21.3-kadomo.1
+# and .2 builds) is removed first. Remove everything again with ./uninstall.sh.
 #
-# Usage: ./install.sh [--yes | --only LIST | --version]
-#   --yes         ask nothing, and install Kadomo Core
-#   --only LIST   ask nothing, and install these categories, comma-separated:
-#                 core, developer, gaming, other
-#   --version     print the Kadomo version (from VERSION) and exit
+# Window manager: one of AeroSpace Kadomo (the default) and OmniWM runs, and
+# starts at login. Accepting the defaults makes it AeroSpace, OmniWM included
+# on a Mac that ran it (OmniWM is quit, and stays installed). A manager you
+# picked with this installer before stays picked.
+#
+# Usage: ./install.sh [--yes | --only LIST] [--window-manager NAME] | --version
+#   --yes                  ask nothing, and install Kadomo Core
+#   --only LIST            ask nothing, and install these categories, comma-separated:
+#                          core, developer, gaming, other
+#   --window-manager NAME  aerospace or omniwm: the one Kadomo Core installs and runs
+#   --version              print the Kadomo version (from VERSION) and exit
 #
 # Without a checkout, like Homebrew's installer (KADOMO_REF picks a released
 # version such as 0.1.1; the default is the latest release, and there is no
@@ -91,30 +98,41 @@ source "$ROOT/developer/dev.sh"
 source "$ROOT/homebrew/homebrew.sh"
 OMNIWM_SOURCE_BIN="$ROOT/omniwm/bin"
 source "$ROOT/omniwm/omniwm.sh"
+source "$ROOT/aerospace/aerospace.sh"
+source "$ROOT/wm/wm.sh"
 
 CATS=("Kadomo Core" Developer Gaming Other)
 CAT_KEYS=(core developer gaming other)
 CAT_BLURB=(
-    "Homebrew, Kadomo Menu, OmniWM, Ghostty, kitty, themes, Starship"
+    "Homebrew, Kadomo Menu, AeroSpace, Ghostty, kitty, themes, Starship"
     "Neovim, Node.js, Java 25, Rancher Desktop, VS Code"
     "Moonlight, with a Windows-style mouse in it"
     "Firefox"
 )
 
-case "${1:-}" in
-    "") ;;
-    --yes|-y) ASSUME_YES=1 ;;
-    --only)
-        [[ -n "${2:-}" ]] || die "--only needs a list: core, developer, gaming, other"
-        ONLY_CATS="$2"; ASSUME_YES=1
-        for key in ${ONLY_CATS//,/ }; do
-            [[ " ${CAT_KEYS[*]} " == *" $key "* ]] || die "unknown category for --only: $key (known: ${CAT_KEYS[*]})"
-        done
-        ;;
-    --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
-    -h|--help) sed -n '2,29p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) die "unknown option: $1 (try --help)" ;;
-esac
+# The window manager Kadomo Core sets up: --window-manager, else the one
+# picked with this installer before, else AeroSpace.
+WM_PICK=""
+while (($#)); do
+    case "$1" in
+        --yes|-y) ASSUME_YES=1 ;;
+        --only)
+            [[ -n "${2:-}" ]] || die "--only needs a list: core, developer, gaming, other"
+            ONLY_CATS="$2"; ASSUME_YES=1; shift
+            for key in ${ONLY_CATS//,/ }; do
+                [[ " ${CAT_KEYS[*]} " == *" $key "* ]] || die "unknown category for --only: $key (known: ${CAT_KEYS[*]})"
+            done
+            ;;
+        --window-manager)
+            case "${2:-}" in aerospace|omniwm) WM_PICK="$2"; shift ;; *) die "--window-manager needs aerospace or omniwm" ;; esac
+            ;;
+        --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
+        -h|--help) sed -n '2,37p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) die "unknown option: $1 (try --help)" ;;
+    esac
+    shift
+done
+DEFAULT_WM="${WM_PICK:-$(wm_choice || echo aerospace)}"
 
 [[ "$(uname -s)" == Darwin ]] || die "Kadomo is for macOS."
 ((EUID != 0)) || die "run this as your own user, not with sudo."
@@ -128,7 +146,8 @@ ITEMS=(
     "Kadomo Core|kadomo-menu|app|Kadomo Menu|the launcher, in ~/Applications, and the kadomo-menu command"
     "Kadomo Core|kadomo-menu|font|JetBrainsMono Nerd Font|for the launcher and kitty; 7 MB from GitHub"
     "Kadomo Core|kadomo-menu|start|Start Kadomo Menu|opens it now; it starts at login by default"
-    "Kadomo Core|omniwm|omniwm|OmniWM|window manager: scrolling and tiling, its border in the theme's colors"
+    "Kadomo Core|aerospace|aerospace|AeroSpace Kadomo|window manager: tiles, accordion, dwindle, scrolling; JankyBorders in the theme's colors"
+    "Kadomo Core|omniwm|omniwm|OmniWM instead|the other window manager: niri-style scrolling; runs in AeroSpace's place"
     "Kadomo Core|apps|ghostty|Ghostty|terminal app, from Homebrew"
     "Kadomo Core|dotfiles|ghostty|Ghostty config|~/.config/ghostty; a different file there is backed up"
     "Kadomo Core|apps|kitty|kitty|terminal app, from Homebrew"
@@ -136,7 +155,7 @@ ITEMS=(
     "Kadomo Core|apps|btop|btop|system monitor, from Homebrew"
     "Kadomo Core|apps|htop|htop|process viewer, from Homebrew"
     "Kadomo Core|developer|starship|Starship prompt|zsh prompt in the theme's colors; a marked block in .zshrc"
-    "Kadomo Core|kadomo-theme-manager|themes|Theme manager and themes|theme-set and 5 themes; Ghostty, kitty, OmniWM, and editors follow it"
+    "Kadomo Core|kadomo-theme-manager|themes|Theme manager and themes|theme-set and 6 themes; Ghostty, kitty, window borders, and editors follow it"
     "Kadomo Core|kadomo-theme-manager|btop|btop follows the theme|btop's color theme follows Kadomo's"
     "Kadomo Core|kadomo-theme-manager|desktop|Wallpaper and light/dark|each theme sets the desktop picture and light or dark mode"
     "Developer|apps|neovim|Neovim|the nvim editor, from Homebrew"
@@ -176,10 +195,17 @@ for ((i=0; i<N; i++)); do
             elif ! is_admin; then present=1; ITEM_DETAIL[i]="needs an administrator account: ask one to install it (https://brew.sh)"; fi
             ;;
         kadomo-menu:font) font_installed && present=1 ;;
+        # The window managers: "already installed" only for the one that is
+        # installed, current, and picked; picking the other switches to it.
+        aerospace:aerospace)
+            if ! aerospace_supported; then present=1; ITEM_DETAIL[i]="not on this Mac: AeroSpace $(aerospace_requirement)"
+            elif aerospace_up_to_date "$ROOT/aerospace" && [[ "$(wm_choice || true)" == aerospace ]]; then present=1
+            elif aerospace_renewed_installed; then ITEM_DETAIL[i]="AeroSpace Kadomo is installed; updates it and makes it the window manager"; fi
+            ;;
         omniwm:omniwm)
             if ! omniwm_supported; then present=1; ITEM_DETAIL[i]="not on this Mac: OmniWM $(omniwm_requirement)"
-            elif omniwm_up_to_date; then present=1
-            elif omniwm_app >/dev/null; then ITEM_DETAIL[i]="OmniWM is already installed; makes it Kadomo's window manager"; fi
+            elif omniwm_up_to_date && [[ "$(wm_choice || true)" == omniwm ]]; then present=1
+            elif omniwm_app >/dev/null; then ITEM_DETAIL[i]="OmniWM is installed; makes it the window manager instead of AeroSpace"; fi
             ;;
         apps:*) app_present "$(app_entry "${ITEM_KEY[i]}")" && present=1 ;;
         developer:starship) dev_present starship && ITEM_DETAIL[i]="already installed; turns it on for zsh, in the theme's colors" ;;
@@ -188,6 +214,7 @@ for ((i=0; i<N; i++)); do
     if ((present)); then
         ITEM_PRESENT[i]=1
         [[ "${ITEM_COMPONENT[i]}:${ITEM_DETAIL[i]}" == "omniwm:not on this Mac"* \
+            || "${ITEM_COMPONENT[i]}:${ITEM_DETAIL[i]}" == "aerospace:not on this Mac"* \
             || "${ITEM_COMPONENT[i]}:${ITEM_DETAIL[i]}" == "homebrew:needs an administrator"* ]] \
             || ITEM_DETAIL[i]="already installed"
     fi
@@ -200,6 +227,7 @@ needs_brew() {
         apps:*|developer:node|developer:java|developer:rancher|developer:vscode) return 0 ;;
         developer:starship) ! dev_present starship ;;
         omniwm:*) ! omniwm_app >/dev/null ;;
+        aerospace:*) ! PATH="$PATH:/opt/homebrew/bin:/usr/local/bin" command -v borders >/dev/null 2>&1 ;;
         moonlight-mouse:*) ! app_path LinearMouse.app >/dev/null ;;
         *) return 1 ;;
     esac
@@ -214,10 +242,23 @@ set_category() {
     local c="$1" on="$2" i n=0
     for ((i=0; i<N; i++)); do
         ((ITEM_CAT[i] == c)) || continue
-        if ((on && ITEM_PRESENT[i] == 0)); then ITEM_ON[i]=1; n=$((n+1)); else ITEM_ON[i]=0; fi
+        if ((on && ITEM_PRESENT[i] == 0)) && ! other_wm_item "$i"; then ITEM_ON[i]=1; n=$((n+1)); else ITEM_ON[i]=0; fi
     done
     ((on && n == 0)) || return 0
-    for ((i=0; i<N; i++)); do ((ITEM_CAT[i] != c)) || ITEM_ON[i]=1; done
+    for ((i=0; i<N; i++)); do ((ITEM_CAT[i] != c)) || other_wm_item "$i" || ITEM_ON[i]=1; done
+}
+
+# The window manager items are a choice of one: AeroSpace Kadomo or OmniWM.
+wm_item() { [[ "${ITEM_COMPONENT[$1]}" == aerospace || "${ITEM_COMPONENT[$1]}" == omniwm ]]; }
+# The window manager that is not the default one (see DEFAULT_WM).
+other_wm_item() { wm_item "$1" && [[ "${ITEM_COMPONENT[$1]}" != "$DEFAULT_WM" ]]; }
+# Turning one window manager on turns the other off.
+toggle_item() {
+    local i="$1" j
+    ITEM_ON[i]=$((1-ITEM_ON[i]))
+    if ((ITEM_ON[i])) && wm_item "$i"; then
+        for ((j=0; j<N; j++)); do ((j == i)) || ! wm_item "$j" || ITEM_ON[j]=0; done
+    fi
 }
 
 # x when a category's items are on, - when only some are, a space when none are.
@@ -225,6 +266,8 @@ category_mark() {
     local c="$1" i on=0 total=0 need=0 need_on=0
     for ((i=0; i<N; i++)); do
         ((ITEM_CAT[i] == c)) || continue
+        # The other window manager is an alternative, not a missing part.
+        if other_wm_item "$i" && ((ITEM_ON[i] == 0)); then continue; fi
         total=$((total+1)); ((ITEM_ON[i] == 0)) || on=$((on+1))
         if ((ITEM_PRESENT[i] == 0)); then need=$((need+1)); ((ITEM_ON[i] == 0)) || need_on=$((need_on+1)); fi
     done
@@ -237,6 +280,7 @@ category_detail() {
     local c="$1" i on=0 total=0 need=0
     for ((i=0; i<N; i++)); do
         ((ITEM_CAT[i] == c)) || continue
+        if other_wm_item "$i" && ((ITEM_ON[i] == 0)); then continue; fi
         total=$((total+1)); ((ITEM_ON[i] == 0)) || on=$((on+1)); ((ITEM_PRESENT[i])) || need=$((need+1))
     done
     if [[ "$(category_mark "$c")" == - ]]; then printf 'your choice: %s of %s items' "$on" "$total"
@@ -339,8 +383,10 @@ draw_advanced() {
 # Turns every item on, or off when all are on already. With a category, only its items.
 toggle_items() {
     local i all=1 c="${1:--1}"
-    for ((i=0; i<N; i++)); do ((c >= 0 && ITEM_CAT[i] != c)) || ((ITEM_ON[i])) || all=0; done
-    for ((i=0; i<N; i++)); do ((c >= 0 && ITEM_CAT[i] != c)) || ITEM_ON[i]=$((1-all)); done
+    for ((i=0; i<N; i++)); do ((c >= 0 && ITEM_CAT[i] != c)) || other_wm_item "$i" || ((ITEM_ON[i])) || all=0; done
+    for ((i=0; i<N; i++)); do
+        ((c >= 0 && ITEM_CAT[i] != c)) || { other_wm_item "$i" && ITEM_ON[i]=0; } || ITEM_ON[i]=$((1-all))
+    done
 }
 
 # Returns 0 to review, 1 to go back to the categories.
@@ -352,7 +398,7 @@ advanced() {
         case "$KEY" in
             up) cursor=$(((cursor+N-1)%N)) ;;
             down) cursor=$(((cursor+1)%N)) ;;
-            space) ITEM_ON[cursor]=$((1-ITEM_ON[cursor])) ;;
+            space) toggle_item "$cursor" ;;
             g|G) toggle_items "${ITEM_CAT[cursor]}" ;;
             a|A) toggle_items ;;
             enter) return 0 ;;
@@ -424,8 +470,17 @@ review() {
     if [[ -z "$BREW_PATH" && ${#brew_needed[@]} -gt 0 ]] && ! item_on homebrew homebrew; then
         fields+=("No Homebrew${TAB}$(wrap_list "$width" "${brew_needed[@]}")"$'\n'"need Homebrew and are skipped: turn on Kadomo Core › Homebrew")
     fi
+    if item_on aerospace aerospace; then
+        if pgrep -xq OmniWM 2>/dev/null || omniwm_app >/dev/null; then
+            fields+=("Window manager${TAB}AeroSpace Kadomo; OmniWM is quit and stays installed"$'\n'"(pick OmniWM instead under Advanced)")
+        else
+            fields+=("Window manager${TAB}AeroSpace Kadomo, with JankyBorders")
+        fi
+    elif item_on omniwm omniwm; then
+        fields+=("Window manager${TAB}OmniWM$(aerospace_renewed_installed && printf '; AeroSpace Kadomo is quit and stays installed')")
+    fi
     if aerospace_leftovers; then
-        fields+=("Removes${TAB}what an older Kadomo installed for AeroSpace"$'\n'"(Kadomo uses OmniWM only now)")
+        fields+=("Removes${TAB}what an older Kadomo installed for AeroSpace"$'\n'"(its 0.21.3-kadomo.1 and .2 builds)")
     fi
     asks=()
     ! item_on homebrew homebrew || asks+=("Homebrew")
@@ -469,7 +524,7 @@ install_selected() {
     # Kadomo uses OmniWM only now: AeroSpace from an older Kadomo goes, with its
     # config and JankyBorders, whatever else is picked.
     if aerospace_leftovers; then
-        step "Removing AeroSpace from an older Kadomo" "$ROOT/omniwm/remove-aerospace.sh" || failed+=("Removing AeroSpace")
+        step "Removing AeroSpace from an older Kadomo" "$ROOT/aerospace/remove-legacy.sh" || failed+=("Removing AeroSpace")
         step "Removing AeroSpace's config and JankyBorders" "$ROOT/dotfiles/uninstall.sh" --retired || failed+=("Removing AeroSpace's config")
     fi
     keys="$(keys_for kadomo-menu)"
@@ -479,6 +534,8 @@ install_selected() {
     keys="$(keys_for apps)"
     [[ -z "$keys" ]] || run_component "Apps: $(labels_for apps)" step apps --only "$keys"
     ! component_on moonlight-mouse || run_component "Moonlight Mouse Optimization" step moonlight-mouse
+    # One window manager is picked; its installer makes it the one that runs.
+    ! component_on aerospace || run_component "AeroSpace Kadomo and JankyBorders" step aerospace
     ! component_on omniwm || run_component "OmniWM" step omniwm
     # After the configs and apps it wires.
     keys="$(keys_for kadomo-theme-manager)"

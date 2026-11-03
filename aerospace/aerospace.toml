@@ -1,0 +1,91 @@
+# Kadomo's AeroSpace config (installed by Kadomo; uninstall puts back what was here before).
+# Edit it freely: Kadomo only writes it again when you run its installer, and
+# then a copy of your edited file is kept next to it as aerospace.toml.before-kadomo.
+# Reference: https://nikitabobko.github.io/AeroSpace/guide
+# Kadomo additions (not in upstream AeroSpace): the dwindle and scrolling
+# layouts, workspace-layout, and focus --scrolling-only / --include-floating.
+config-version = 2
+
+# Kadomo's login agent starts AeroSpace (kadomo-wm), so it can start OmniWM
+# instead when you pick that one. Leave this off.
+start-at-login = false
+# JankyBorders draws the borders, in the Kadomo theme's colors.
+after-startup-command = ['exec-and-forget ~/.local/bin/kadomo-borders start']
+
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+accordion-padding = 30
+# New workspaces start in Tiles. A layout you pick in the menu (Workspace
+# Layout) or with workspace-layout is remembered per workspace; changing this
+# line drops those remembered choices.
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+automatically-unhide-macos-hidden-apps = false
+persistent-workspaces = ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+key-mapping.preset = 'qwerty'
+
+gaps.inner.horizontal = 8
+gaps.inner.vertical = 8
+gaps.outer.left = 8
+gaps.outer.bottom = 8
+gaps.outer.top = 8
+gaps.outer.right = 8
+
+[mode.main.binding]
+    # Focus: option-arrows (ctrl-arrows belong to Mission Control)
+    alt-left = 'focus left'
+    alt-right = 'focus right'
+    alt-up = 'focus up'
+    alt-down = 'focus down'
+    # Scrolling layout: the column to the left / right; nothing in the other layouts
+    ctrl-alt-left = 'focus --scrolling-only --boundaries-action stop left'
+    ctrl-alt-right = 'focus --scrolling-only --boundaries-action stop right'
+
+    # Move the focused window
+    alt-shift-left = 'move left'
+    alt-shift-right = 'move right'
+    alt-shift-up = 'move up'
+    alt-shift-down = 'move down'
+
+    # Sizes
+    alt-minus = 'resize smart -50'
+    alt-equal = 'resize smart +50'
+    alt-shift-b = 'balance-sizes'
+
+    # Layout of the whole workspace (also in AeroSpace's menu, Workspace Layout)
+    alt-shift-t = 'workspace-layout tiles'
+    alt-shift-a = 'workspace-layout accordion'
+    alt-shift-d = 'workspace-layout dwindle'
+    alt-shift-s = 'workspace-layout scrolling'
+    alt-shift-f = 'layout floating tiling'
+    alt-f = 'fullscreen'
+
+    alt-1 = 'workspace 1'
+    alt-2 = 'workspace 2'
+    alt-3 = 'workspace 3'
+    alt-4 = 'workspace 4'
+    alt-5 = 'workspace 5'
+    alt-6 = 'workspace 6'
+    alt-7 = 'workspace 7'
+    alt-8 = 'workspace 8'
+    alt-9 = 'workspace 9'
+
+    alt-shift-1 = 'move-node-to-workspace 1'
+    alt-shift-2 = 'move-node-to-workspace 2'
+    alt-shift-3 = 'move-node-to-workspace 3'
+    alt-shift-4 = 'move-node-to-workspace 4'
+    alt-shift-5 = 'move-node-to-workspace 5'
+    alt-shift-6 = 'move-node-to-workspace 6'
+    alt-shift-7 = 'move-node-to-workspace 7'
+    alt-shift-8 = 'move-node-to-workspace 8'
+    alt-shift-9 = 'move-node-to-workspace 9'
+
+    alt-tab = 'workspace-back-and-forth'
+    alt-shift-semicolon = 'mode service'
+
+[mode.service.binding]
+    esc = ['reload-config', 'mode main']
+    r = ['flatten-workspace-tree', 'mode main']
+    f = ['layout floating tiling', 'mode main']
+    backspace = ['close-all-windows-but-current', 'mode main']

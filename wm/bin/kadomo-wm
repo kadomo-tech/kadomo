@@ -1,0 +1,97 @@
+#!/bin/bash
+# Kadomo's window manager switch. Both AeroSpace Kadomo and OmniWM may be
+# installed; only the chosen one runs and starts at login.
+#
+#   kadomo-wm current                 the chosen manager: aerospace, omniwm, or none
+#   kadomo-wm use aerospace|omniwm    quit the other one, start this one, and remember it.
+#                                     When it does not start, the one that ran before is
+#                                     started again and the choice stays as it was.
+#   kadomo-wm login                   what the login agent runs: start the chosen manager,
+#                                     and quit the other one if its own setting starts it
+#   kadomo-wm stop                    quit both (uninstall uses it)
+#
+# Each manager is started and stopped through its own helper in ~/.local/bin
+# (kadomo-aerospace, kadomo-omniwm). The choice is in
+# ${XDG_STATE_HOME:-~/.local/state}/kadomo/wm-choice.
+# Runs on the Bash 3.2 that ships with macOS.
+set -euo pipefail
+
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/kadomo"
+CHOICE="$STATE/wm-choice"
+BIN_DIR="${KADOMO_WM_BIN_DIR:-$HOME/.local/bin}"
+# How long a manager gets to start, in quarter seconds.
+START_TICKS="${KADOMO_WM_START_TICKS:-40}"
+# How long "login" watches for the other manager starting itself, in quarter seconds.
+LOGIN_TICKS="${KADOMO_WM_LOGIN_TICKS:-60}"
+export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
+
+die() { echo "kadomo-wm: $*" >&2; exit 1; }
+
+label() { case "$1" in aerospace) printf 'AeroSpace Kadomo' ;; omniwm) printf 'OmniWM' ;; *) printf '%s' "$1" ;; esac; }
+other() { case "$1" in aerospace) printf omniwm ;; *) printf aerospace ;; esac; }
+helper() { printf '%s/kadomo-%s' "$BIN_DIR" "$1"; }
+installed() { [[ -x "$(helper "$1")" ]]; }
+
+choice() {
+    local value
+    [[ -s "$CHOICE" ]] || return 1
+    value="$(head -n 1 "$CHOICE" | tr -d '[:space:]')"
+    case "$value" in aerospace|omniwm) printf '%s' "$value" ;; *) return 1 ;; esac
+}
+save_choice() {
+    mkdir -p "$STATE"
+    printf '%s\n' "$1" >"$CHOICE.tmp.$$"
+    mv -f "$CHOICE.tmp.$$" "$CHOICE"
+}
+
+running() { installed "$1" && "$(helper "$1")" status 2>/dev/null | grep -q ': running$'; }
+start_wm() { installed "$1" && "$(helper "$1")" start; }
+stop_wm() { ! installed "$1" || "$(helper "$1")" stop; }
+wait_running() {
+    local i
+    for ((i=0; i<START_TICKS; i++)); do running "$1" && return 0; sleep 0.25; done
+    running "$1"
+}
+
+use() {
+    local target="$1" previous other_ran=0
+    case "$target" in aerospace|omniwm) ;; *) die "unknown window manager: $target (aerospace or omniwm)" ;; esac
+    installed "$target" || die "$(label "$target") is not installed; run Kadomo's installer and pick it"
+    previous="$(choice || true)"
+    if running "$(other "$target")"; then
+        other_ran=1
+        stop_wm "$(other "$target")" || die "could not quit $(label "$(other "$target")"); nothing changed"
+    fi
+    if start_wm "$target" && wait_running "$target"; then
+        save_choice "$target"
+        echo "kadomo-wm: $(label "$target") is the window manager now"
+        return 0
+    fi
+    # Back to how it was: the manager that ran before runs again, the choice is unchanged.
+    stop_wm "$target" >/dev/null 2>&1 || true
+    if ((other_ran)) || [[ "$previous" == "$(other "$target")" ]]; then
+        start_wm "$(other "$target")" >/dev/null 2>&1 || true
+        die "could not start $(label "$target"); $(label "$(other "$target")") runs again"
+    fi
+    die "could not start $(label "$target")"
+}
+
+login() {
+    local target i
+    target="$(choice)" || exit 0
+    start_wm "$target" || echo "kadomo-wm: could not start $(label "$target")" >&2
+    # The other manager may start itself a little later, by its own login setting.
+    for ((i=0; i<LOGIN_TICKS; i++)); do
+        if running "$(other "$target")"; then stop_wm "$(other "$target")" || true; fi
+        sleep 0.25
+    done
+}
+
+case "${1:-}" in
+    current) choice || echo none ;;
+    use) [[ -n "${2:-}" ]] || die "use needs aerospace or omniwm"; use "$2" ;;
+    login) login ;;
+    stop) stop_wm aerospace || true; stop_wm omniwm || true ;;
+    -h|--help|"") sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "unknown command: $1 (try --help)" ;;
+esac

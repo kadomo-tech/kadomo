@@ -1,20 +1,23 @@
 #!/bin/bash
-# Kadomo used to ship AeroSpace with Scrolling as a second window manager. It
-# now uses OmniWM only, and this removes what an older Kadomo put on the Mac
-# for AeroSpace: Kadomo's build of the app (and the Accessibility grant macOS
-# recorded for it), kadomo-aerospace and kadomo-workspace-layout, the
-# ~/.local/bin/aerospace link, the login agents, the scrolling settings, the
-# Kadomo Menu entries, and the saved choices and workspace layouts. A
-# ~/.local/bin/aerospace it set aside is put back, and so is a regular
-# AeroSpace that a much older Kadomo build replaced. A regular AeroSpace you
-# installed yourself stays installed, but is quit, so it does not fight OmniWM.
+# An older Kadomo shipped AeroSpace with Scrolling as a second window manager
+# (versions 0.21.3-kadomo.1 and .2). This removes what it put on the Mac:
+# that build of the app (and the Accessibility grant macOS recorded for it),
+# kadomo-aerospace and kadomo-workspace-layout from back then, the login
+# agents, the scrolling settings, the old Kadomo Menu entries, and the saved
+# choices and workspace layouts. A ~/.local/bin/aerospace it set aside is put
+# back, and so is a regular AeroSpace that a much older Kadomo build replaced.
+# A regular AeroSpace you installed yourself stays installed, but is quit.
 # (The AeroSpace and JankyBorders configs are the dotfiles' to remove:
 # dotfiles/uninstall.sh --retired.)
 #
-# omniwm/install.sh and the top-level install.sh and uninstall.sh run it.
+# It never touches the renewed AeroSpace Kadomo (0.21.3-kadomo.3 and later,
+# recorded in aerospace-kadomo-installed.txt): not its app, its command link,
+# its menu entries, or a running AeroSpace or borders while it is installed.
+#
+# install.sh, aerospace/install.sh's callers and aerospace/uninstall.sh run it.
 # With nothing to remove, it says "no aerospace installed".
 #
-# Usage: ./remove-aerospace.sh [--dry-run]
+# Usage: ./remove-legacy.sh [--dry-run]
 #
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
@@ -23,7 +26,7 @@ DRY_RUN=0
 case "${1:-}" in
     "") ;;
     --dry-run) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,24p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
 esac
 
@@ -69,12 +72,23 @@ find_brew() {
     return 1
 }
 app_version() { /usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$1/Contents/Info.plist" 2>/dev/null || true; }
-kadomo_build_installed() { [[ "$(app_version "$APP")" == *-kadomo.* ]]; }
+# Only the older builds, 0.21.3-kadomo.1 and .2: later ones are the renewed AeroSpace Kadomo.
+kadomo_build_installed() { [[ "$(app_version "$APP")" =~ -kadomo\.[12]$ ]]; }
+renewed_installed() {
+    local version n
+    [[ -s "$STATE_DIR/aerospace-kadomo-installed.txt" ]] && return 0
+    version="$(app_version "$APP")"
+    [[ "$version" == *-kadomo.* ]] || return 1
+    n="${version##*-kadomo.}"; n="${n%%[!0-9]*}"
+    [[ "$n" =~ ^[0-9]+$ ]] && ((n >= 3))
+}
 # An older Kadomo build (0.21.3-kadomo.1 or .2) in the regular app's place.
 legacy_build_installed() { [[ "$(app_version "$REGULAR_APP")" == *-kadomo.* ]]; }
-ours_script() { [[ -f "$1" ]] && grep -q "$2" "$1"; }
+# An older Kadomo's script: it names itself, and is not the renewed helper of the same name.
+ours_script() { [[ -f "$1" ]] && grep -q "$2" "$1" && ! grep -q "Kadomo's helper for AeroSpace Kadomo" "$1"; }
 # ~/.local/bin/aerospace is Kadomo's: the link to its CLI, or the file older builds put there.
 ours_cli() {
+    ! renewed_installed || return 1
     if [[ -L "$CLI_BIN" ]]; then [[ "$(readlink "$CLI_BIN")" == "$APP_CLI" ]]; return; fi
     [[ -x "$CLI_BIN" && "$("$CLI_BIN" --version 2>/dev/null | head -1)" == *-kadomo.* ]]
 }
@@ -91,7 +105,7 @@ while IFS= read -r plist; do [[ -e "$plist" ]] && anything=1; done < <(agent_pli
 for path in "$SCROLLING_CONFIG" "$MENU_FILE" "$CHOICE_FILE" "$LAYOUTS_DIR" "$WM_CHOICE_FILE"; do [[ -e "$path" ]] && anything=1; done
 ((anything)) || { echo "  =  no aerospace installed"; exit 0; }
 
-echo "  Kadomo no longer includes AeroSpace; removing what an older Kadomo installed for it"
+echo "  removing what an older Kadomo installed for AeroSpace"
 
 # Stopped first, so nothing is removed while it runs: the login agents (so
 # nothing starts AeroSpace again), then any AeroSpace and the JankyBorders it started.
@@ -101,7 +115,7 @@ for label in $AGENT_LABELS; do
         run launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
     fi
 done
-if pgrep -xq AeroSpace 2>/dev/null; then
+if ! renewed_installed && pgrep -xq AeroSpace 2>/dev/null; then
     echo "  ■  quitting AeroSpace"
     for id in "$APP_ID" "$REGULAR_ID"; do run osascript -e "tell application id \"$id\" to quit" >/dev/null 2>&1 || true; done
     if ((DRY_RUN == 0)); then
@@ -109,7 +123,7 @@ if pgrep -xq AeroSpace 2>/dev/null; then
         pkill -x AeroSpace 2>/dev/null || true
     fi
 fi
-if pgrep -xq borders 2>/dev/null; then
+if ! renewed_installed && pgrep -xq borders 2>/dev/null; then
     echo "  ■  stopping borders (AeroSpace started it)"
     run pkill -x borders || true
 fi
@@ -157,8 +171,9 @@ if [[ -n "$cask" ]]; then
     fi
 fi
 
-# The link points into the app just removed, so test it by its target.
-if [[ -L "$CLI_BIN" && "$(readlink "$CLI_BIN")" == "$APP_CLI" ]] || { [[ -f "$CLI_BIN" && ! -L "$CLI_BIN" ]] && ours_cli; }; then
+# The link points into the app just removed, so test it by its target. The
+# renewed build links the same place: its link stays.
+if ! renewed_installed && [[ -L "$CLI_BIN" && "$(readlink "$CLI_BIN")" == "$APP_CLI" ]] || { [[ -f "$CLI_BIN" && ! -L "$CLI_BIN" ]] && ours_cli; }; then
     echo "  -  ${CLI_BIN/#$HOME/~}"
     run rm -f -- "$CLI_BIN"
 fi
