@@ -85,6 +85,18 @@ OPT SHIFT + F|Float or tile the window|
 # Service mode
 OPT SHIFT + ;|Service mode|Then R: flatten, F: float, Esc: reload config'
 
+# Keybinds lists only the keys of the window manager that runs: the one picked
+# (kadomo-wm), or, before anyone picked, this one unless the other is installed.
+keys_shown() {
+    local choice
+    choice="$(head -n 1 "${XDG_STATE_HOME:-$HOME/.local/state}/kadomo/wm-choice" 2>/dev/null | tr -d '[:space:]' || true)"
+    case "$choice" in
+        aerospace) return 0 ;;
+        omniwm) return 1 ;;
+        *) [[ ! -x "$HOME/.local/bin/kadomo-omniwm" ]] ;;
+    esac
+}
+
 write_keybinds() {
     local key title note n=10
     while IFS='|' read -r key title note; do
@@ -125,7 +137,7 @@ LIST
         printf 'subtitle = "aerospace.toml; run Reload Config from AeroSpace'\''s menu after saving"\n'
         printf 'category = "services/aerospace"\nicon = "doc.text"\norder = %s\nkeywords = ["aerospace", "config", "settings"]\n' "$n"
         printf 'open = %s\n' "$(toml "$CONFIG")"
-        [[ ! -d "$APP" ]] || write_keybinds
+        if [[ -d "$APP" ]] && keys_shown; then write_keybinds; fi
     } >"$MENU_FILE.tmp.$$"
     mv -f "$MENU_FILE.tmp.$$" "$MENU_FILE"
 }

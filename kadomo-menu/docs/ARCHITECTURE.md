@@ -135,5 +135,6 @@ the active theme only changes on ↩, and leaving the row or closing restores it
   measure hotkey handler → frame committed and document the gap.
 - Lock screen, restart, and dark-mode toggling have no permission-free public
   API; they use `pmset` and Apple Events and may prompt once for Automation.
-- Window/workspace control requires an external window manager (OmniWM in
-  Kadomo, through command files).
+- Window/workspace control requires an external window manager (AeroSpace
+  Kadomo, or OmniWM, in Kadomo, through command files). Keybinds shows the
+  keys of the one that runs.

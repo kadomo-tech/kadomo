@@ -141,6 +141,8 @@ check "OmniWM runs" running OmniWM
 check "AeroSpace is quit" not running aerospace
 check "its borders are quit (no second border renderer)" not running borders
 check "the choice is OmniWM" test "$(cat "$CHOICE")" = omniwm
+check "Keybinds shows OmniWM's keys" has "$HOME/.config/kadomo/menu/commands/omniwm.toml" "[[keybind]]"
+check "and not AeroSpace's" not has "$HOME/.config/kadomo/menu/commands/aerospace-kadomo.toml" "[[keybind]]"
 
 touch "$MOCK/aerospace-fails"
 check "a switch that cannot start AeroSpace fails" not "$HOME/.local/bin/kadomo-wm" use aerospace
@@ -153,6 +155,8 @@ check "installs" install_aerospace
 check "OmniWM is quit" not running OmniWM
 check "AeroSpace runs" running aerospace
 check "OmniWM stays installed" test -d "$OMNI"
+check "Keybinds shows AeroSpace's keys again" has "$HOME/.config/kadomo/menu/commands/aerospace-kadomo.toml" "[[keybind]]"
+check "and not OmniWM's" not has "$HOME/.config/kadomo/menu/commands/omniwm.toml" "[[keybind]]"
 
 echo "Login"
 rm -f "$RUN/aerospace"; touch "$RUN/OmniWM"

@@ -53,6 +53,15 @@ wait_running() {
     running "$1"
 }
 
+# Kadomo Menu's Keybinds shows the keys of the manager that runs: both
+# managers write their entries again once the choice changes.
+refresh_menus() {
+    local wm
+    for wm in aerospace omniwm; do
+        ! installed "$wm" || "$(helper "$wm")" menu >/dev/null 2>&1 || true
+    done
+}
+
 use() {
     local target="$1" previous other_ran=0
     case "$target" in aerospace|omniwm) ;; *) die "unknown window manager: $target (aerospace or omniwm)" ;; esac
@@ -64,6 +73,7 @@ use() {
     fi
     if start_wm "$target" && wait_running "$target"; then
         save_choice "$target"
+        refresh_menus
         echo "kadomo-wm: $(label "$target") is the window manager now"
         return 0
     fi
