@@ -44,7 +44,7 @@ hb_packages() { # <brew>
 # short names (felixkratz/formulae/borders is borders).
 hb_kadomo_packages() {
     local file
-    for file in "$STATE_DIR/apps-installed.txt" "$STATE_DIR/developer-installed.txt" "$STATE_DIR/omniwm-installed.txt"; do
+    for file in "$STATE_DIR/apps-installed.txt" "$STATE_DIR/developer-installed.txt" "$STATE_DIR/omniwm-installed.txt" "$STATE_DIR/sketchybar-installed.txt"; do
         [[ -f "$file" ]] && awk -F'|' '$1 == "formula" || $1 == "cask" { print $2 }' "$file"
     done
     [[ -f "$STATE_DIR/packages-installed.txt" ]] && cut -d'|' -f1 "$STATE_DIR/packages-installed.txt"

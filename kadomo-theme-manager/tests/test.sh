@@ -44,6 +44,8 @@ for pair in "ghostty.conf:dotfiles/ghostty/themes/tmac2k" "btop.theme:dotfiles/b
     settings "$WORK/original" >"$WORK/was"
     check "${pair%%:*} has the same colors" cmp -s "$WORK/now" "$WORK/was"
 done
+check "sketchybar: the bar is the background, see-through" has "$THEME/sketchybar-colors.sh" 'export BG_TRANS="0xc0000000"'
+check "sketchybar: colors are 0xAARRGGBB" has "$THEME/sketchybar-colors.sh" 'export ACCENT="0xffba5aff"'
 check "omniwm: the border runs violet to cyan" has "$THEME/omniwm.toml" 'direction = "topLeftToBottomRight"'
 check "omniwm: violet first" bash -c "grep -A4 '^\[borders.gradient.start\]' '$THEME/omniwm.toml' | grep -qx 'red = 0.7294'"
 check "omniwm: the solid color is the first stop" bash -c "grep -A4 '^\[borders.color\]' '$THEME/omniwm.toml' | grep -qx 'green = 0.3529'"
@@ -140,7 +142,7 @@ for round in 1 2 3 4 5; do
 done
 check "catppuccin-latte is current, five rounds running" same "$(cat "$CUR/theme.name")" catppuccin-latte
 check "its files are in place" has "$THEME/kitty.conf" "background #eff1f5"
-check "every generated file is there" bash -c "cd '$THEME' && ls btop.theme ghostty.conf kadomo-menu.toml kitty.conf omniwm.toml palette.tsv >/dev/null"
+check "every generated file is there" bash -c "cd '$THEME' && ls btop.theme ghostty.conf kadomo-menu.toml kitty.conf omniwm.toml palette.tsv sketchybar-colors.sh >/dev/null"
 check "no staging folder left" [ ! -e "$CUR/next-theme" -a ! -e "$CUR/old-theme" ]
 check "the lock is released" [ ! -e "$HOME/.local/state/kadomo/theme.lock" ]
 

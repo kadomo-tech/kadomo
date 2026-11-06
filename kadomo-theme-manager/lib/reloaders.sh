@@ -64,6 +64,14 @@ reload_omniwm() {
     "$bin" theme || warn "theme: could not update OmniWM's border colors"
 }
 
+# SketchyBar's colors.sh sources current/theme/sketchybar-colors.sh; a reload
+# reads it, and the theme's name, again.
+reload_sketchybar() {
+    # -a: a click on the bar starts theme-set, and pgrep leaves out its own ancestors otherwise.
+    pgrep -axq sketchybar 2>/dev/null || return 0
+    sketchybar --reload >/dev/null 2>&1 || warn "theme: could not reload SketchyBar: sketchybar --reload"
+}
+
 # Kadomo Menu watches current/theme/kadomo-menu.toml and restyles itself
 # while its theme is "kadomo"; a launcher set to another theme, or showing an
 # Omarchy theme (omarchy:<id>), is put back on "kadomo": picking a Kadomo theme

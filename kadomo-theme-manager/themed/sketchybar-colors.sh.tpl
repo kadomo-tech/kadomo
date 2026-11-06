@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# SketchyBar's colors, sourced by ~/.config/sketchybar/colors.sh.
+export BG="{{ background_argb }}"
+export BG_TRANS="0xc0{{ background_strip }}"
+export FG="{{ foreground_argb }}"
+export SURFACE="{{ selection_argb }}"
+export OVERLAY="{{ muted_argb }}"
+export COMMENT="{{ muted_argb }}"
+export ACCENT="{{ accent_argb }}"
+export RED="{{ red_argb }}"
+export GREEN="{{ green_argb }}"
+export YELLOW="{{ yellow_argb }}"
+export BLUE="{{ blue_argb }}"
+export MAGENTA="{{ magenta_argb }}"
+export CYAN="{{ cyan_argb }}"
+export ORANGE="{{ orange_argb }}"

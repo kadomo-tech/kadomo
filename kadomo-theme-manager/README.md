@@ -157,6 +157,7 @@ app is not installed or not running.
 | kitty | `include ~/.config/kadomo/current/theme/kitty.conf` | `SIGUSR1` reloads it |
 | btop | `color_theme = "current"`: `~/.config/btop/themes/current.theme` links to the theme's `btop.theme` | `SIGUSR2` reloads it (1.3 and later) |
 | OmniWM | `kadomo-omniwm theme` puts `omniwm.toml`'s color tables in `~/.config/omniwm/settings.toml`, in place of the border colors there (width, glow, and the rest stay yours; the colors from before Kadomo come back on uninstall) | OmniWM reloads settings.toml when it changes |
+| SketchyBar | `~/.config/sketchybar/colors.sh` sources the theme's `sketchybar-colors.sh` | `sketchybar --reload` |
 | Kadomo Menu | its theme is set to `kadomo`, which reads `kadomo-menu.toml` | it watches the file; set back to `kadomo` if its config named another theme |
 | Neovim | the `kadomo` colorscheme: `~/.config/nvim/colors/kadomo.lua` links to the theme's `neovim-colors.lua`, and a block in `init.lua` (or `init.vim`) selects it | every running Neovim showing it loads it again |
 | Neovim with LazyVim | `~/.config/nvim/lua/plugins/theme.lua` links to the theme's `neovim.lua`: `kadomo`, or a colorscheme plugin the theme names | the next time it starts |

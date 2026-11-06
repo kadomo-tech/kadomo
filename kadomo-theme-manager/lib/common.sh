@@ -36,7 +36,7 @@ PREVIEWS="$CACHE/theme-selector/previews"
 
 # Every app the installer can wire. theme.conf's apps line picks the ones that
 # follow the theme; KADOMO_THEME_APPS overrides it (tests set it to none).
-ALL_APPS="ghostty kitty btop omniwm kadomo-menu neovim vim vscode starship appearance wallpaper"
+ALL_APPS="ghostty kitty btop omniwm sketchybar kadomo-menu neovim vim vscode starship appearance wallpaper"
 
 IMAGE_EXTENSIONS="jpg jpeg png webp heic gif tif tiff bmp"
 

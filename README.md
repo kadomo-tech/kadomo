@@ -57,7 +57,7 @@ Pick any mix of these when you install. **Kadomo Core** is on by default.
 
 | Category | Includes |
 | --- | --- |
-| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
+| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager, [SketchyBar](https://github.com/FelixKratz/SketchyBar) status bar, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
 | 🛠 **Developer** | Neovim with Kadomo's Vim/Neovim settings, Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
 | 🎮 **Gaming** | Moonlight, plus a mouse profile with no acceleration that applies only inside Moonlight (LinearMouse) |
 | 🌐 **Other** | Firefox |
@@ -71,7 +71,7 @@ each one on or off.
 theme-set catppuccin
 ```
 
-Switches Ghostty, kitty, OmniWM's focus border, Kadomo Menu, btop, Neovim,
+Switches Ghostty, kitty, OmniWM's focus border, SketchyBar, Kadomo Menu, btop, Neovim,
 Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, all
 live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
 `rose-pine`, `sora`. Kadomo Menu can also install
@@ -193,6 +193,7 @@ scripts run them in order.
 | [`homebrew/`](homebrew) | Installs Homebrew if it's missing, and adds the PATH block to `~/.zprofile` |
 | [`kadomo-menu/`](kadomo-menu) | The launcher app, the `kadomo-menu` command, and its font |
 | [`omniwm/`](omniwm/README.md) | OmniWM, plus `kadomo-omniwm` for themed borders and the menu's keybinds |
+| [`sketchybar/`](sketchybar/README.md) | SketchyBar, its plugins, and what it needs from Homebrew |
 | [`dotfiles/`](dotfiles) | Configs, copied to where each tool reads them |
 | [`apps/`](apps) | Ghostty, kitty, btop, htop, Neovim, Moonlight, and Firefox |
 | [`moonlight-mouse/`](moonlight-mouse/README.md) | The LinearMouse profile for Moonlight |

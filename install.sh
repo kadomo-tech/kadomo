@@ -10,7 +10,7 @@
 #   Gaming        Moonlight, and a Windows-style mouse in it (LinearMouse)
 #   Other         Firefox
 # Each component's own installer does the work: homebrew/, kadomo-menu/, omniwm/,
-# dotfiles/, apps/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
+# sketchybar/, dotfiles/, apps/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
 # older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now) is removed
 # first. Remove everything again with ./uninstall.sh.
 #
@@ -91,11 +91,13 @@ source "$ROOT/developer/dev.sh"
 source "$ROOT/homebrew/homebrew.sh"
 OMNIWM_SOURCE_BIN="$ROOT/omniwm/bin"
 source "$ROOT/omniwm/omniwm.sh"
+SKETCHYBAR_SOURCE="$ROOT/sketchybar/config"
+source "$ROOT/sketchybar/sketchybar.sh"
 
 CATS=("Kadomo Core" Developer Gaming Other)
 CAT_KEYS=(core developer gaming other)
 CAT_BLURB=(
-    "Homebrew, Kadomo Menu, OmniWM, Ghostty, kitty, themes, Starship"
+    "Homebrew, Kadomo Menu, OmniWM, SketchyBar, Ghostty, kitty, themes, Starship"
     "Neovim, Node.js, Java 25, Rancher Desktop, VS Code"
     "Moonlight, with a Windows-style mouse in it"
     "Firefox"
@@ -129,6 +131,7 @@ ITEMS=(
     "Kadomo Core|kadomo-menu|font|JetBrainsMono Nerd Font|for the launcher and kitty; 7 MB from GitHub"
     "Kadomo Core|kadomo-menu|start|Start Kadomo Menu|opens it now; it starts at login by default"
     "Kadomo Core|omniwm|omniwm|OmniWM|window manager: scrolling and tiling, its border in the theme's colors"
+    "Kadomo Core|sketchybar|sketchybar|SketchyBar|status bar in the theme's colors, with workspaces; replaces the macOS menu bar"
     "Kadomo Core|apps|ghostty|Ghostty|terminal app, from Homebrew"
     "Kadomo Core|dotfiles|ghostty|Ghostty config|~/.config/ghostty; a different file there is backed up"
     "Kadomo Core|apps|kitty|kitty|terminal app, from Homebrew"
@@ -181,6 +184,7 @@ for ((i=0; i<N; i++)); do
             elif omniwm_up_to_date; then present=1
             elif omniwm_app >/dev/null; then ITEM_DETAIL[i]="OmniWM is already installed; makes it Kadomo's window manager"; fi
             ;;
+        sketchybar:*) sketchybar_up_to_date && present=1 ;;
         apps:*) app_present "$(app_entry "${ITEM_KEY[i]}")" && present=1 ;;
         developer:starship) dev_present starship && ITEM_DETAIL[i]="already installed; turns it on for zsh, in the theme's colors" ;;
         developer:*) dev_present "${ITEM_KEY[i]}" && present=1 ;;
@@ -200,6 +204,7 @@ needs_brew() {
         apps:*|developer:node|developer:java|developer:rancher|developer:vscode) return 0 ;;
         developer:starship) ! dev_present starship ;;
         omniwm:*) ! omniwm_app >/dev/null ;;
+        sketchybar:*) return 0 ;;
         moonlight-mouse:*) ! app_path LinearMouse.app >/dev/null ;;
         *) return 1 ;;
     esac
@@ -480,6 +485,8 @@ install_selected() {
     [[ -z "$keys" ]] || run_component "Apps: $(labels_for apps)" step apps --only "$keys"
     ! component_on moonlight-mouse || run_component "Moonlight Mouse Optimization" step moonlight-mouse
     ! component_on omniwm || run_component "OmniWM" step omniwm
+    # After OmniWM, whose settings it changes; the theme manager then gives it its colors.
+    ! component_on sketchybar || run_component "SketchyBar" step sketchybar
     # After the configs and apps it wires.
     keys="$(keys_for kadomo-theme-manager)"
     [[ -z "$keys" ]] || run_component "Theme manager and themes" step kadomo-theme-manager --only "$keys"
