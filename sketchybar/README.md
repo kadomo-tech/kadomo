@@ -15,7 +15,7 @@ the colors of the current Kadomo theme.
 | SketchyBar, media-control, switchaudio-osx, bun | Homebrew, unless already installed. SketchyBar comes from the `felixkratz/formulae` tap |
 | Hack Nerd Font, sketchybar-app-font | Homebrew, unless already installed, then registered with macOS (`fonts.js`), as Font Book does. A file in `~/Library/Fonts` isn't always enough: macOS can leave it out of its list of fonts, and the bar then shows `[?]` for icons |
 | The bar's config | `config/` is copied to `~/.config/sketchybar`. A different folder there is backed up first |
-| The macOS menu bar | Set to hide, because the bar takes its place. It shows when the pointer reaches the top of the screen |
+| The macOS menu bar | Set to hide, because the bar takes its place. It still drops down when the pointer reaches the top of the screen, so the bar is drawn above it (`topmost=on`) to keep its clicks. That also covers the app menus (File, Edit, and so on) |
 | OmniWM's `settings.toml` | `ipcEnabled = true`, which the workspace items need, and a top gap of at least 32 under `[gaps.outer]`, so windows stay below the bar |
 
 `~/Library/Application Support/kadomo/sketchybar-installed.txt` records all of

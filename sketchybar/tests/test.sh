@@ -76,6 +76,8 @@ check "nothing is left of AeroSpace, Hammerspoon, or omarchy's commands" \
 check "the watcher finds the bar, its own ancestor" has "$SB/config/plugins/omniwm_watch.sh" "pgrep -axq sketchybar"
 check "theme-set finds the bar when a click on it started theme-set" has "$SB/../kadomo-theme-manager/lib/reloaders.sh" "pgrep -axq sketchybar"
 
+check "the bar stays above the menu bar, which would take its clicks" has "$SB/config/sketchybarrc" "topmost=on"
+
 echo "A dry run"
 setup dry
 out="$(sb install --dry-run)"

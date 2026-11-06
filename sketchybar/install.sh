@@ -120,7 +120,7 @@ if ! ((DRY_RUN)) && ! sketchybar_has_record hide-menu-bar; then
     record hide-menu-bar "$(defaults read NSGlobalDomain _HIHideMenuBar 2>/dev/null || echo absent)"
     record autohide-menu-bar "$(osascript -e 'tell application "System Events" to get autohide menu bar of dock preferences' 2>/dev/null || echo false)"
 fi
-echo "  +  hiding the macOS menu bar (it shows when the pointer reaches the top of the screen)"
+echo "  +  hiding the macOS menu bar (the bar draws over it, app menus included)"
 run defaults write NSGlobalDomain _HIHideMenuBar -bool true
 hide_menu_bar_now() { osascript -e 'tell application "System Events" to set autohide menu bar of dock preferences to true' >/dev/null; }
 run hide_menu_bar_now \

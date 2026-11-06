@@ -6,6 +6,8 @@ PLUGIN_DIR="$CONFIG_DIR/plugins"
 source "$CONFIG_DIR/colors.sh"
 
 # ---------- Bar ----------
+# topmost=on: the macOS menu bar drops down when the pointer reaches the top of
+# the screen. Below it (topmost=window), the bar loses every click to it.
 sketchybar --bar \
   position=top \
   height=32 \
@@ -17,7 +19,7 @@ sketchybar --bar \
   margin=0 \
   notch_width=200 \
   display=all \
-  topmost=window
+  topmost=on
 
 # ---------- Defaults ----------
 default=(
