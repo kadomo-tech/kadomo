@@ -64,7 +64,7 @@ sketchybar --add item menu_bar left \
 # Left out on a Mac without OmniWM (it needs macOS 26 on Apple silicon).
 OMNIWMCTL="$(command -v omniwmctl)"
 if [ -n "$OMNIWMCTL" ]; then
-  for sid in 1 2 3 4 5; do
+  for sid in 1 2 3 4 5 6 7 8 9; do
     sketchybar --add item space."$sid" left \
                --subscribe space."$sid" omniwm_workspace_change \
                --set space."$sid" \
@@ -129,6 +129,16 @@ sketchybar --add item media_next left \
                  label.drawing=off \
                  background.drawing=off \
                  click_script="$MEDIA_CONTROL next-track; sleep 0.3; sketchybar --trigger media_refresh"
+
+# Invisible, to catch clicks: the empty bar reports none. Between the music and the
+# notch, the last item on the left. Double click: plugins/bar_opacity.sh.
+sketchybar --add item empty_left left \
+           --set empty_left \
+                 width=200 \
+                 icon.drawing=off \
+                 label.drawing=off \
+                 background.drawing=off \
+                 click_script="$PLUGIN_DIR/bar_opacity.sh"
 
 # ---------- Center: indicators · clock · weather · updates · theme ----------
 # Indicators show only while their state is on (v4 bar). Pinned to the
@@ -268,6 +278,15 @@ sketchybar --add item bluetooth right \
                  update_freq=60 \
                  script="$PLUGIN_DIR/bluetooth.sh" \
                  click_script='open "x-apple.systempreferences:com.apple.BluetoothSettings"'
+
+# Invisible, to catch clicks, like empty_left: between the notch and the right items.
+sketchybar --add item empty_right right \
+           --set empty_right \
+                 width=320 \
+                 icon.drawing=off \
+                 label.drawing=off \
+                 background.drawing=off \
+                 click_script="$PLUGIN_DIR/bar_opacity.sh"
 
 # ---------- Force first run ----------
 sketchybar --update

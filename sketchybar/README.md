@@ -29,7 +29,7 @@ everything back.
 | --- | --- | --- | --- |
 | Logo | | Kadomo Menu | |
 | Menu bar | Highlighted while the macOS menu bar shows | Shows it, or puts it back. See [The macOS menu bar](#the-macos-menu-bar) | `menu_bar.sh` |
-| Workspaces 1–5 | The focused one is highlighted | Goes to that workspace | `omniwm.sh` |
+| Workspaces 1–9 | The focused one is highlighted | Goes to that workspace | `omniwm.sh` |
 | Front app | The focused app's icon and name | | `front_app.sh`, `icon_map.sh` |
 | Music | What's playing in any player, from macOS Now Playing | Play or pause; next | `media.sh` |
 | Indicators | Only while on: `caffeinate`, Do Not Disturb | | `indicators.sh` |
@@ -54,6 +54,16 @@ the logo: the menu bar shows, and the bar moves down below it. So do OmniWM's
 windows, through a temporary rise in the top gap in `settings.toml`. Click again
 to put everything back; a top gap you changed in the meantime stays. Kadomo Menu
 does the same under Services › Menu Bar.
+
+## See-through
+
+Double click an empty part of the bar and its background goes to 50% opacity;
+text and icons stay solid. Each double click after that goes to the next of 25%,
+10%, 100%, and 50% again. A reload or a theme switch brings back the theme's own
+opacity, 75%. SketchyBar reports no clicks on the
+empty bar, so two invisible items catch them: `empty_left` and `empty_right`, of
+fixed widths, on either side of the notch. On a wide display, the empty space
+beyond them does nothing.
 
 ## Workspaces
 

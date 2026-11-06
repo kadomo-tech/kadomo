@@ -76,6 +76,7 @@ check "nothing is left of AeroSpace, Hammerspoon, or omarchy's commands" \
 check "the watcher finds the bar, its own ancestor" has "$SB/config/plugins/omniwm_watch.sh" "pgrep -axq sketchybar"
 check "theme-set finds the bar when a click on it started theme-set" has "$SB/../kadomo-theme-manager/lib/reloaders.sh" "pgrep -axq sketchybar"
 
+check "all nine of OmniWM's workspaces" has "$SB/config/sketchybarrc" "for sid in 1 2 3 4 5 6 7 8 9; do"
 check "the bar stays above the menu bar, which would take its clicks" has "$SB/config/sketchybarrc" "topmost=on"
 
 echo "A dry run"
@@ -312,6 +313,45 @@ printf '#!/bin/bash\nexit 1\n' >"$STUBS/osascript"
 mb toggle
 check "leaves the bar where it is" lacks "$LOG" "y_offset"
 check "and the gap" has "$(SETTINGS)" 'top = 32.0'
+
+echo "Double clicking the bar"
+setup opacity
+sb install >/dev/null 2>&1
+mkdir -p "$H/.local/bin"
+echo 0xc0112233 >"$W/color"
+cat >"$STUBS/sketchybar" <<EOF
+#!/bin/bash
+case "\$*" in
+    "--query bar") printf '{\n\t"color": "%s",\n\t"border_color": "0xffff0000"\n}\n' "\$(cat "$W/color")" ;;
+    "--bar color="*) echo "\${2#color=}" >"$W/color" ;;
+esac
+EOF
+ln -sf "$STUBS/sketchybar" "$H/.local/bin/sketchybar"
+mkdir -p "$H/.config/kadomo/current/theme"
+echo 'export BG_TRANS="0xc0112233"' >"$H/.config/kadomo/current/theme/sketchybar-colors.sh"
+click() { HOME="$H" CONFIG_DIR="$(CONFIG)" TMPDIR="$W" BUTTON="${1:-left}" PATH="$STUBS:/usr/bin:/bin" "$(CONFIG)/plugins/bar_opacity.sh"; }
+click
+check "one click changes nothing" has "$W/color" 0xc0112233
+rm -f "$W/sketchybar-last-click"
+click right; click right
+check "nor does a double click with the right button" has "$W/color" 0xc0112233
+echo 1000 >"$W/sketchybar-last-click"
+click
+check "nor two clicks far apart" has "$W/color" 0xc0112233
+rm -f "$W/sketchybar-last-click"
+click; click
+check "a double click takes the theme's color to 50%" has "$W/color" 0x80112233
+click; click
+check "the next to 25%" has "$W/color" 0x40112233
+click; click
+check "the next to 10%" has "$W/color" 0x1a112233
+click; click
+check "the next to 100%" has "$W/color" 0xff112233
+click; click
+check "and round again to 50%" has "$W/color" 0x80112233
+click; click; click
+check "a third click starts a new double click" has "$W/color" 0x40112233
+check "the empty items catch clicks on either side" bash -c "grep -c 'click_script=\"\$PLUGIN_DIR/bar_opacity.sh\"' '$SB/config/sketchybarrc' | grep -qx 2"
 
 echo "The theme's colors"
 THEMER="$SB/../kadomo-theme-manager"
