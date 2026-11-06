@@ -3,7 +3,7 @@
 # from the bar the environment is launchd's, and a login zsh does not read
 # .zshrc, so the tool paths are set here by hand. Usage:
 #   open -na Ghostty --args -e tui.sh <cmd...>
-export PATH="$HOME/.bun/bin:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 print -P "%F{blue}▸%f $*"
 "$@"
 echo

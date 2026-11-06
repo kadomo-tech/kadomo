@@ -14,7 +14,7 @@
 #   OmniWM           kadomo-omniwm and its menu entries; the border colors
 #                    from before Kadomo come back, and OmniWM goes if Kadomo
 #                    installed it (its settings stay)
-#   SketchyBar       the bar and its config; the menu bar and OmniWM's settings go
+#   SketchyBar       the bar, its config and menu entries; the menu bar and OmniWM's settings go
 #                    back, and its packages go if Kadomo installed them
 #   AeroSpace from an older Kadomo
 #                    Kadomo's build, its commands, login agents, and settings
@@ -203,7 +203,7 @@ detail_for() {
                 printf 'its menu entries; OmniWM stays, its border colors go back'
             fi
             ;;
-        sketchybar) printf 'the bar and its config; the menu bar and OmniWM settings go back' ;;
+        sketchybar) printf 'the bar, its config and menu entries; the menu bar and OmniWM settings go back' ;;
         aerospace) printf "Kadomo's build, its commands and login agents; a regular AeroSpace you installed stays" ;;
         apps) names="$(record_names "$APPS_MANIFEST")"; printf '%s' "${names:-the apps Kadomo installed}" ;;
         moonlight-mouse) printf 'the Moonlight profile and login agent; LinearMouse if Kadomo installed it' ;;

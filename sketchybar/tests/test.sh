@@ -86,6 +86,7 @@ check "places no config" gone "$(CONFIG)"
 check "keeps no record" gone "$(MANIFEST)"
 check "leaves OmniWM alone" has "$(SETTINGS)" 'ipcEnabled = false'
 check "installs nothing" lacks "$LOG" 'install'
+check "writes no menu entries" gone "$H/.config/kadomo/menu/commands/sketchybar.toml"
 
 echo "Installing"
 setup install
@@ -101,6 +102,18 @@ check "turns on OmniWM's IPC" has "$(SETTINGS)" 'ipcEnabled = true'
 check "makes room for the bar" has "$(SETTINGS)" 'top = 32.0'
 check "changes only that gap" has "$(SETTINGS)" 'bottom = 0.0'
 check "starts the bar" has "$LOG" "brew services restart sketchybar"
+MENU="$H/.config/kadomo/menu/commands/sketchybar.toml"
+check "adds SketchyBar under Services" has "$MENU" 'id = "services/sketchybar"'
+for verb in start stop restart; do
+    check "with $verb" has "$MENU" "args = [\"services\", \"$verb\", \"sketchybar\"]"
+done
+check "through the brew it found" has "$MENU" "exec = \"$STUBS/brew\""
+check "adds the menu bar under Services" has "$MENU" 'id = "services/menu-bar"'
+for verb in show hide; do
+    check "with $verb" has "$MENU" "args = [\"$verb\"]"
+done
+check "through the bar's plugin" has "$MENU" "exec = \"$(CONFIG)/plugins/menu_bar.sh\""
+check "leaves no stray file there" test "$(ls -A "$(dirname "$MENU")")" = sketchybar.toml
 check "records what it installed" has "$(MANIFEST)" "formula|felixkratz/formulae/sketchybar"
 check "records the menu bar before" has "$(MANIFEST)" "hide-menu-bar|absent"
 check "records the gap before" has "$(MANIFEST)" "omniwm-gap-top|0.0"
@@ -129,6 +142,7 @@ BAR_RUNNING=1 sb uninstall >"$W/out" 2>&1
 check "stops the bar first" has "$LOG" "brew services stop sketchybar"
 check "stops the watcher" has "$LOG" "pkill -f omniwmctl watch active-workspace"
 check "removes the config" gone "$(CONFIG)"
+check "removes the menu entries" gone "$H/.config/kadomo/menu/commands/sketchybar.toml"
 check "shows the menu bar again" has "$LOG" "defaults delete NSGlobalDomain _HIHideMenuBar"
 check "as it was" has "$LOG" "set autohide menu bar of dock preferences to false"
 check "OmniWM's IPC goes back" has "$(SETTINGS)" 'ipcEnabled = false'
@@ -145,7 +159,7 @@ setup yours
 mkdir -p "$(CONFIG)" "$H/Library/Fonts"; echo "# my bar" >"$(CONFIG)/sketchybarrc"
 touch "$H/Library/Fonts/HackNerdFont-Regular.ttf" "$H/Library/Fonts/sketchybar-app-font.ttf"
 sed -i '' 's/^top = 0.0/top = 50.0/; s/^ipcEnabled = false/ipcEnabled = true/' "$(SETTINGS)"
-TAPS="FelixKratz/formulae" INSTALLED="sketchybar media-control switchaudio-osx bun" BAR_RUNNING=1 \
+TAPS="FelixKratz/formulae" INSTALLED="sketchybar media-control switchaudio-osx" BAR_RUNNING=1 \
     sb install >"$W/out" 2>&1
 check "your config is backed up" has "$W/out" "backed up to sketchybar.bak."
 check "installs no package you have" lacks "$LOG" "brew install --formula"
@@ -200,6 +214,104 @@ rm -f "$(SETTINGS)"
 sb install >"$W/out" 2>&1
 check "installs" exists "$(CONFIG)/sketchybarrc"
 check "writes no settings" gone "$(SETTINGS)"
+
+echo "The menu bar item"
+setup menu-bar
+sb install >/dev/null 2>&1
+echo true >"$W/autohide"
+cat >"$STUBS/osascript" <<EOF
+#!/bin/bash
+echo "osascript \$*" >>"$LOG"
+case "\$*" in
+    *"get autohide"*) cat "$W/autohide" ;;
+    *"to true") echo true >"$W/autohide" ;;
+    *"to false") echo false >"$W/autohide" ;;
+    *JavaScript*) echo 33 ;;
+esac
+EOF
+# colors.sh puts ~/.local/bin and then Homebrew first on the PATH, so the stand-ins
+# go in that ~/.local/bin: from anywhere else, the plugin would reach the real bar.
+mb() {
+    mkdir -p "$H/.local/bin"; ln -sf "$STUBS"/* "$H/.local/bin/"
+    HOME="$H" CONFIG_DIR="$(CONFIG)" XDG_CONFIG_HOME="$H/.config" KADOMO_STATE_DIR="$H/state" PATH="$STUBS:/usr/bin:/bin" "$(CONFIG)/plugins/menu_bar.sh" "$@"
+}
+GAP_FILE="$H/state/sketchybar-menu-bar-gap"
+: >"$LOG"
+mb sync
+check "a sync leaves a hidden menu bar hidden" lacks "$LOG" "to false"
+check "and the gap alone" has "$(SETTINGS)" 'top = 32.0'
+mb toggle
+check "a click shows the menu bar" has "$LOG" "set autohide menu bar of dock preferences to false"
+check "moves the bar below it" has "$LOG" "sketchybar --bar y_offset=33"
+check "and the windows below the bar" has "$(SETTINGS)" 'top = 65.0'
+check "changes only that gap" has "$(SETTINGS)" 'bottom = 0.0'
+mb sync
+check "a reload does not raise the gap twice" has "$(SETTINGS)" 'top = 65.0'
+check "and keeps what it was" has "$GAP_FILE" "32.0 65.0"
+: >"$LOG"
+mb
+check "the next click hides the menu bar" has "$LOG" "set autohide menu bar of dock preferences to true"
+check "puts the bar back" has "$LOG" "sketchybar --bar y_offset=0"
+check "and the gap" has "$(SETTINGS)" 'top = 32.0'
+check "and keeps no record" gone "$GAP_FILE"
+check "and writes no stray file" bash -c "! ls -A '$H/.config/omniwm' | grep -q kadomo"
+mb
+sed -i '' 's/^top = 65.0/top = 70.0/' "$(SETTINGS)"
+mb
+check "a gap you changed in the meantime stays" has "$(SETTINGS)" 'top = 70.0'
+sed -i '' 's/^top = 70.0/top = 32.0/' "$(SETTINGS)"
+mb
+sb uninstall >/dev/null 2>&1
+check "uninstalling with the menu bar showing brings the gap back to before Kadomo" has "$(SETTINGS)" 'top = 0.0'
+check "and removes the record" gone "$GAP_FILE"
+
+echo "The menu bar, from Kadomo Menu"
+setup menu-bar-menu
+sb install >/dev/null 2>&1
+echo true >"$W/autohide"
+cat >"$STUBS/osascript" <<EOF
+#!/bin/bash
+echo "osascript \$*" >>"$LOG"
+case "\$*" in
+    *"get autohide"*) cat "$W/autohide" ;;
+    *"to true") echo true >"$W/autohide" ;;
+    *"to false") echo false >"$W/autohide" ;;
+    *JavaScript*) echo 33 ;;
+esac
+EOF
+: >"$LOG"
+mb_menu() { mkdir -p "$H/.local/bin"; ln -sf "$STUBS"/* "$H/.local/bin/"; env -u CONFIG_DIR HOME="$H" XDG_CONFIG_HOME="$H/.config" KADOMO_STATE_DIR="$H/state" PATH="$STUBS:/usr/bin:/bin" "$(CONFIG)/plugins/menu_bar.sh" "$@"; }
+mb_menu hide
+check "hide with the menu bar hidden changes no gap" has "$(SETTINGS)" 'top = 32.0'
+mb_menu show
+check "show works without the bar's environment" has "$LOG" "sketchybar --bar y_offset=33"
+check "raises the gap" has "$(SETTINGS)" 'top = 65.0'
+mb_menu show
+check "show twice raises it once" has "$(SETTINGS)" 'top = 65.0'
+check "and stays showing" has "$W/autohide" "false"
+mb_menu hide
+check "hide puts the gap back" has "$(SETTINGS)" 'top = 32.0'
+check "and hides the menu bar" has "$W/autohide" "true"
+
+echo "The menu bar item, without OmniWM"
+setup menu-bar-no-omniwm
+sb install >/dev/null 2>&1
+rm -f "$(SETTINGS)"
+printf '#!/bin/bash\ncase "$*" in *"get autohide"*) echo true ;; *JavaScript*) echo 24 ;; esac\n' >"$STUBS/osascript"
+: >"$LOG"
+mb toggle
+check "still moves the bar" has "$LOG" "sketchybar --bar y_offset=24"
+check "writes no settings" gone "$(SETTINGS)"
+check "keeps no record of a gap" gone "$GAP_FILE"
+
+echo "The menu bar item, when System Events says no"
+setup menu-bar-refused
+sb install >/dev/null 2>&1
+printf '#!/bin/bash\nexit 1\n' >"$STUBS/osascript"
+: >"$LOG"
+mb toggle
+check "leaves the bar where it is" lacks "$LOG" "y_offset"
+check "and the gap" has "$(SETTINGS)" 'top = 32.0'
 
 echo "The theme's colors"
 THEMER="$SB/../kadomo-theme-manager"

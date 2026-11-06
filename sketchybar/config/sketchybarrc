@@ -52,6 +52,14 @@ sketchybar --add item logo left \
                  background.drawing=off \
                  click_script="$HOME/.local/bin/kadomo-menu toggle"
 
+# ---------- macOS menu bar: shows it and moves the bar down, or puts it back ----------
+sketchybar --add item menu_bar left \
+           --set menu_bar \
+                 icon="󰍜" \
+                 label.drawing=off \
+                 background.drawing=off \
+                 click_script="$PLUGIN_DIR/menu_bar.sh toggle"
+
 # ---------- OmniWM workspaces ----------
 # Left out on a Mac without OmniWM (it needs macOS 26 on Apple silicon).
 OMNIWMCTL="$(command -v omniwmctl)"
@@ -191,7 +199,7 @@ sketchybar --add item standup_center center \
                  background.drawing=off \
                  script="$PLUGIN_DIR/standup.sh"
 
-# v4 bar order, left to right: agents · bluetooth · network · audio · power.
+# v4 bar order, left to right: bluetooth · network · audio · power.
 # Right items lay out right-to-left in add order, so battery goes first.
 sketchybar --add item battery right \
            --set battery \
@@ -261,17 +269,6 @@ sketchybar --add item bluetooth right \
                  script="$PLUGIN_DIR/bluetooth.sh" \
                  click_script='open "x-apple.systempreferences:com.apple.BluetoothSettings"'
 
-# Coding-agent usage: Claude Code 5-hour and weekly limits (v4.0.5 agents
-# widget), or today's spend when the limits are unknown. The script checks
-# every 5 minutes, so an ended window drops to 0% soon; Anthropic is asked at
-# most every 15 minutes (agent_usage_claude.py caches the answer).
-sketchybar --add item agents right \
-           --set agents \
-                 drawing=off \
-                 update_freq=300 \
-                 script="$PLUGIN_DIR/agents.sh" \
-                 click_script="open -na Ghostty --args -e $PLUGIN_DIR/tui.sh bunx ccusage daily"
-
 # ---------- Force first run ----------
 sketchybar --update
 
@@ -282,6 +279,9 @@ if [ -n "$OMNIWMCTL" ]; then
   pkill -f "omniwmctl watch active-workspace" 2>/dev/null
   nohup "$PLUGIN_DIR/omniwm_watch.sh" >/dev/null 2>&1 &
 fi
+
+# A reload puts the bar back at the top, even with the menu bar showing.
+"$PLUGIN_DIR/menu_bar.sh" sync
 
 # Volume only subscribes to volume_change events, so prime it on startup
 NAME=volume bash "$PLUGIN_DIR/volume.sh"

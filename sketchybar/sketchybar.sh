@@ -7,8 +7,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/apps/apps.sh"
 
 SKETCHYBAR_TAP="felixkratz/formulae"
 SKETCHYBAR_FORMULA="$SKETCHYBAR_TAP/sketchybar"
-# The music item, the headphones icon on the volume item, and the agents item.
-SKETCHYBAR_FORMULAE=("$SKETCHYBAR_FORMULA" media-control switchaudio-osx bun)
+# The music item and the headphones icon on the volume item.
+SKETCHYBAR_FORMULAE=("$SKETCHYBAR_FORMULA" media-control switchaudio-osx)
 # One line per font: <cask>|<a file it installs>|<the files the bar's font family is in>.
 SKETCHYBAR_FONTS=(
     "font-hack-nerd-font|HackNerdFont-Regular.ttf|HackNerdFont-*.ttf"
@@ -16,6 +16,7 @@ SKETCHYBAR_FONTS=(
 )
 SKETCHYBAR_CONFIG="$HOME/.config/sketchybar"
 SKETCHYBAR_OMNIWM_SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/settings.toml"
+SKETCHYBAR_MENU_FILE="${KADOMO_CONFIG:-$HOME/.config/kadomo}/menu/commands/sketchybar.toml"
 # The bar's height in sketchybarrc: windows stay below it.
 SKETCHYBAR_HEIGHT=32
 
@@ -25,6 +26,8 @@ SKETCHYBAR_HEIGHT=32
 # macOS); hide-menu-bar, autohide-menu-bar, omniwm-ipc, omniwm-gap-top (each
 # setting from before Kadomo changed it).
 SKETCHYBAR_MANIFEST="$STATE_DIR/sketchybar-installed.txt"
+# Written by plugins/menu_bar.sh while the menu bar shows: "<gap before> <gap now>".
+SKETCHYBAR_MENU_BAR_GAP="$STATE_DIR/sketchybar-menu-bar-gap"
 
 sketchybar_record() {
     mkdir -p "$STATE_DIR"
@@ -48,9 +51,44 @@ sketchybar_tree_sha() {
 
 # Whether everything install.sh puts in place is there and current.
 sketchybar_up_to_date() {
-    [[ -n "${SKETCHYBAR_SOURCE:-}" && -d "$SKETCHYBAR_CONFIG" && -s "$SKETCHYBAR_MANIFEST" ]] || return 1
+    [[ -n "${SKETCHYBAR_SOURCE:-}" && -d "$SKETCHYBAR_CONFIG" && -s "$SKETCHYBAR_MANIFEST" && -f "$SKETCHYBAR_MENU_FILE" ]] || return 1
     command -v sketchybar >/dev/null 2>&1 || [[ -x /opt/homebrew/bin/sketchybar || -x /usr/local/bin/sketchybar ]] || return 1
     [[ "$(sketchybar_tree_sha "$SKETCHYBAR_CONFIG")" == "$(sketchybar_tree_sha "$SKETCHYBAR_SOURCE")" ]]
+}
+
+# Kadomo Menu › Services › SketchyBar. Homebrew's service is what starts the bar at
+# login, so these go through it: a bar killed any other way comes straight back.
+# And Services › Menu Bar, which does what the bar's menu bar item does.
+sketchybar_write_menu() { # <brew>
+    local verb title note sym n=1
+    mkdir -p "$(dirname "$SKETCHYBAR_MENU_FILE")"
+    {
+        printf '# Written by sketchybar/install.sh; changes here are replaced.\n\n'
+        printf '[[category]]\nid = "services/sketchybar"\ntitle = "SketchyBar"\nsubtitle = "The status bar, in the theme'\''s colors"\n'
+        printf 'icon = "menubar.rectangle"\norder = 1\nkeywords = ["sketchybar", "status bar", "bar"]\n\n'
+        while IFS='|' read -r verb title note sym; do
+            printf '[[command]]\nid = "kadomo-sketchybar-%s"\ntitle = "%s"\nsubtitle = "%s"\n' "$verb" "$title" "$note"
+            printf 'category = "services/sketchybar"\nicon = "%s"\norder = %s\nkeywords = ["sketchybar", "status bar", "bar"]\n' "$sym" "$n"
+            printf 'exec = "%s"\nargs = ["services", "%s", "sketchybar"]\n\n' "$1" "$verb"
+            n=$((n + 1))
+        done <<EOF
+start|Start|Start the bar, and at every login|play
+stop|Stop|Quit the bar; it stays off at login until you start it|stop
+restart|Restart|Start the bar again|arrow.clockwise
+EOF
+        printf '[[category]]\nid = "services/menu-bar"\ntitle = "Menu Bar"\nsubtitle = "The macOS menu bar, with the app menus"\n'
+        printf 'icon = "menubar.arrow.down.rectangle"\norder = 2\nkeywords = ["menu bar", "menubar", "macos", "app menus"]\n\n'
+        while IFS='|' read -r verb title note sym; do
+            printf '[[command]]\nid = "kadomo-menu-bar-%s"\ntitle = "%s"\nsubtitle = "%s"\n' "$verb" "$title" "$note"
+            printf 'category = "services/menu-bar"\nicon = "%s"\norder = %s\nkeywords = ["menu bar", "menubar", "macos", "app menus"]\n' "$sym" "$n"
+            printf 'exec = "%s"\nargs = ["%s"]\n\n' "$SKETCHYBAR_CONFIG/plugins/menu_bar.sh" "$verb"
+            n=$((n + 1))
+        done <<EOF
+show|Show|Show the menu bar, and move the bar and windows below it|eye
+hide|Hide|Hide the menu bar, and put the bar and windows back|eye.slash
+EOF
+    } >"$SKETCHYBAR_MENU_FILE.tmp.$$"
+    mv -f "$SKETCHYBAR_MENU_FILE.tmp.$$" "$SKETCHYBAR_MENU_FILE"
 }
 
 # --- OmniWM's settings.toml ----------------------------------------------------

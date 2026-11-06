@@ -60,6 +60,11 @@ fi
 
 # OmniWM's settings, unless you have changed them since.
 if [[ -f "$(sketchybar_omniwm_target)" ]]; then
+    # The gap the menu bar item raised comes down first, to the one recorded below.
+    if [[ -f "$SKETCHYBAR_MENU_BAR_GAP" ]]; then
+        read -r gap_before gap_raised <"$SKETCHYBAR_MENU_BAR_GAP"
+        [[ "$(sketchybar_omniwm_get gaps.outer top)" != "$gap_raised" ]] || run sketchybar_omniwm_set gaps.outer top "$gap_before"
+    fi
     if sketchybar_has_record omniwm-ipc && [[ "$(sketchybar_omniwm_get general ipcEnabled)" == true ]]; then
         echo "  ↩  OmniWM's IPC (off, as it was)"
         run sketchybar_omniwm_set general ipcEnabled "$(sketchybar_recorded omniwm-ipc)"
@@ -94,6 +99,12 @@ if ! recorded_line formula "$SKETCHYBAR_FORMULA" && ! sketchybar_has_record serv
     run sketchybar --reload >/dev/null 2>&1 || true
 fi
 
+# Kadomo Menu's entries.
+if [[ -f "$SKETCHYBAR_MENU_FILE" ]]; then
+    echo "  -  Kadomo Menu: Services > SketchyBar"
+    run rm -f -- "$SKETCHYBAR_MENU_FILE"
+fi
+
 # The fonts Kadomo registered with macOS, while their files are still here.
 while IFS='|' read -r kind path; do
     [[ "$kind" == font-file && -f "$path" ]] || continue
@@ -125,7 +136,7 @@ elif grep -qE '^(formula|cask)\|' "$SKETCHYBAR_MANIFEST"; then
     echo "  !  Homebrew not found; left SketchyBar's packages installed" >&2
 fi
 
-run rm -f -- "$SKETCHYBAR_MANIFEST"
+run rm -f -- "$SKETCHYBAR_MANIFEST" "$SKETCHYBAR_MENU_BAR_GAP"
 run rmdir "$STATE_DIR" 2>/dev/null || true
 ((DRY_RUN)) && echo "Dry run: nothing was changed."
 exit 0
