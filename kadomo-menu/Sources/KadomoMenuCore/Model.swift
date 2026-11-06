@@ -88,6 +88,8 @@ public struct Item: Sendable, Identifiable, Hashable {
     public var runningApp: String?
     /// A section label in a read-only list (the Keybinds reference): drawn small, never selected or searched.
     public var isHeading = false
+    /// A system-wide shortcut that runs the item without opening the launcher.
+    public var hotkey: KeyChord?
 
     public init(
         id: String, title: String, subtitle: String = "", kind: ItemKind = .action,

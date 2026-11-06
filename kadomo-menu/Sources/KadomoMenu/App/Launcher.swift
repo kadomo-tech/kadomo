@@ -54,6 +54,7 @@ final class Launcher: NSObject, NSTextFieldDelegate {
     private(set) var runFailures: [String] = []
     private var themeErrors: [Diagnostic] = []
     private var hotkeyError: String?
+    private var commandHotkeyErrors: [String] = []
 
     /// Hotkey press → panel drawn, in milliseconds, for real opens.
     private(set) var openSamples: [Double] = []
@@ -100,7 +101,9 @@ final class Launcher: NSObject, NSTextFieldDelegate {
 
         guard interactive else { return }
         HotKey.shared.onPress = { [weak self] in self?.toggle(t0: Clock.now()) }
+        HotKey.shared.onCommand = { [weak self] id in self?.runFromHotKey(id) }
         registerHotKey()
+        registerCommandHotKeys()
         startWatching()
         observeSystem()
         applyLoginItem()
@@ -244,6 +247,7 @@ final class Launcher: NSObject, NSTextFieldDelegate {
         configureExternalProvider()
         applyConfig()
         registerHotKey()
+        registerCommandHotKeys()
         refreshStaticSources()
         rebuild(sync: sync)
         scanApps()
@@ -272,6 +276,12 @@ final class Launcher: NSObject, NSTextFieldDelegate {
         let wanted = store.config.hotkey
         if HotKey.shared.chord == KeyChord.parse(wanted), HotKey.shared.lastError == nil { return }
         hotkeyError = HotKey.shared.register(wanted)
+    }
+
+    private func registerCommandHotKeys() {
+        commandHotkeyErrors = HotKey.shared.register(commands: store.userItems.compactMap { item in
+            item.hotkey.map { (id: item.id, chord: $0) }
+        })
     }
 
     private func applyLoginItem() {
@@ -508,7 +518,7 @@ final class Launcher: NSObject, NSTextFieldDelegate {
             return ("Press ↩ again to confirm “\(what)” · esc to cancel", style.warning)
         }
         if let transientMessage { return transientMessage }
-        if let error = hotkeyError { return ("⚠︎ \(error)", style.warning) }
+        if let error = hotkeyError ?? commandHotkeyErrors.first { return ("⚠︎ \(error)", style.warning) }
         let errors = store.errors + themeErrors.filter { $0.severity == .error }
         if let first = errors.first {
             return ("⚠︎ \(first.description)\(errors.count > 1 ? "  (+\(errors.count - 1) more: kadomo-menu config check)" : "")", style.error)
@@ -670,6 +680,17 @@ final class Launcher: NSObject, NSTextFieldDelegate {
             guard let self, let error else { return }
             self.report(error, screen: screen)
             if case .openApp = action { self.scanApps() }
+        }
+    }
+
+    /// A command's own shortcut. The launcher stays as it was, and a key press
+    /// doesn't count toward the rows that rank first.
+    private func runFromHotKey(_ id: String) {
+        guard let item = model.catalog.item(id) else { return }
+        Log.info("run \(id) (hotkey)")
+        Executor.run(item.action, title: item.title) { [weak self] error in
+            guard let self, let error else { return }
+            self.report(error, screen: nil)
         }
     }
 
@@ -984,6 +1005,7 @@ final class Launcher: NSObject, NSTextFieldDelegate {
         var lines: [String] = []
         lines.append("Kadomo Menu \(Launcher.version) · pid \(getpid()) · \(Bundle.main.bundlePath)")
         lines.append("Hotkey: \(HotKey.shared.chord?.symbol ?? store.config.hotkey) \(hotkeyError.map { "— \($0)" } ?? "(registered)")")
+        lines += commandHotkeyErrors.map { "Hotkey: \($0)" }
         lines.append("Theme: \(theme.name) (\(theme.id)) · provider \(activeState.activeTheme.provider.rawValue)")
         lines.append("Font: \(style.titleFont.fontName) \(Int(style.titleFont.pointSize))pt (theme asks for \"\(theme.font.family)\")")
         var counts: [String: Int] = [:]

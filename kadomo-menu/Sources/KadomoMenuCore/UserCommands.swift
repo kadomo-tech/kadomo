@@ -125,14 +125,24 @@ public enum UserCommands {
             }
             let icon: IconRef = if let s = r.string("icon") { s.hasPrefix("/") || s.hasPrefix("~") ? .file(Paths.expand(s)) : .symbol(s) }
                 else if let g = r.string("glyph") { .glyph(g) } else { .symbol("terminal") }
-            items.append(Item(
+            let confirm = r.bool("confirm") ?? false
+            var hotkey: KeyChord?
+            if let v = r.string("hotkey") {
+                // A shortcut runs at once, so nothing would ask for the second Enter.
+                if confirm { r.error("hotkey", "a command with confirm can't have one") }
+                else if let chord = KeyChord.parse(v) { hotkey = chord }
+                else { r.error("hotkey", "not a key chord like \"option+shift+m\"") }
+            }
+            var item = Item(
                 id: idPrefix + rawID, title: title, subtitle: r.string("subtitle") ?? r.string("description") ?? "",
                 kind: .action, parent: category, alsoIn: r.strings("also_in") ?? [], icon: icon,
                 keywords: r.strings("keywords") ?? [], aliases: r.strings("aliases") ?? [], action: action,
-                secondary: secondary, hint: r.string("hint"), confirm: r.bool("confirm") ?? false,
+                secondary: secondary, hint: r.string("hint") ?? hotkey?.symbol, confirm: confirm,
                 keepOpen: r.bool("keep_open") ?? false, order: r.int("order") ?? 0, source: source,
                 runningApp: r.string("running_app")
-            ))
+            )
+            item.hotkey = hotkey
+            items.append(item)
             diagnostics += r.finish()
 
             // A command may name a nested category that nobody defined: create it.

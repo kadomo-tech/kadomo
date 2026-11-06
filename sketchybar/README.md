@@ -16,7 +16,7 @@ the colors of the current Kadomo theme.
 | Hack Nerd Font, sketchybar-app-font | Homebrew, unless already installed, then registered with macOS (`fonts.js`), as Font Book does. A file in `~/Library/Fonts` isn't always enough: macOS can leave it out of its list of fonts, and the bar then shows `[?]` for icons |
 | The bar's config | `config/` is copied to `~/.config/sketchybar`. A different folder there is backed up first |
 | The macOS menu bar | Set to hide, because the bar takes its place. It still drops down when the pointer reaches the top of the screen, so the bar is drawn above it (`topmost=on`) to keep its clicks. That also covers the app menus (File, Edit, and so on) |
-| Kadomo Menu | Services › SketchyBar: Start, Stop, Restart, through `brew services`. Stop also keeps the bar off at login until you start it again. Services › Menu Bar: Show, Hide. Both in `~/.config/kadomo/menu/commands/sketchybar.toml` |
+| Kadomo Menu | Services › SketchyBar: Start, Stop, Restart, through `brew services`. Stop also keeps the bar off at login until you start it again. Services › Menu Bar: Show or Hide (⌥⇧M), Show, Hide. Both in `~/.config/kadomo/menu/commands/sketchybar.toml` |
 | OmniWM's `settings.toml` | `ipcEnabled = true`, which the workspace items need, and a top gap of at least 32 under `[gaps.outer]`, so windows stay below the bar |
 
 `~/Library/Application Support/kadomo/sketchybar-installed.txt` records all of
@@ -28,7 +28,7 @@ everything back.
 | Item | Shows | Click | Plugin |
 | --- | --- | --- | --- |
 | Logo | | Kadomo Menu | |
-| Menu bar | Highlighted while the macOS menu bar shows | Shows it, or puts it back. See [The macOS menu bar](#the-macos-menu-bar) | `menu_bar.sh` |
+| Menu bar | Highlighted while the macOS menu bar shows | Shows it, or puts it back; so does ⌥⇧M. See [The macOS menu bar](#the-macos-menu-bar) | `menu_bar.sh` |
 | Workspaces 1–9 | The focused one is highlighted | Goes to that workspace | `omniwm.sh` |
 | Front app | The focused app's icon and name | | `front_app.sh`, `icon_map.sh` |
 | Music | What's playing in any player, from macOS Now Playing | Play or pause; next | `media.sh` |
@@ -54,6 +54,10 @@ the logo: the menu bar shows, and the bar moves down below it. So do OmniWM's
 windows, through a temporary rise in the top gap in `settings.toml`. Click again
 to put everything back; a top gap you changed in the meantime stays. Kadomo Menu
 does the same under Services › Menu Bar.
+
+Option-Shift-M does it from anywhere. Kadomo Menu holds that key, so it has to be
+running; to use another, change `hotkey` in the `kadomo-menu-bar-toggle` command in
+`sketchybar.sh`.
 
 ## See-through
 

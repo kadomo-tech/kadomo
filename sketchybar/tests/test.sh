@@ -110,9 +110,12 @@ for verb in start stop restart; do
 done
 check "through the brew it found" has "$MENU" "exec = \"$STUBS/brew\""
 check "adds the menu bar under Services" has "$MENU" 'id = "services/menu-bar"'
-for verb in show hide; do
+for verb in toggle show hide; do
     check "with $verb" has "$MENU" "args = [\"$verb\"]"
 done
+check "with a key for the toggle" has "$MENU" 'hotkey = "option+shift+m"'
+check "and only for the toggle" test "$(grep -c '^hotkey = ' "$MENU")" = 1
+check "and says so under Keybinds" has "$MENU" 'key = "OPT SHIFT + M"'
 check "through the bar's plugin" has "$MENU" "exec = \"$(CONFIG)/plugins/menu_bar.sh\""
 check "leaves no stray file there" test "$(ls -A "$(dirname "$MENU")")" = sketchybar.toml
 check "records what it installed" has "$(MANIFEST)" "formula|felixkratz/formulae/sketchybar"

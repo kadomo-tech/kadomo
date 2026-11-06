@@ -17,7 +17,8 @@ Saving any of them applies the change. `kadomo-menu config check` validates.
 | `keywords`, `aliases` | | extra search words. An exact alias ranks just under an exact title |
 | `icon` | | an SF Symbol name, or a path to a file whose icon to show |
 | `glyph` | | a literal character (emoji, Nerd Font glyph) instead of an icon |
-| `hint` | | text at the right edge |
+| `hint` | the shortcut, if it has one | text at the right edge |
+| `hotkey` | | a system-wide shortcut, like `"option+shift+m"`, that runs the command without opening the launcher. Not with `confirm`. A shortcut that's taken shows a warning in the launcher and in `kadomo-menu status` |
 | `confirm` | false | ask for a second Enter |
 | `keep_open` | false | leave the launcher open after running |
 | `order` | 0 | sort position in its category (ties sort by title) |

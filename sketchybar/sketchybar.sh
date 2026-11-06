@@ -58,7 +58,8 @@ sketchybar_up_to_date() {
 
 # Kadomo Menu › Services › SketchyBar. Homebrew's service is what starts the bar at
 # login, so these go through it: a bar killed any other way comes straight back.
-# And Services › Menu Bar, which does what the bar's menu bar item does.
+# And Services › Menu Bar, which does what the bar's menu bar item does, with a
+# key for it.
 sketchybar_write_menu() { # <brew>
     local verb title note sym n=1
     mkdir -p "$(dirname "$SKETCHYBAR_MENU_FILE")"
@@ -81,12 +82,16 @@ EOF
         while IFS='|' read -r verb title note sym; do
             printf '[[command]]\nid = "kadomo-menu-bar-%s"\ntitle = "%s"\nsubtitle = "%s"\n' "$verb" "$title" "$note"
             printf 'category = "services/menu-bar"\nicon = "%s"\norder = %s\nkeywords = ["menu bar", "menubar", "macos", "app menus"]\n' "$sym" "$n"
+            [[ "$verb" != toggle ]] || printf 'hotkey = "option+shift+m"\n'
             printf 'exec = "%s"\nargs = ["%s"]\n\n' "$SKETCHYBAR_CONFIG/plugins/menu_bar.sh" "$verb"
             n=$((n + 1))
         done <<EOF
+toggle|Show or Hide|Flip the menu bar, with the bar and windows|menubar.arrow.up.rectangle
 show|Show|Show the menu bar, and move the bar and windows below it|eye
 hide|Hide|Hide the menu bar, and put the bar and windows back|eye.slash
 EOF
+        printf '[[keybind]]\nheading = "Menu bar"\norder = 60\n\n'
+        printf '[[keybind]]\nkey = "OPT SHIFT + M"\ntitle = "Show or hide the macOS menu bar"\norder = 61\n'
     } >"$SKETCHYBAR_MENU_FILE.tmp.$$"
     mv -f "$SKETCHYBAR_MENU_FILE.tmp.$$" "$SKETCHYBAR_MENU_FILE"
 }

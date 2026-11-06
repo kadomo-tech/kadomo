@@ -266,6 +266,46 @@ import Testing
         #expect(items.first { $0.kind == .action }?.runningApp == "com.example.Other")
     }
 
+    @Test func commandHotkeys() {
+        let (items, diags) = UserCommands.parseFile("""
+        [[command]]
+        title = "Plain"
+        exec = "/usr/bin/true"
+
+        [[command]]
+        title = "Keyed"
+        hotkey = "option+shift+m"
+        exec = "/usr/bin/true"
+
+        [[command]]
+        title = "Hinted"
+        hotkey = "ctrl+k"
+        hint = "Mine"
+        exec = "/usr/bin/true"
+
+        [[command]]
+        title = "Bad"
+        hotkey = "nope+m"
+        exec = "/usr/bin/true"
+
+        [[command]]
+        title = "Careful"
+        hotkey = "ctrl+j"
+        confirm = true
+        exec = "/usr/bin/true"
+        """, file: "c.toml", source: "user")
+        let byTitle = Dictionary(uniqueKeysWithValues: items.map { ($0.title, $0) })
+        #expect(byTitle["Plain"]?.hotkey == nil)
+        #expect(byTitle["Keyed"]?.hotkey == KeyChord("m", [.option, .shift]))
+        #expect(byTitle["Keyed"]?.hint == "⌥⇧M")
+        #expect(byTitle["Hinted"]?.hint == "Mine")
+        #expect(byTitle["Bad"]?.hotkey == nil)
+        #expect(byTitle["Careful"]?.hotkey == nil)
+        #expect(diags.map(\.severity) == [.error, .error])
+        #expect(diags.first?.message.contains("not a key chord") == true)
+        #expect(diags.last?.message.contains("confirm") == true)
+    }
+
     @Test func userCommandsAreSearchableInCatalog() {
         let (items, _) = UserCommands.parseFile("""
         [[command]]
