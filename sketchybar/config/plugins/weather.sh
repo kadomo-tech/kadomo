@@ -3,7 +3,7 @@
 # Without wttr.in's condition: it comes as an emoji, in color.
 source "$CONFIG_DIR/colors.sh"
 
-OUT="$(curl -s --max-time 5 'wttr.in/?format=%t' 2>/dev/null | tr -d '\n' | sed 's/+//')"
+OUT="$(curl -s --max-time 5 'https://wttr.in/?format=%t' 2>/dev/null | tr -d '\n' | sed 's/+//')"
 if [ -n "$OUT" ] && [[ "$OUT" != *"Unknown"* ]] && [[ "$OUT" != *"Sorry"* ]]; then
   sketchybar --set "$NAME" drawing=on label="$OUT" label.color="$FG"
 else

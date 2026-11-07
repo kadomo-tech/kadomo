@@ -82,6 +82,7 @@ check "the bar keeps the open app's name" has "$SB/config/plugins/front_app.sh" 
 check "no glyph is written in a way the bar's bash cannot read" bash -c "! grep -rn \"\\$'\\\\U\" '$SB/config'"
 check "every display has the same layout, with nothing in the middle" bash -c "! grep -rnE 'add item [^ ]+ center|associated_display' '$SB/config'"
 check "nothing is left of the font it used before" bash -c "! grep -rn 'Hack Nerd Font' '$SB/config'"
+check "the weather comes over HTTPS" has "$SB/config/plugins/weather.sh" "'https://wttr.in/"
 
 echo "The workspaces"
 setup workspaces
