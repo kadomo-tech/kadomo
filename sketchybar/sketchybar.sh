@@ -11,7 +11,7 @@ SKETCHYBAR_FORMULA="$SKETCHYBAR_TAP/sketchybar"
 SKETCHYBAR_FORMULAE=("$SKETCHYBAR_FORMULA" media-control switchaudio-osx)
 # One line per font: <cask>|<a file it installs>|<the files the bar's font family is in>.
 SKETCHYBAR_FONTS=(
-    "font-hack-nerd-font|HackNerdFont-Regular.ttf|HackNerdFont-*.ttf"
+    "font-jetbrains-mono-nerd-font|JetBrainsMonoNerdFont-Regular.ttf|JetBrainsMonoNerdFont-*.ttf"
     "font-sketchybar-app-font|sketchybar-app-font.ttf|sketchybar-app-font.ttf"
 )
 SKETCHYBAR_CONFIG="$HOME/.config/sketchybar"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Highlight the focused OmniWM workspace.
+# The focused OmniWM workspace is a dot; the others are dim numbers.
 # Workspace id is derived from $NAME (e.g. "space.3" → "3").
 # $FOCUSED_WORKSPACE is set by the omniwm_workspace_change trigger.
 
@@ -10,11 +10,10 @@ FOCUSED="${FOCUSED_WORKSPACE:-$(omniwmctl query active-workspace 2>/dev/null | t
 
 if [ "$SID" = "$FOCUSED" ]; then
   sketchybar --set "$NAME" \
-    background.drawing=on \
-    background.color="$BLUE" \
-    icon.color="$BG"
+    icon="󰝥" \
+    icon.color="$FG"
 else
   sketchybar --set "$NAME" \
-    background.drawing=off \
-    icon.color="$FG"
+    icon="$SID" \
+    icon.color="$COMMENT"
 fi

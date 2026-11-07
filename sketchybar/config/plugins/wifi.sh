@@ -11,7 +11,7 @@ POWER=$(networksetup -getairportpower "$DEV" 2>/dev/null | awk '{print $NF}')
 
 if [ "$POWER" = "On" ]; then
   ICON="󰖩"
-  COLOR="$CYAN"
+  COLOR="$FG"
 else
   ICON="󰖪"
   COLOR="$COMMENT"
@@ -19,5 +19,4 @@ fi
 
 sketchybar --set "$NAME" \
   icon="$ICON" \
-  icon.color="$COLOR" \
-  label.drawing=off
+  icon.color="$COLOR"

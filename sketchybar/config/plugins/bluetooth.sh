@@ -6,5 +6,4 @@ source "$CONFIG_DIR/colors.sh"
 
 sketchybar --set "$NAME" \
   icon="󰂯" \
-  icon.color="$BLUE" \
-  label.drawing=off
+  icon.color="$FG"

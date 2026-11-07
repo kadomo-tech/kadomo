@@ -31,5 +31,4 @@ esac
 
 sketchybar --set "$NAME" \
   icon="$ICON" \
-  icon.color="$CYAN" \
-  label="${VOLUME}%"
+  icon.color="$FG"

@@ -78,6 +78,20 @@ check "theme-set finds the bar when a click on it started theme-set" has "$SB/..
 
 check "all nine of OmniWM's workspaces" has "$SB/config/sketchybarrc" "for sid in 1 2 3 4 5 6 7 8 9; do"
 check "the bar stays above the menu bar, which would take its clicks" has "$SB/config/sketchybarrc" "topmost=on"
+check "the bar keeps the open app's name" has "$SB/config/plugins/front_app.sh" 'label="$INFO"'
+check "no glyph is written in a way the bar's bash cannot read" bash -c "! grep -rn \"\\$'\\\\U\" '$SB/config'"
+check "nothing is left of the font it used before" bash -c "! grep -rn 'Hack Nerd Font' '$SB/config'"
+
+echo "The workspaces"
+setup workspaces
+mkdir -p "$H/.local/bin"
+printf '#!/bin/bash\necho "$*" >>"%s"\n' "$LOG" >"$H/.local/bin/sketchybar"
+chmod +x "$H/.local/bin/sketchybar"
+ws() { HOME="$H" CONFIG_DIR="$SB/config" NAME="space.$1" FOCUSED_WORKSPACE=2 "$SB/config/plugins/omniwm.sh"; }
+ws 2
+check "the focused one is a dot" has "$LOG" "--set space.2 icon=󰝥 icon.color="
+ws 3
+check "the others keep their number" has "$LOG" "--set space.3 icon=3 icon.color="
 
 echo "A dry run"
 setup dry
@@ -152,7 +166,7 @@ check "as it was" has "$LOG" "set autohide menu bar of dock preferences to false
 check "OmniWM's IPC goes back" has "$(SETTINGS)" 'ipcEnabled = false'
 check "OmniWM's gap goes back" has "$(SETTINGS)" 'top = 0.0'
 check "removes what it installed" has "$LOG" "brew uninstall --formula felixkratz/formulae/sketchybar"
-check "removes the fonts" has "$LOG" "brew uninstall --cask font-hack-nerd-font"
+check "removes the fonts" has "$LOG" "brew uninstall --cask font-jetbrains-mono-nerd-font"
 check "removes the tap" has "$LOG" "brew untap felixkratz/formulae"
 check "removes its record" gone "$(MANIFEST)"
 out="$(sb uninstall --dry-run)"
@@ -161,7 +175,7 @@ check "then nothing is left to do" grep -q 'no sketchybar installed' <<<"$out"
 echo "What was yours"
 setup yours
 mkdir -p "$(CONFIG)" "$H/Library/Fonts"; echo "# my bar" >"$(CONFIG)/sketchybarrc"
-touch "$H/Library/Fonts/HackNerdFont-Regular.ttf" "$H/Library/Fonts/sketchybar-app-font.ttf"
+touch "$H/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf" "$H/Library/Fonts/sketchybar-app-font.ttf"
 sed -i '' 's/^top = 0.0/top = 50.0/; s/^ipcEnabled = false/ipcEnabled = true/' "$(SETTINGS)"
 TAPS="FelixKratz/formulae" INSTALLED="sketchybar media-control switchaudio-osx" BAR_RUNNING=1 \
     sb install >"$W/out" 2>&1
@@ -181,14 +195,14 @@ check "your IPC stays on" has "$(SETTINGS)" 'ipcEnabled = true'
 echo "Registering fonts"
 setup fonts
 mkdir -p "$H/Library/Fonts"
-touch "$H/Library/Fonts/HackNerdFont-Bold.ttf" "$H/Library/Fonts/HackNerdFontMono-Bold.ttf" "$H/Library/Fonts/sketchybar-app-font.ttf"
+touch "$H/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf" "$H/Library/Fonts/JetBrainsMonoNerdFontMono-Regular.ttf" "$H/Library/Fonts/sketchybar-app-font.ttf"
 out="$(sb install --dry-run)"
 check "a dry run registers nothing" lacks "$LOG" "fonts.js register"
 check "a dry run says it would" grep -q 'would run: register_font .*sketchybar-app-font.ttf' <<<"$out"
 sb install >/dev/null 2>&1
-check "the font the bar asks for" has "$LOG" "fonts.js register $H/Library/Fonts/HackNerdFont-Bold.ttf"
+check "the font the bar asks for" has "$LOG" "fonts.js register $H/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf"
 check "the app icons" has "$LOG" "fonts.js register $H/Library/Fonts/sketchybar-app-font.ttf"
-check "not the Mono variant it does not use" lacks "$LOG" "HackNerdFontMono-Bold.ttf"
+check "not the Mono variant it does not use" lacks "$LOG" "JetBrainsMonoNerdFontMono-Regular.ttf"
 check "before the bar starts" bash -c "grep -n 'fonts.js register' '$LOG' | tail -1 | cut -d: -f1 | { read a; b=\$(grep -n 'services restart' '$LOG' | cut -d: -f1); [ \"\$a\" -lt \"\$b\" ]; }"
 check "records them" has "$(MANIFEST)" "font-file|$H/Library/Fonts/sketchybar-app-font.ttf"
 sb install >/dev/null 2>&1

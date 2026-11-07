@@ -1,7 +1,7 @@
 #!/bin/bash
 # Installs SketchyBar with the omarchy4mac bar, adapted for Kadomo, and starts it:
 #   sketchybar, media-control, switchaudio-osx   from Homebrew, unless already here
-#   Hack Nerd Font, sketchybar-app-font          from Homebrew, unless already here
+#   JetBrainsMono Nerd Font, sketchybar-app-font from Homebrew, unless already here
 #   ~/.config/sketchybar                         the bar's config and plugins; a
 #                                                different folder there is backed up
 #   ~/.config/kadomo/menu/commands/sketchybar.toml

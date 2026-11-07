@@ -10,5 +10,5 @@ if [ "$SENDER" = "front_app_switched" ]; then
     icon.font="sketchybar-app-font:Regular:16.0" \
     icon.color="$FG" \
     label="$INFO" \
-    label.color="$BLUE"
+    label.color="$FG"
 fi

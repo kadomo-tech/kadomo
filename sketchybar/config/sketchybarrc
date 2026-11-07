@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# SketchyBar, ported from omarchy4mac: OmniWM-aware, in the current Kadomo theme's colors.
+# SketchyBar, ported from omarchy4mac and styled after Omarchy's bar: OmniWM-aware,
+# one monospace font, and icons in the current Kadomo theme's foreground color.
 # Reload: brew services restart sketchybar  (or: sketchybar --reload)
 
 PLUGIN_DIR="$CONFIG_DIR/plugins"
@@ -12,10 +13,10 @@ sketchybar --bar \
   position=top \
   height=32 \
   blur_radius=30 \
-  color="$BG_TRANS" \
+  color="$BG" \
   border_width=0 \
-  padding_left=8 \
-  padding_right=8 \
+  padding_left=12 \
+  padding_right=12 \
   margin=0 \
   notch_width=200 \
   display=all \
@@ -23,18 +24,17 @@ sketchybar --bar \
 
 # ---------- Defaults ----------
 default=(
-  padding_left=4
-  padding_right=4
-  icon.font="Hack Nerd Font:Bold:14.0"
-  label.font="Hack Nerd Font:Bold:13.0"
+  padding_left=2
+  padding_right=2
+  icon.font="JetBrainsMono Nerd Font:Regular:15.0"
+  label.font="JetBrainsMono Nerd Font:Regular:13.0"
   icon.color="$FG"
   label.color="$FG"
-  icon.padding_left=6
-  icon.padding_right=6
+  icon.padding_left=5
+  icon.padding_right=5
   label.padding_left=4
-  label.padding_right=6
-  background.corner_radius=6
-  background.height=22
+  label.padding_right=4
+  background.drawing=off
 )
 sketchybar --default "${default[@]}"
 
@@ -45,11 +45,7 @@ sketchybar --add event omniwm_workspace_change
 sketchybar --add item logo left \
            --set logo \
                  icon="󰣇" \
-                 icon.color="$ACCENT" \
-                 icon.padding_left=8 \
-                 icon.padding_right=8 \
                  label.drawing=off \
-                 background.drawing=off \
                  click_script="$HOME/.local/bin/kadomo-menu toggle"
 
 # ---------- macOS menu bar: shows it and moves the bar down, or puts it back ----------
@@ -57,40 +53,36 @@ sketchybar --add item menu_bar left \
            --set menu_bar \
                  icon="󰍜" \
                  label.drawing=off \
-                 background.drawing=off \
                  click_script="$PLUGIN_DIR/menu_bar.sh toggle"
 
 # ---------- OmniWM workspaces ----------
 # Left out on a Mac without OmniWM (it needs macOS 26 on Apple silicon).
+# A fixed width: the focused one's dot and the others' numbers differ.
 OMNIWMCTL="$(command -v omniwmctl)"
 if [ -n "$OMNIWMCTL" ]; then
   for sid in 1 2 3 4 5 6 7 8 9; do
     sketchybar --add item space."$sid" left \
                --subscribe space."$sid" omniwm_workspace_change \
                --set space."$sid" \
+                     padding_left=0 \
+                     padding_right=0 \
                      icon="$sid" \
+                     icon.font="JetBrainsMono Nerd Font:Regular:13.0" \
+                     icon.color="$COMMENT" \
+                     icon.width=22 \
+                     icon.align=center \
+                     icon.padding_left=0 \
+                     icon.padding_right=0 \
                      label.drawing=off \
-                     background.color="$SURFACE" \
-                     background.drawing=off \
                      click_script="$OMNIWMCTL command switch-workspace $sid" \
                      script="$PLUGIN_DIR/omniwm.sh"
   done
-
-  # Separator between workspaces and front_app
-  sketchybar --add item space_sep left \
-             --set space_sep \
-                   icon="" \
-                   icon.color="$COMMENT" \
-                   icon.padding_left=8 \
-                   icon.padding_right=8 \
-                   label.drawing=off \
-                   background.drawing=off
 fi
 
 # ---------- Front app (focused window) ----------
 sketchybar --add item front_app left \
            --set front_app \
-                 label.color="$BLUE" \
+                 padding_left=12 \
                  icon.padding_right=4 \
                  script="$PLUGIN_DIR/front_app.sh" \
            --subscribe front_app front_app_switched
@@ -99,7 +91,7 @@ sketchybar --add item front_app left \
 # Whatever plays (Spotify, YouTube Music in Brave, any player), from macOS
 # Now Playing via media-control, like Omarchy 4's media widget (MPRIS).
 # Spotify's notification refreshes it at once; update_freq covers the rest.
-# Title: 23 characters (about 180 px in Hack Nerd Font 13), the width of
+# Title: 23 characters (about 180 px in JetBrainsMono 13), the width of
 # Omarchy 4's media widget (maxLabelWidth: 180). Longer titles scroll.
 sketchybar --add event spotify_change "com.spotify.client.PlaybackStateChanged"
 sketchybar --add event media_refresh
@@ -108,13 +100,11 @@ MEDIA_CONTROL="$(command -v media-control || echo /opt/homebrew/bin/media-contro
 sketchybar --add item media left \
            --set media \
                  drawing=off \
+                 padding_left=12 \
                  icon="󰐊" \
-                 icon.color="$FG" \
-                 label.color="$FG" \
                  label.max_chars=23 \
                  scroll_texts=on \
                  label.scroll_duration=200 \
-                 background.drawing=off \
                  update_freq=2 \
                  script="$PLUGIN_DIR/media.sh" \
                  click_script="$MEDIA_CONTROL toggle-play-pause; sleep 0.3; sketchybar --trigger media_refresh" \
@@ -125,9 +115,7 @@ sketchybar --add item media_next left \
            --set media_next \
                  drawing=off \
                  icon="󰒭" \
-                 icon.color="$FG" \
                  label.drawing=off \
-                 background.drawing=off \
                  click_script="$MEDIA_CONTROL next-track; sleep 0.3; sketchybar --trigger media_refresh"
 
 # Invisible, to catch clicks: the empty bar reports none. Between the music and the
@@ -137,132 +125,24 @@ sketchybar --add item empty_left left \
                  width=200 \
                  icon.drawing=off \
                  label.drawing=off \
-                 background.drawing=off \
                  click_script="$PLUGIN_DIR/bar_opacity.sh"
 
-# ---------- Center: indicators · clock · weather · updates · theme ----------
-# Indicators show only while their state is on (v4 bar). Pinned to the
-# external displays by clock.sh, like the clock: the notch eats the centre.
-for ind in indicator_awake indicator_dnd; do
-  sketchybar --add item "$ind" center \
-             --set "$ind" \
-                   drawing=off \
-                   label.drawing=off \
-                   background.drawing=off \
-                   update_freq=10 \
-                   script="$PLUGIN_DIR/indicators.sh"
-done
-sketchybar --subscribe indicator_awake system_woke display_change \
-           --subscribe indicator_dnd display_change
-
-sketchybar --add item clock center \
-           --set clock \
-                 update_freq=10 \
-                 icon="" \
-                 icon.color="$MAGENTA" \
-                 label.color="$FG" \
-                 script="$PLUGIN_DIR/clock.sh" \
-                 click_script='open "x-apple.systempreferences:com.apple.Date-Time-Settings.extension"' \
-           --subscribe clock display_change
-
-sketchybar --add item weather center \
-           --set weather \
-                 drawing=off \
-                 icon.drawing=off \
-                 label.color="$FG" \
-                 update_freq=1800 \
-                 script="$PLUGIN_DIR/weather.sh" \
-                 click_script='open https://wttr.in' \
-           --subscribe weather system_woke display_change
-
-# Update badge: outdated Homebrew packages, hidden at zero (v4 bar).
-# The click runs the upgrade, then fires brew_upgraded so the badge recounts at once.
-sketchybar --add event brew_upgraded
-sketchybar --add item updates center \
-           --set updates \
-                 drawing=off \
-                 update_freq=21600 \
-                 script="$PLUGIN_DIR/updates.sh" \
-                 click_script="open -na Ghostty --args -e $PLUGIN_DIR/tui.sh sh -c 'brew update && brew upgrade; sketchybar --trigger brew_upgraded'" \
-           --subscribe updates system_woke display_change brew_upgraded
-
-# Current theme name — label re-reads on every `sketchybar --reload`, which
-# theme-set fires after each switch. Click = shuffle (plugins/theme_random.sh).
-sketchybar --add item theme_name center \
-           --set theme_name \
-                 icon="󰏘" \
-                 icon.color="$YELLOW" \
-                 label="$("$HOME/.local/bin/theme-current" 2>/dev/null || echo "?")" \
-                 label.color="$FG" \
-                 click_script="$PLUGIN_DIR/theme_random.sh"
-
-# Stand-up / sit-down state, centre copy: shows on the external displays next to
-# the centred theme name. Added straight after theme_name so it lands beside it.
-# The right-cluster copy (standup) covers the built-in panel. One plugin drives
-# both; it pins each copy to the right display set like clock.sh does.
-sketchybar --add item standup_center center \
-           --set standup_center \
-                 drawing=off \
-                 update_freq=20 \
-                 icon.color="$FG" \
-                 label.drawing=off \
-                 background.drawing=off \
-                 script="$PLUGIN_DIR/standup.sh"
-
-# v4 bar order, left to right: bluetooth · network · audio · power.
-# Right items lay out right-to-left in add order, so battery goes first.
+# ---------- Right, left to right ----------
+# clock · weather · indicators · updates · theme · stand-up · bluetooth · network
+# · audio · power. Right items lay out right-to-left in add order, so battery
+# goes first.
 sketchybar --add item battery right \
            --set battery \
                  update_freq=120 \
-                 icon.color="$GREEN" \
-                 label.color="$FG" \
+                 label.drawing=off \
                  script="$PLUGIN_DIR/battery.sh" \
                  click_script='open "x-apple.systempreferences:com.apple.Battery-Settings.extension"' \
            --subscribe battery system_woke power_source_change
 
-# Right-side clock + theme name — the leftmost pair of the right cluster, i.e.
-# immediately in front of the battery. These are the built-in display's variant:
-# clock.sh pins them to the notched laptop panel and pins the centered pair to
-# the external displays, so both layouts are live at once on different screens.
-#
-# Right-side items are laid out right-to-left in the order they're added, so
-# theme_name_right must be added BEFORE clock_right to end up on its right —
-# preserving the same clock-then-theme reading order as the centered pair.
-sketchybar --add item theme_name_right right \
-           --set theme_name_right \
-                 drawing=off \
-                 icon="󰏘" \
-                 icon.color="$YELLOW" \
-                 label.color="$FG" \
-                 click_script="$PLUGIN_DIR/theme_random.sh"
-
-# Stand-up / sit-down state of the interval timer (~/.hermes/standup_timer.sh).
-# Added straight after theme_name_right so it draws immediately to the LEFT of the
-# theme name (right items lay out right-to-left in add order). Icon only: a chair
-# while seated, a standing person while standing. Hidden when no timer runs.
-sketchybar --add item standup right \
-           --set standup \
-                 drawing=off \
-                 update_freq=20 \
-                 icon.color="$FG" \
-                 label.drawing=off \
-                 background.drawing=off \
-                 script="$PLUGIN_DIR/standup.sh"
-
-sketchybar --add item clock_right right \
-           --set clock_right \
-                 drawing=off \
-                 icon="󰥔" \
-                 icon.color="$MAGENTA" \
-                 label.color="$FG" \
-                 click_script='open "x-apple.systempreferences:com.apple.Date-Time-Settings.extension"'
-
-
 sketchybar --add item volume right \
            --set volume \
                  update_freq=5 \
-                 icon.color="$CYAN" \
-                 label.color="$FG" \
+                 label.drawing=off \
                  script="$PLUGIN_DIR/volume.sh" \
                  click_script='open "x-apple.systempreferences:com.apple.Sound-Settings.extension"' \
            --subscribe volume volume_change
@@ -270,14 +150,72 @@ sketchybar --add item volume right \
 sketchybar --add item wifi right \
            --set wifi \
                  update_freq=30 \
+                 label.drawing=off \
                  script="$PLUGIN_DIR/wifi.sh" \
                  click_script='open "x-apple.systempreferences:com.apple.wifi-settings-extension"'
 
 sketchybar --add item bluetooth right \
            --set bluetooth \
                  update_freq=60 \
+                 label.drawing=off \
                  script="$PLUGIN_DIR/bluetooth.sh" \
                  click_script='open "x-apple.systempreferences:com.apple.BluetoothSettings"'
+
+# Stand-up / sit-down state of the interval timer (~/.hermes/standup_timer.sh).
+# Icon only: a chair while seated, a standing person while standing. Hidden when
+# no timer runs.
+sketchybar --add item standup right \
+           --set standup \
+                 drawing=off \
+                 update_freq=20 \
+                 label.drawing=off \
+                 script="$PLUGIN_DIR/standup.sh"
+
+# The current theme. Click = shuffle (plugins/theme_random.sh).
+sketchybar --add item theme_name right \
+           --set theme_name \
+                 icon="󰏘" \
+                 label.drawing=off \
+                 click_script="$PLUGIN_DIR/theme_random.sh"
+
+# Update badge: outdated Homebrew packages, hidden at zero (v4 bar).
+# The click runs the upgrade, then fires brew_upgraded so the badge recounts at once.
+sketchybar --add event brew_upgraded
+sketchybar --add item updates right \
+           --set updates \
+                 drawing=off \
+                 update_freq=21600 \
+                 script="$PLUGIN_DIR/updates.sh" \
+                 click_script="open -na Ghostty --args -e $PLUGIN_DIR/tui.sh sh -c 'brew update && brew upgrade; sketchybar --trigger brew_upgraded'" \
+           --subscribe updates system_woke brew_upgraded
+
+# Indicators show only while their state is on (v4 bar).
+for ind in indicator_dnd indicator_awake; do
+  sketchybar --add item "$ind" right \
+             --set "$ind" \
+                   drawing=off \
+                   label.drawing=off \
+                   update_freq=10 \
+                   script="$PLUGIN_DIR/indicators.sh"
+done
+sketchybar --subscribe indicator_awake system_woke
+
+sketchybar --add item weather right \
+           --set weather \
+                 drawing=off \
+                 icon.drawing=off \
+                 update_freq=1800 \
+                 script="$PLUGIN_DIR/weather.sh" \
+                 click_script='open https://wttr.in' \
+           --subscribe weather system_woke
+
+sketchybar --add item clock right \
+           --set clock \
+                 update_freq=10 \
+                 icon.drawing=off \
+                 padding_right=6 \
+                 script="$PLUGIN_DIR/clock.sh" \
+                 click_script='open "x-apple.systempreferences:com.apple.Date-Time-Settings.extension"'
 
 # Invisible, to catch clicks, like empty_left: between the notch and the right items.
 sketchybar --add item empty_right right \
@@ -285,7 +223,6 @@ sketchybar --add item empty_right right \
                  width=320 \
                  icon.drawing=off \
                  label.drawing=off \
-                 background.drawing=off \
                  click_script="$PLUGIN_DIR/bar_opacity.sh"
 
 # ---------- Force first run ----------
@@ -312,10 +249,9 @@ NAME=front_app SENDER=front_app_switched INFO="$FRONT_APP" bash "$PLUGIN_DIR/fro
 # Prime the music item on startup
 NAME=media bash "$PLUGIN_DIR/media.sh"
 
-# Prime the stand-up / sit-down icons on startup (they have no event to subscribe to)
+# Prime the stand-up / sit-down icon on startup (it has no event to subscribe to)
 NAME=standup bash "$PLUGIN_DIR/standup.sh"
-NAME=standup_center bash "$PLUGIN_DIR/standup.sh"
 
 # Run every item script once now: after a reload, an item is blank until its first
-# update_freq tick (weather 30 min, updates 6 h), which hid the clock after a theme switch.
+# update_freq tick (weather 30 min, updates 6 h).
 sketchybar --update
