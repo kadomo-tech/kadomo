@@ -80,6 +80,7 @@ check "all nine of OmniWM's workspaces" has "$SB/config/sketchybarrc" "for sid i
 check "the bar stays above the menu bar, which would take its clicks" has "$SB/config/sketchybarrc" "topmost=on"
 check "the bar keeps the open app's name" has "$SB/config/plugins/front_app.sh" 'label="$INFO"'
 check "no glyph is written in a way the bar's bash cannot read" bash -c "! grep -rn \"\\$'\\\\U\" '$SB/config'"
+check "every display has the same layout, with nothing in the middle" bash -c "! grep -rnE 'add item [^ ]+ center|associated_display' '$SB/config'"
 check "nothing is left of the font it used before" bash -c "! grep -rn 'Hack Nerd Font' '$SB/config'"
 
 echo "The workspaces"
