@@ -7,8 +7,8 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/apps/apps.sh"
 
 SKETCHYBAR_TAP="felixkratz/formulae"
 SKETCHYBAR_FORMULA="$SKETCHYBAR_TAP/sketchybar"
-# The music item and the headphones icon on the volume item.
-SKETCHYBAR_FORMULAE=("$SKETCHYBAR_FORMULA" media-control switchaudio-osx)
+# The headphones icon on the volume item.
+SKETCHYBAR_FORMULAE=("$SKETCHYBAR_FORMULA" switchaudio-osx)
 # One line per font: <cask>|<a file it installs>|<the files the bar's font family is in>.
 SKETCHYBAR_FONTS=(
     "font-jetbrains-mono-nerd-font|JetBrainsMonoNerdFont-Regular.ttf|JetBrainsMonoNerdFont-*.ttf"

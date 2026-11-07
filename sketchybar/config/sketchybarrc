@@ -87,39 +87,8 @@ sketchybar --add item front_app left \
                  script="$PLUGIN_DIR/front_app.sh" \
            --subscribe front_app front_app_switched
 
-# ---------- Music (now playing, any player) ----------
-# Whatever plays (Spotify, YouTube Music in Brave, any player), from macOS
-# Now Playing via media-control, like Omarchy 4's media widget (MPRIS).
-# Spotify's notification refreshes it at once; update_freq covers the rest.
-# Title: 23 characters (about 180 px in JetBrainsMono 13), the width of
-# Omarchy 4's media widget (maxLabelWidth: 180). Longer titles scroll.
-sketchybar --add event spotify_change "com.spotify.client.PlaybackStateChanged"
-sketchybar --add event media_refresh
-# Full path: click scripts do not get Homebrew on PATH.
-MEDIA_CONTROL="$(command -v media-control || echo /opt/homebrew/bin/media-control)"
-sketchybar --add item media left \
-           --set media \
-                 drawing=off \
-                 padding_left=12 \
-                 icon="󰐊" \
-                 label.max_chars=23 \
-                 scroll_texts=on \
-                 label.scroll_duration=200 \
-                 update_freq=2 \
-                 script="$PLUGIN_DIR/media.sh" \
-                 click_script="$MEDIA_CONTROL toggle-play-pause; sleep 0.3; sketchybar --trigger media_refresh" \
-           --subscribe media spotify_change media_refresh
-
-# Next-track button (shown/hidden together with the title by media.sh)
-sketchybar --add item media_next left \
-           --set media_next \
-                 drawing=off \
-                 icon="󰒭" \
-                 label.drawing=off \
-                 click_script="$MEDIA_CONTROL next-track; sleep 0.3; sketchybar --trigger media_refresh"
-
-# Invisible, to catch clicks: the empty bar reports none. Between the music and the
-# notch, the last item on the left. Double click: plugins/bar_opacity.sh.
+# Invisible, to catch clicks: the empty bar reports none. Between the front app and
+# the notch, the last item on the left. Double click: plugins/bar_opacity.sh.
 sketchybar --add item empty_left left \
            --set empty_left \
                  width=200 \
@@ -245,9 +214,6 @@ NAME=volume bash "$PLUGIN_DIR/volume.sh"
 # Prime front_app on startup with the currently focused app name
 FRONT_APP="$(osascript -e 'tell application "System Events" to get name of first application process whose frontmost is true' 2>/dev/null)"
 NAME=front_app SENDER=front_app_switched INFO="$FRONT_APP" bash "$PLUGIN_DIR/front_app.sh"
-
-# Prime the music item on startup
-NAME=media bash "$PLUGIN_DIR/media.sh"
 
 # Prime the stand-up / sit-down icon on startup (it has no event to subscribe to)
 NAME=standup bash "$PLUGIN_DIR/standup.sh"

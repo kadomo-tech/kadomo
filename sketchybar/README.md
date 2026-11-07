@@ -13,7 +13,7 @@ in one monospace font, with icons in the theme's foreground color.
 
 | What | Where |
 | --- | --- |
-| SketchyBar, media-control, switchaudio-osx | Homebrew, unless already installed. SketchyBar comes from the `felixkratz/formulae` tap |
+| SketchyBar, switchaudio-osx | Homebrew, unless already installed. SketchyBar comes from the `felixkratz/formulae` tap |
 | JetBrainsMono Nerd Font, sketchybar-app-font | Homebrew, unless already installed, then registered with macOS (`fonts.js`), as Font Book does. A file in `~/Library/Fonts` isn't always enough: macOS can leave it out of its list of fonts, and the bar then shows `[?]` for icons |
 | The bar's config | `config/` is copied to `~/.config/sketchybar`. A different folder there is backed up first |
 | The macOS menu bar | Set to hide, because the bar takes its place. It still drops down when the pointer reaches the top of the screen, so the bar is drawn above it (`topmost=on`) to keep its clicks. That also covers the app menus (File, Edit, and so on) |
@@ -32,7 +32,6 @@ everything back.
 | Menu bar | Highlighted while the macOS menu bar shows | Shows it, or puts it back; so does ⌥⇧M. See [The macOS menu bar](#the-macos-menu-bar) | `menu_bar.sh` |
 | Workspaces 1–9 | The focused one is a dot, the others dim numbers | Goes to that workspace | `omniwm.sh` |
 | Front app | The focused app's icon and name | | `front_app.sh`, `icon_map.sh` |
-| Music | What's playing in any player, from macOS Now Playing | Play or pause; next | `media.sh` |
 | Clock | Day and time, 24-hour | Date & Time settings | `clock.sh` |
 | Weather | The temperature from wttr.in, located by IP address | Opens wttr.in | `weather.sh` |
 | Indicators | Only while on: `caffeinate`, Do Not Disturb | | `indicators.sh` |

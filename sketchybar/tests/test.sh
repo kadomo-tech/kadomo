@@ -177,7 +177,7 @@ setup yours
 mkdir -p "$(CONFIG)" "$H/Library/Fonts"; echo "# my bar" >"$(CONFIG)/sketchybarrc"
 touch "$H/Library/Fonts/JetBrainsMonoNerdFont-Regular.ttf" "$H/Library/Fonts/sketchybar-app-font.ttf"
 sed -i '' 's/^top = 0.0/top = 50.0/; s/^ipcEnabled = false/ipcEnabled = true/' "$(SETTINGS)"
-TAPS="FelixKratz/formulae" INSTALLED="sketchybar media-control switchaudio-osx" BAR_RUNNING=1 \
+TAPS="FelixKratz/formulae" INSTALLED="sketchybar switchaudio-osx" BAR_RUNNING=1 \
     sb install >"$W/out" 2>&1
 check "your config is backed up" has "$W/out" "backed up to sketchybar.bak."
 check "installs no package you have" lacks "$LOG" "brew install --formula"
