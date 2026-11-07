@@ -81,7 +81,7 @@ nonisolated enum Socket {
         write(client, IPCCodec.encode(request))
         var tv = timeval(tv_sec: timeout, tv_usec: 0)
         setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &tv, socklen_t(MemoryLayout<timeval>.size))
-        let data = readLine(client)
+        let data = readLine(client, timeout: timeout)
         guard let response = IPCCodec.decode(IPCResponse.self, data) else {
             throw data.isEmpty ? SocketError.timedOut : SocketError.badReply
         }
@@ -93,16 +93,26 @@ nonisolated enum Socket {
 
     // MARK: Bytes
 
-    static func readLine(_ socket: Int32) -> Data {
+    // Bound both memory and total time, even when a peer keeps sending bytes.
+    static let maxMessageBytes = 4 * 1024 * 1024
+
+    static func readLine(_ socket: Int32, timeout: Int = 5) -> Data {
         var data = Data()
         var buffer = [UInt8](repeating: 0, count: 65_536)
+        let deadline = ProcessInfo.processInfo.systemUptime + Double(timeout)
         while true {
+            let remaining = deadline - ProcessInfo.processInfo.systemUptime
+            guard remaining > 0 else { return Data() }
+            var descriptor = pollfd(fd: socket, events: Int16(POLLIN), revents: 0)
+            let ready = poll(&descriptor, 1, Int32(min(remaining * 1000 + 1, Double(Int32.max))))
+            if ready < 0 && errno == EINTR { continue }
+            guard ready > 0 else { return Data() }
             let count = read(socket, &buffer, buffer.count)
-            if count <= 0 { break }
+            if count < 0 && errno == EINTR { continue }
+            guard count > 0, data.count + count <= maxMessageBytes else { return Data() }
             data.append(buffer, count: count)
-            if buffer[count - 1] == 0x0A { break }
+            if buffer[count - 1] == 0x0A { return data }
         }
-        return data
     }
 
     static func write(_ socket: Int32, _ data: Data) {

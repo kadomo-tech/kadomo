@@ -19,6 +19,7 @@ let package = Package(
             swiftSettings: [.defaultIsolation(MainActor.self)],
             linkerSettings: [.linkedFramework("Carbon")]
         ),
+        .testTarget(name: "KadomoSocketTests", dependencies: ["KadomoMenu"]),
         .testTarget(name: "KadomoMenuCoreTests", dependencies: ["KadomoMenuCore"]),
         .testTarget(name: "KadomoOmarchyTests", dependencies: ["KadomoOmarchy", "KadomoMenuCore"]),
     ]

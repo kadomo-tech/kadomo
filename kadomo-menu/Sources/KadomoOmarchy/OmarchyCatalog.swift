@@ -136,13 +136,16 @@ extension OmarchyNames {
 struct OmarchyHTTP: Sendable {
     var maxBytes = 12 * 1024 * 1024
 
-    func get(_ urlString: String, accept: String = "*/*") async throws(OmarchyInstallError) -> Data? {
+    func get(_ urlString: String, accept: String = "*/*", session suppliedSession: URLSession? = nil) async throws(OmarchyInstallError) -> Data? {
         guard let url = URL(string: urlString), url.scheme == "https" else { throw OmarchyInstallError("bad URL \(urlString)") }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 20)
         request.setValue("kadomo-menu", forHTTPHeaderField: "User-Agent")
         request.setValue(accept, forHTTPHeaderField: "Accept")
-        let data: Data, response: URLResponse
-        do { (data, response) = try await URLSession.shared.data(for: request) } catch {
+        // Cancel the transfer on every exit, including a size-limit failure.
+        let session = suppliedSession ?? URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let bytes: URLSession.AsyncBytes, response: URLResponse
+        do { (bytes, response) = try await session.bytes(for: request) } catch {
             throw OmarchyInstallError("\(url.host ?? "the server") is unreachable: \(error.localizedDescription)")
         }
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
@@ -150,7 +153,19 @@ struct OmarchyHTTP: Sendable {
         guard (200..<300).contains(status) else {
             throw OmarchyInstallError("\(url.host ?? "the server") answered \(status)\(status == 403 ? " (GitHub's rate limit? try again later)" : "")")
         }
-        guard data.count <= maxBytes else { throw OmarchyInstallError("\(url.lastPathComponent) is larger than \(maxBytes / 1_048_576) MB") }
+        let tooLarge = OmarchyInstallError("\(url.lastPathComponent) is larger than \(maxBytes / 1_048_576) MB")
+        if response.expectedContentLength > Int64(maxBytes) { throw tooLarge }
+        var data = Data()
+        do {
+            for try await byte in bytes {
+                guard data.count < maxBytes else { throw tooLarge }
+                data.append(byte)
+            }
+        } catch let error as OmarchyInstallError {
+            throw error
+        } catch {
+            throw OmarchyInstallError("download failed: \(error.localizedDescription)")
+        }
         return data
     }
 
