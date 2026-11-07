@@ -57,7 +57,7 @@ exit 0
 EOS
     chmod +x "$W/bin/sudo"
     export HOME="$W/home" ZDOTDIR="$W/home" KADOMO_STATE_DIR="$W/state" KADOMO_BREW="$PREFIX/bin/brew"
-    export KADOMO_HOMEBREW_INSTALL_URL="file://$W/scripts/install.sh" KADOMO_HOMEBREW_UNINSTALL_URL="file://$W/scripts/uninstall.sh"
+    export KADOMO_TEST_HOOKS=1 KADOMO_HOMEBREW_INSTALL_URL="file://$W/scripts/install.sh" KADOMO_HOMEBREW_UNINSTALL_URL="file://$W/scripts/uninstall.sh"
     export KADOMO_CLT_DIR="$W/clt" PATH="$W/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     RECORD="$W/state/homebrew-installed.txt"
 }
@@ -135,6 +135,11 @@ echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >"$HOME/.zprofile"
 check "gets no second block" test "$(grep -c 'brew shellenv' "$HOME/.zprofile")" -eq 1
 "$HB/uninstall.sh" >/dev/null 2>&1
 check "keeps its own line" has "$HOME/.zprofile" "brew shellenv"
+
+echo "the test overrides"
+stray() { env -u KADOMO_TEST_HOOKS KADOMO_HOMEBREW_INSTALL_URL=https://example.invalid/x KADOMO_HOMEBREW_UNINSTALL_URL=https://example.invalid/x KADOMO_CLT_DIR=/tmp/x \
+    /bin/bash -c 'source "$0/homebrew.sh"; printf "%s %s %s" "$HOMEBREW_INSTALL_URL" "$HOMEBREW_UNINSTALL_URL" "$CLT_DIR"' "$HB"; }
+check "count for nothing outside the tests" test "$(stray)" = "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh /Library/Developer/CommandLineTools"
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 ((FAIL == 0))

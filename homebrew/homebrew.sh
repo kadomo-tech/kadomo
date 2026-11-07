@@ -5,10 +5,18 @@
 # find_brew, STATE_DIR.
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/apps/apps.sh"
 
-# Homebrew's own scripts, the way https://brew.sh installs it. The KADOMO_
-# variables here replace them and the Command Line Tools folder, for tests.
-HOMEBREW_INSTALL_URL="${KADOMO_HOMEBREW_INSTALL_URL:-https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh}"
-HOMEBREW_UNINSTALL_URL="${KADOMO_HOMEBREW_UNINSTALL_URL:-https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh}"
+# Homebrew's own scripts, the way https://brew.sh installs it. These run with
+# sudo ready, and the folder below goes through sudo rm -rf, so the KADOMO_
+# variables that replace them count only in the tests (KADOMO_TEST_HOOKS=1): a
+# value left in a shell profile changes nothing.
+HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+HOMEBREW_UNINSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh"
+CLT_DIR="/Library/Developer/CommandLineTools"
+if [[ "${KADOMO_TEST_HOOKS:-}" == 1 ]]; then
+    HOMEBREW_INSTALL_URL="${KADOMO_HOMEBREW_INSTALL_URL:-$HOMEBREW_INSTALL_URL}"
+    HOMEBREW_UNINSTALL_URL="${KADOMO_HOMEBREW_UNINSTALL_URL:-$HOMEBREW_UNINSTALL_URL}"
+    CLT_DIR="${KADOMO_CLT_DIR:-$CLT_DIR}"
+fi
 
 # One <key>|<value> line per fact: prefix (where Kadomo installed Homebrew),
 # clt|added (its installer added the Xcode Command Line Tools), zprofile (the
@@ -17,7 +25,6 @@ HOMEBREW_RECORD="$STATE_DIR/homebrew-installed.txt"
 HOMEBREW_ZPROFILE="${ZDOTDIR:-$HOME}/.zprofile"
 HOMEBREW_BEGIN="# >>> kadomo homebrew (added by Kadomo's installer; ./uninstall.sh removes it)"
 HOMEBREW_END="# <<< kadomo homebrew"
-CLT_DIR="${KADOMO_CLT_DIR:-/Library/Developer/CommandLineTools}"
 
 declare -F short_path >/dev/null || short_path() { case "$1" in "$HOME"/*) printf '~%s' "${1#"$HOME"}" ;; *) printf '%s' "$1" ;; esac; }
 
