@@ -30,7 +30,7 @@ WORK=""
 # The bundled build. Update these together when a new version is built into release/.
 RELEASE_VERSION="0.1.0"
 RELEASE_ZIP="$ROOT/release/KadomoMenu-$RELEASE_VERSION-x86_64-arm64.zip"
-RELEASE_SHA256="a362a973cb03f7dfaede8b01fc010c72cd87c788bf9766f89ddd90ff8427fe89"
+RELEASE_SHA256="d82551ec29013850fec89359614ed8bf6747a9dc394fb6f61e3f1b87c4242147"
 ZIP_PATH="$RELEASE_ZIP"
 
 # The default theme's font, pinned to a Nerd Fonts release and checked against its SHA-256.
