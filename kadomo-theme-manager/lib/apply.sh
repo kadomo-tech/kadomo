@@ -62,11 +62,9 @@ stage_theme() {
     mkdir -p "$NEXT_DIR"
     if dir="$(builtin_theme_dir "$name")"; then overlay_theme "$dir" "$name"; fi
     if dir="$(user_theme_dir "$name")"; then overlay_theme "$dir" "$USER_THEMES/$name"; fi
-    if [[ ! -f "$NEXT_DIR/colors.toml" && -f "$NEXT_DIR/alacritty.toml" ]]; then
-        import_alacritty "$NEXT_DIR"
-        # An untrusted alacritty.toml could set the shell Alacritty starts.
-        if dir="$(user_theme_dir "$name")" && theme_untrusted "$dir"; then rm -f -- "$NEXT_DIR/alacritty.toml"; fi
-    fi
+    if [[ ! -f "$NEXT_DIR/colors.toml" && -f "$NEXT_DIR/alacritty.toml" ]]; then import_alacritty "$NEXT_DIR"; fi
+    # An untrusted alacritty.toml could set the shell Alacritty starts.
+    if dir="$(user_theme_dir "$name")" && theme_untrusted "$dir"; then rm -f -- "$NEXT_DIR/alacritty.toml"; fi
 }
 
 # Fills $NEXT_DIR from an external theme folder (theme-set --external): always

@@ -340,14 +340,23 @@ Install from Git), which clones over HTTPS only, with hooks, submodules, and
 symlinks off; see [Omarchy themes](../kadomo-menu/docs/OMARCHY.md). There is
 no command line installer.
 
-A folder in `~/.config/kadomo/themes` with a `.git` in it (that is not a
-symlink to your own working copy), such as one an older Kadomo's
-`theme-install` cloned, is someone else's, so only its colors and images are
+User themes in `~/.config/kadomo/themes` are restricted by default, including
+archives, Git worktrees, and symlinked folders. Only colors and images are
 used: `colors.toml`, `alacritty.toml` (its palette, then it is dropped),
-`btop.theme`, `kadomo-menu*.toml`, `preview.*`, and the images in
-`backgrounds/`. Lua, terminal configs, `vscode.json`, scripts, and every
-symlink are skipped and listed on stderr. Themes you wrote yourself are used
-in full.
+`btop.theme`, `kadomo-menu*.toml`, `preview.*`, and images in `backgrounds/`.
+Lua, terminal configs, scripts, and file symlinks are skipped.
+
+To allow executable configuration from a theme you wrote or reviewed, add
+its absolute path as one line in `~/.config/kadomo/trusted-themes`, for example:
+
+```sh
+printf '%s\n' "$HOME/.config/kadomo/themes/my-theme" >> ~/.config/kadomo/trusted-themes
+```
+
+Trust applies to future changes in that folder too. Remove its line to revoke
+trust, then apply the theme again; `theme-remove` removes the line with the
+folder. Bundled themes are trusted; external-provider
+themes remain restricted regardless of this list.
 
 ## Themes from other providers
 

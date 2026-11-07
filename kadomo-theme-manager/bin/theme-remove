@@ -18,6 +18,7 @@ if [[ ! -e "$dest" && ! -L "$dest" ]]; then
     die "theme-remove: no theme named $name"
 fi
 
+theme_forget_trust "$dest"
 if [[ -L "$dest" ]]; then rm -f -- "$dest"; else rm -rf -- "$dest"; fi
 printf 'Removed %s\n' "$(display_name "$name")"
 

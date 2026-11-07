@@ -92,11 +92,33 @@ normalize_name() {
 
 builtin_theme_dir() { [[ -d "$BUILTIN_THEMES/$1" ]] && printf '%s' "$BUILTIN_THEMES/$1"; }
 user_theme_dir() { [[ -d "$USER_THEMES/$1" ]] && printf '%s' "$USER_THEMES/$1"; }
-theme_exists() { [[ -d "$BUILTIN_THEMES/$1" || -d "$USER_THEMES/$1" ]]; }
+# Names read back from state files (native.name, settings.conf) get here without
+# normalize_name, so this refuses a name that would leave the themes folders.
+theme_exists() {
+    case "$1" in ""|.*|*/*) return 1 ;; esac
+    [[ -d "$BUILTIN_THEMES/$1" || -d "$USER_THEMES/$1" ]]
+}
 
-# A user theme cloned from git is someone else's work: a .git folder that is
-# not reached through a symlink to your own working copy.
-theme_untrusted() { [[ -d "$1/.git" && ! -L "${1%/}" ]]; }
+# Only bundled themes and folders explicitly trusted by the user may supply
+# executable configuration. Git metadata (including its absence) proves no trust.
+# trusted-themes contains one absolute theme folder path per line.
+theme_untrusted() {
+    case "$1" in */../*|*/..) return 0 ;; esac
+    case "$1" in "$BUILTIN_THEMES"/*) return 1 ;; esac
+    [[ -f "$KADOMO_CONFIG/trusted-themes" ]] && grep -Fxq -- "$1" "$KADOMO_CONFIG/trusted-themes" && return 1
+    return 0
+}
+
+# Takes a theme folder off trusted-themes, so another folder that later gets
+# its name is not trusted by accident. Written in place, so a link stays one.
+theme_forget_trust() {
+    local file="$KADOMO_CONFIG/trusted-themes" tmp
+    [[ -f "$file" ]] && grep -Fxq -- "$1" "$file" || return 0
+    tmp="$file.tmp.$$"
+    grep -Fxv -- "$1" "$file" >"$tmp" || true
+    cat "$tmp" >"$file"
+    rm -f -- "$tmp"
+}
 
 # Every theme name, built-in and user, sorted and de-duplicated.
 theme_names() {

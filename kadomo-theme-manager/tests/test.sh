@@ -80,6 +80,7 @@ echo "4. your ghostty.conf in a theme wins, and theme-refresh keeps the wallpape
 "$BIN/theme-set" catppuccin >/dev/null
 "$BIN/theme-bg-next" >/dev/null
 mkdir -p "$HOME/.config/kadomo/themes/catppuccin"
+printf '%s\n' "$HOME/.config/kadomo/themes/catppuccin" >"$HOME/.config/kadomo/trusted-themes"
 printf 'background = #123456\n' >"$HOME/.config/kadomo/themes/catppuccin/ghostty.conf"
 "$BIN/theme-refresh" >/dev/null
 check "Ghostty uses it" same "$(cat "$THEME/ghostty.conf")" "background = #123456"
@@ -95,6 +96,34 @@ check "mix fills in" has "$THEME/ghostty.conf" "mixed = #8a826d"
 "$BIN/theme-set" catppuccin >/dev/null
 check "a theme's own ghostty.conf still wins over it" same "$(cat "$THEME/ghostty.conf")" "background = #123456"
 rm "$HOME/.config/kadomo/themes/catppuccin/ghostty.conf"
+
+echo "untrusted archives, worktrees, and symlinked themes cannot supply code"
+review_theme="$HOME/.config/kadomo/themes/review"
+mkdir -p "$review_theme"
+printf '%s\n' 'background = "#123456"' >"$review_theme/colors.toml"
+printf '%s\n' '-- security-review-marker' >"$review_theme/neovim.lua"
+for kind in archive worktree symlink; do
+    if [[ "$kind" == worktree ]]; then printf '%s\n' 'gitdir: /unused' >"$review_theme/.git"; fi
+    target=review
+    if [[ "$kind" == symlink ]]; then ln -s "$review_theme" "$HOME/.config/kadomo/themes/review-link"; target=review-link; fi
+    "$BIN/theme-set" "$target" >/dev/null 2>"$WORK/err"
+    check "$kind cannot supply Lua" lacks "$THEME/neovim.lua" security-review-marker
+    check "$kind retains palette" has "$THEME/kitty.conf" '#123456'
+done
+printf '%s\n' "$review_theme" >>"$HOME/.config/kadomo/trusted-themes"
+"$BIN/theme-set" review >/dev/null 2>&1
+check "explicit trust allows custom Lua" has "$THEME/neovim.lua" security-review-marker
+sed -i '' '\|/themes/review$|d' "$HOME/.config/kadomo/trusted-themes"
+"$BIN/theme-set" review >/dev/null 2>&1
+check "revoking trust drops custom Lua" lacks "$THEME/neovim.lua" security-review-marker
+printf '[terminal.shell]\nprogram = "/tmp/kadomo-pwned"\n' >"$review_theme/alacritty.toml"
+"$BIN/theme-set" review >/dev/null 2>&1
+check "an untrusted alacritty.toml goes even beside a colors.toml" [ ! -e "$THEME/alacritty.toml" ]
+printf '%s\n' "$review_theme" >>"$HOME/.config/kadomo/trusted-themes"
+"$BIN/theme-set" review >/dev/null 2>&1
+check "  a trusted one stays" has "$THEME/alacritty.toml" /tmp/kadomo-pwned
+sed -i '' '\|/themes/review$|d' "$HOME/.config/kadomo/trusted-themes"
+rm -rf -- "$review_theme" "$HOME/.config/kadomo/themes/review-link"
 
 echo "6. a theme cloned from git gives only colors and images"
 repo="$WORK/omarchy-evil-theme"
@@ -402,6 +431,18 @@ check "  and removed again, with the folders Kadomo made" [ ! -e "$HOME/Library/
 check "  ~/Library itself stays" [ -d "$HOME/Library" ]
 export KADOMO_VSCODE_CLI=""
 check "nothing ran" [ ! -e /tmp/kadomo-pwned ]
+
+echo "the trust list"
+forget="$HOME/.config/kadomo/themes/forget-me"
+mkdir -p "$forget"
+printf '%s\n' "$forget" >>"$HOME/.config/kadomo/trusted-themes"
+before="$(grep -cvxF "$forget" "$HOME/.config/kadomo/trusted-themes")"
+"$BIN/theme-remove" forget-me >/dev/null 2>&1
+check "theme-remove takes the folder off it" lacks "$HOME/.config/kadomo/trusted-themes" "$forget"
+check "  and leaves the other lines" same "$(grep -c . "$HOME/.config/kadomo/trusted-themes")" "$before"
+check "a name with .. is not a theme" bash -c "source '$ROOT/lib/common.sh'; ! theme_exists .. && ! theme_exists ../../x"
+check "a path that climbs out of the built-in themes is not trusted" bash -c "source '$ROOT/lib/common.sh'; theme_untrusted \"\$BUILTIN_THEMES/../../x\""
+check "  a built-in theme still is" bash -c "source '$ROOT/lib/common.sh'; ! theme_untrusted \"\$BUILTIN_THEMES/gruvbox\""
 
 echo "theme-remove"
 "$BIN/theme-set" evil >/dev/null 2>&1
