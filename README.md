@@ -7,7 +7,7 @@
 A launcher, a tiling window manager, good terminals, and one theme that
 restyles all of it at once. Removing it is just as easy.
 
-![version](https://img.shields.io/badge/version-0.1.1-7aa2f7)
+![version](https://img.shields.io/badge/version-0.1.2-7aa2f7)
 ![macOS](https://img.shields.io/badge/macOS-26%2B-black?logo=apple)
 ![status](https://img.shields.io/badge/status-alpha-e0af68)
 
@@ -100,7 +100,7 @@ Options go after a `_`. Put `KADOMO_REF` in front to choose a version:
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)" _ --yes
 
 # A specific release (installs come from releases only, never a branch)
-KADOMO_REF=0.1.1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)"
+KADOMO_REF=0.1.2 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/kadomo-tech/kadomo/main/install.sh)"
 ```
 
 | Option | What it does |
@@ -209,6 +209,6 @@ The curl installer keeps its copy of Kadomo in `~/.local/share/kadomo/source`.
 ## Versioning
 
 Kadomo follows [Semantic Versioning](https://semver.org). The current
-version is in [`VERSION`](VERSION) (0.1.1), and releases are tagged `vX.Y.Z`.
+version is in [`VERSION`](VERSION) (0.1.2), and releases are tagged `vX.Y.Z`.
 While Kadomo is at **0.x**, any release can change how things behave or
 install.
