@@ -10,6 +10,8 @@
 #                                             Kadomo Menu › Services › OmniWM (start, stop,
 #                                             match theme borders, edit settings) and
 #                                             OmniWM's keys under Keybinds
+#   ~/.config/omniwm/settings.toml            Ctrl+Option+Left / Right for previous / next
+#                                             workspace, when those are free
 # Nothing of Kadomo's runs at login: OmniWM starts itself, once you turn that on
 # in its settings. What an older Kadomo installed for AeroSpace, and its OmniWM
 # login agent, are removed (remove-aerospace.sh). macOS asks once to allow
@@ -29,7 +31,7 @@ DRY_RUN=0
 case "${1:-}" in
     "") ;;
     --dry-run) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,21p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
 esac
 
@@ -80,13 +82,16 @@ remove_args=()
 if ((DRY_RUN)); then
     echo "  ▶  would start OmniWM"
     echo "    would run: ${OMNIWM_BIN/#$HOME/~} start"
+    echo "    would run: ${OMNIWM_BIN/#$HOME/~} workspace-keys"
 else
     echo "  ▶  starting OmniWM (allow it in Privacy & Security › Accessibility if macOS asks)"
     "$OMNIWM_BIN" start || echo "  !  could not start OmniWM; open it from Applications" >&2
-    # OmniWM writes settings.toml on its first start; then the border gets the theme's colors.
+    # OmniWM writes settings.toml on its first start; then the border gets the theme's
+    # colors and the workspace keys go in.
     for ((i=0; i<40; i++)); do [[ -f "$OMNIWM_SETTINGS" ]] && break; sleep 0.25; done
     if [[ -f "$OMNIWM_SETTINGS" ]]; then
         "$OMNIWM_BIN" theme || echo "  !  could not put the theme's colors on OmniWM's border" >&2
+        "$OMNIWM_BIN" workspace-keys || echo "  !  could not set OmniWM's next and previous workspace keys" >&2
     fi
     pgrep -xq OmniWM 2>/dev/null \
         || todo+=("Allow OmniWM in System Settings › Privacy & Security › Accessibility and Input Monitoring, then start it from Kadomo Menu › Services › OmniWM.")

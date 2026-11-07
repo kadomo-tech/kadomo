@@ -8,6 +8,9 @@
 #   kadomo-omniwm status           whether OmniWM runs
 #   kadomo-omniwm theme            put the Kadomo theme's border colors in OmniWM's settings.toml
 #   kadomo-omniwm restore-borders  put back the border colors settings.toml had before Kadomo
+#   kadomo-omniwm workspace-keys   once, give next / previous workspace Kadomo's keys in settings.toml
+#   kadomo-omniwm restore-workspace-keys
+#                                  take those keys off again, unless you have changed them
 #   kadomo-omniwm menu             rewrite the Kadomo Menu entries (Services › OmniWM, and
 #                                  its keys under Keybinds)
 #
@@ -27,6 +30,8 @@ MENU_FILE="$KADOMO_CONFIG/menu/commands/omniwm.toml"
 SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/settings.toml"
 STATE_DIR="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}"
 BORDERS_BEFORE="$STATE_DIR/omniwm-borders-before.toml"
+# Written once workspace-keys has run: the hotkey ids it changed, one per line.
+WORKSPACE_KEYS_SET="$STATE_DIR/omniwm-workspace-keys.txt"
 SELF="$HOME/.local/bin/kadomo-omniwm"
 export PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
 
@@ -55,6 +60,7 @@ start() {
     local path
     path="$(app)" || die "OmniWM is not installed: brew install --cask $OMNIWM_CASK"
     write_menu
+    workspace_keys
     is_running && return 0
     open "$path"
 }
@@ -162,13 +168,73 @@ restore_borders() {
     rm -f -- "$BORDERS_BEFORE"
 }
 
+# --- the keys for next and previous workspace ---------------------------------
+
+# One <hotkey id>|<binding> line per key. OmniWM leaves these two unassigned.
+WORKSPACE_KEYS='switchWorkspace.next|Control+Option+Right Arrow
+switchWorkspace.previous|Control+Option+Left Arrow'
+
+# The binding line right above a hotkey's id, as OmniWM writes them; nothing when
+# the hotkey is not there.
+hotkey_binding() { # <file> <id>
+    awk -v id="id = \"$2\"" '$0 == id { print prev; exit } { prev = $0 }' "$1"
+}
+
+# Changes one hotkey, written atomically; OmniWM sees the new file and reloads it.
+set_hotkey() { # <file> <id> <binding now> <new binding>
+    local tmp
+    tmp="$(dirname "$1")/.settings.toml.kadomo.$$"
+    awk -v id="id = \"$2\"" -v from="binding = \"$3\"" -v to="binding = \"$4\"" '
+        $0 == from { held = 1; next }
+        held { print ($0 == id ? to : from); held = 0 }
+        { print }
+        END { if (held) print from }' "$1" >"$tmp"
+    mv -f "$tmp" "$1"
+}
+
+# Once only, so a key you take off later stays off. A hotkey you have assigned
+# stays yours, and so does a key another hotkey uses. Nothing happens until
+# OmniWM has written settings.toml.
+workspace_keys() {
+    local target id key now
+    target="$(settings_target)"
+    [[ -f "$target" && ! -e "$WORKSPACE_KEYS_SET" ]] || return 0
+    mkdir -p "$STATE_DIR"
+    : >"$WORKSPACE_KEYS_SET"
+    while IFS='|' read -r id key; do
+        now="$(hotkey_binding "$target" "$id")"
+        if [[ -z "$now" ]]; then
+            echo "kadomo-omniwm: no $id hotkey in $target; left it alone" >&2
+            continue
+        fi
+        [[ "$now" == 'binding = "Unassigned"' ]] || continue
+        if grep -qxF "binding = \"$key\"" "$target"; then continue; fi
+        set_hotkey "$target" "$id" Unassigned "$key"
+        printf '%s\n' "$id" >>"$WORKSPACE_KEYS_SET"
+    done <<<"$WORKSPACE_KEYS"
+}
+
+restore_workspace_keys() {
+    local target id key
+    [[ -e "$WORKSPACE_KEYS_SET" ]] || return 0
+    target="$(settings_target)"
+    if [[ -f "$target" ]]; then
+        while IFS='|' read -r id key; do
+            grep -qxF "$id" "$WORKSPACE_KEYS_SET" || continue
+            [[ "$(hotkey_binding "$target" "$id")" == "binding = \"$key\"" ]] || continue
+            set_hotkey "$target" "$id" "$key" Unassigned
+        done <<<"$WORKSPACE_KEYS"
+    fi
+    rm -f -- "$WORKSPACE_KEYS_SET"
+}
+
 # --- Kadomo Menu ---------------------------------------------------------------
 
 toml() { local s="${1//\\/\\\\}"; printf '"%s"' "${s//\"/\\\"}"; }
 
 # Kadomo Menu › Keybinds: one key|action|note line per row, or "# Heading" to start a
-# section. OmniWM's own default hotkeys (Kadomo leaves them
-# as they are; you change them in OmniWM's Settings › Hotkeys).
+# section. OmniWM's own default hotkeys, and the two workspace keys Kadomo adds
+# (you change them in OmniWM's Settings › Hotkeys).
 KEYBINDS='# Getting around
 OPT + ARROWS|Focus left / right / up / down|
 OPT + TAB|Focus the previous window|
@@ -180,6 +246,7 @@ OPT SHIFT + ARROWS|Move the window|
 # Workspaces
 OPT + 1…9|Go to workspace|
 OPT SHIFT + 1…9|Send the window to workspace|
+CTRL OPT + LEFT / RIGHT|Previous / next workspace|
 CTRL OPT + TAB|Jump back to the last workspace|
 CTRL OPT SHIFT + UP / DOWN|Send the window a workspace up / down|
 # Sizing
@@ -250,7 +317,9 @@ case "${1:-}" in
     status) echo "omniwm: $(is_running && echo running || echo "not running")" ;;
     theme) theme ;;
     restore-borders) restore_borders ;;
+    workspace-keys) workspace_keys ;;
+    restore-workspace-keys) restore_workspace_keys ;;
     menu) write_menu ;;
-    -h|--help|"") sed -n '2,19p' "$0" | sed 's/^# \{0,1\}//' ;;
+    -h|--help|"") sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "unknown command: $1 (try --help)" ;;
 esac

@@ -13,6 +13,7 @@ border around the focused window. It needs macOS 26 or later on Apple silicon.
 | --- | --- |
 | OmniWM | `/Applications/OmniWM.app`, from Homebrew (`brew install --cask omniwm`) unless it is already on the Mac |
 | `kadomo-omniwm` | `~/.local/bin`: start, stop, status, theme, restore-borders, menu. A command that runs and exits; nothing of Kadomo's runs in the background |
+| Workspace keys | Ctrl+Option+Left / Right for previous / next workspace, in `~/.config/omniwm/settings.toml` |
 | Kadomo Menu | Services › OmniWM: Start, Stop, Match Theme Borders, Edit Settings, and OmniWM's keys in Keybinds (`~/.config/kadomo/menu/commands/omniwm.toml`) |
 
 macOS asks once to allow OmniWM under Privacy & Security › Accessibility and
@@ -30,9 +31,16 @@ uninstaller remove it.
 
 ## Keybinds
 
-Kadomo Menu › Keybinds lists OmniWM's default hotkeys, which Kadomo leaves
-as they are. If you change one in OmniWM's Settings › Hotkeys, edit
-`KEYBINDS` in `bin/kadomo-omniwm` to match.
+Kadomo Menu › Keybinds lists OmniWM's hotkeys. Kadomo leaves the defaults as
+they are and adds two that OmniWM leaves unassigned: Ctrl+Option+Left and Right
+for the previous and next workspace. OmniWM writes `settings.toml` on its first
+start, so `kadomo-omniwm workspace-keys` sets them after that. It sets each one
+once, and only if that hotkey is unassigned and no other hotkey uses the key, so
+your own choices stay. `~/Library/Application Support/kadomo/omniwm-workspace-keys.txt`
+records what it set, and uninstalling takes those off unless you have changed them.
+
+If you change a hotkey in OmniWM's Settings › Hotkeys, edit `KEYBINDS` in
+`bin/kadomo-omniwm` to match.
 
 ## AeroSpace from an older Kadomo
 

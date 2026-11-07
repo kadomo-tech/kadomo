@@ -2,7 +2,8 @@
 # Removes what install.sh put in place: kadomo-omniwm and the Kadomo Menu
 # entries, and the OmniWM login agent older installs left. (What they
 # installed for AeroSpace is remove-aerospace.sh's.) OmniWM's border goes back to
-# the colors it had before Kadomo's theme. OmniWM itself is quit and
+# the colors it had before Kadomo's theme, and the workspace keys Kadomo set come
+# off unless you have changed them. OmniWM itself is quit and
 # uninstalled only when Kadomo installed it; one you installed yourself stays,
 # and so does its settings.toml.
 #
@@ -24,14 +25,14 @@ case "${1:-}" in
     "") ;;
     --dry-run) DRY_RUN=1 ;;
     --stop) STOP_ONLY=1 ;;
-    -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
 esac
 
 run() { if ((DRY_RUN)); then echo "    would run: $*"; else "$@"; fi; }
 
 if [[ ! -s "$OMNIWM_MANIFEST" && ! -e "$OMNIWM_BIN" && ! -e "$OMNIWM_AGENT_PLIST" && ! -e "$OMNIWM_MENU_FILE" \
-      && ! -s "$OMNIWM_BORDERS_BEFORE" ]]; then
+      && ! -s "$OMNIWM_BORDERS_BEFORE" && ! -e "$OMNIWM_WORKSPACE_KEYS" ]]; then
     echo "  =  no omniwm installed"
     exit 0
 fi
@@ -67,6 +68,13 @@ if [[ -s "$OMNIWM_BORDERS_BEFORE" ]]; then
     echo "  ↩  OmniWM's border colors (from before Kadomo's theme)"
     if [[ -x "$OMNIWM_BIN" ]]; then run "$OMNIWM_BIN" restore-borders || echo "  !  could not put OmniWM's border colors back" >&2
     else run "$HERE/bin/kadomo-omniwm" restore-borders || echo "  !  could not put OmniWM's border colors back" >&2; fi
+fi
+
+# The workspace keys Kadomo set, also while kadomo-omniwm is still here.
+if [[ -e "$OMNIWM_WORKSPACE_KEYS" ]]; then
+    echo "  ↩  OmniWM's next and previous workspace keys"
+    if [[ -x "$OMNIWM_BIN" ]]; then run "$OMNIWM_BIN" restore-workspace-keys || echo "  !  could not take OmniWM's workspace keys off" >&2
+    else run "$HERE/bin/kadomo-omniwm" restore-workspace-keys || echo "  !  could not take OmniWM's workspace keys off" >&2; fi
 fi
 
 # The login agent older installs put in place.
