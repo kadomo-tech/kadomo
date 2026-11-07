@@ -7,10 +7,12 @@ source "$CONFIG_DIR/colors.sh"
 
 # SketchyBar has no double click event: each click runs this once, so the first
 # leaves the time for the second to find. Milliseconds, which macOS's date lacks.
-LAST="${TMPDIR:-/tmp}/sketchybar-last-click"
+LAST="${TMPDIR:-$HOME/Library/Caches}/sketchybar-last-click"
 WINDOW_MS=400
 now="$(perl -MTime::HiRes=time -e 'printf "%d", time * 1000')"
 last="$(cat "$LAST" 2>/dev/null || echo 0)"
+# Digits only: bash evaluates a variable's text inside $(( )), commands included.
+case "$last" in ""|*[!0-9]*) last=0 ;; esac
 if [ $((now - last)) -gt "$WINDOW_MS" ]; then
   echo "$now" >"$LAST"
   exit 0

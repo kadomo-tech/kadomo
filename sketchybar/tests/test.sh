@@ -94,6 +94,19 @@ check "the focused one is a dot" has "$LOG" "--set space.2 icon=󰝥 icon.color=
 ws 3
 check "the others keep their number" has "$LOG" "--set space.3 icon=3 icon.color="
 
+echo "The bar's opacity"
+setup opacity
+mkdir -p "$H/.local/bin"
+printf '#!/bin/bash\necho "$*" >>"%s"\n' "$LOG" >"$H/.local/bin/sketchybar"
+chmod +x "$H/.local/bin/sketchybar"
+click() { HOME="$H" TMPDIR="$W" CONFIG_DIR="$SB/config" BUTTON=left "$SB/config/plugins/bar_opacity.sh"; }
+printf 'x[$(touch %s/pwned)]\n' "$W" >"$W/sketchybar-last-click"
+click
+check "the click file's contents never run" gone "$W/pwned"
+check "  and a click replaces them with the time" grep -qE '^[0-9]+$' "$W/sketchybar-last-click"
+click
+check "a second click changes the opacity" has "$LOG" "--bar color=0x80"
+
 echo "A dry run"
 setup dry
 out="$(sb install --dry-run)"
