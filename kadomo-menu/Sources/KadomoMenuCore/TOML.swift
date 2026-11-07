@@ -71,6 +71,11 @@ private struct Parser {
     let bytes: [UInt8]
     var i = 0
     var line = 1
+    var depth = 0
+
+    // Parsing recurses on nested values and dotted keys. Themes are untrusted
+    // input, so a file must not be able to run the stack out and crash the app.
+    static let maxDepth = 64
 
     init(bytes: [UInt8]) {
         // Skip a UTF-8 byte order mark.
@@ -191,6 +196,7 @@ private struct Parser {
         repeat {
             skipBlank(newlines: false)
             parts.append(try key())
+            guard parts.count <= Self.maxDepth else { throw fail("key has more than \(Self.maxDepth) parts") }
             skipBlank(newlines: false)
             if c == UInt8(ascii: ".") { i += 1 } else { break }
         } while true
@@ -212,6 +218,9 @@ private struct Parser {
 
     mutating func value() throws(TOMLError) -> TOMLValue {
         guard !atEnd else { throw fail("expected a value") }
+        guard depth < Self.maxDepth else { throw fail("values are nested more than \(Self.maxDepth) levels deep") }
+        depth += 1
+        defer { depth -= 1 }
         switch c {
         case UInt8(ascii: "\""):
             if peek(1) == UInt8(ascii: "\""), peek(2) == UInt8(ascii: "\"") { return .string(try multilineBasic()) }

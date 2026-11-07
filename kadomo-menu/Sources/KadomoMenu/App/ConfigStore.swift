@@ -9,6 +9,7 @@ final class ConfigStore {
     private(set) var userItems: [Item] = []
     private(set) var diagnostics: [Diagnostic] = []
     private var hasValidConfig = false
+    private static let maxThemeFileBytes = 256 * 1024
 
     var errors: [Diagnostic] { diagnostics.filter { $0.severity == .error } }
     var warnings: [Diagnostic] { diagnostics.filter { $0.severity == .warning } }
@@ -64,7 +65,11 @@ final class ConfigStore {
         }
         if config.kadomo.mode != "off" {
             let path = Paths.expand(config.kadomo.themeFile)
-            if let text = try? String(contentsOfFile: path, encoding: .utf8) {
+            // This file can come from a theme someone else wrote.
+            var info = stat()
+            if stat(path, &info) == 0, info.st_size > Self.maxThemeFileBytes {
+                diags.append(Diagnostic(.warning, path, "larger than \(Self.maxThemeFileBytes / 1024) KB; ignored"))
+            } else if let text = try? String(contentsOfFile: path, encoding: .utf8) {
                 // Kadomo's file inherits from Kadomo Dark unless it says otherwise.
                 let body = text.contains("extends") ? text : "extends = \"kadomo-dark\"\n" + text
                 themes["kadomo"] = ThemeSource(id: "kadomo", text: body, file: path, builtin: false)

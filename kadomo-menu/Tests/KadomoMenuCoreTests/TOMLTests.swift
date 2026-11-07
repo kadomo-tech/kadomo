@@ -77,6 +77,27 @@ import Testing
         }
     }
 
+    @Test func nestingWithinTheLimitParses() throws {
+        let t = try TOML.parse("x = " + String(repeating: "[", count: 63) + String(repeating: "]", count: 63))
+        #expect(t["x"]?.array != nil)
+    }
+
+    // Each of these overflowed the stack before the limit, at sizes a theme may be.
+    @Test(arguments: [
+        ("x = " + String(repeating: "[", count: 65_000), "nested"),
+        ("x = " + String(repeating: "{a=", count: 30_000), "nested"),
+        (Array(repeating: "a", count: 30_000).joined(separator: ".") + " = 1", "more than 64 parts"),
+        ("[" + Array(repeating: "a", count: 30_000).joined(separator: ".") + "]", "more than 64 parts"),
+    ])
+    func refusesDeepInputInsteadOfCrashing(_ text: String, message: String) {
+        do {
+            _ = try TOML.parse(text)
+            Issue.record("expected an error")
+        } catch {
+            #expect(error.message.contains(message), "\(error.message)")
+        }
+    }
+
     @Test func unicodeAndBOM() throws {
         let t = try TOML.parse("\u{FEFF}title = \"東京 café\"")
         #expect(t["title"]?.string == "東京 café")
