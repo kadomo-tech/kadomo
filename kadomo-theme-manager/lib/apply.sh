@@ -45,7 +45,7 @@ overlay_theme() {
             fi
         done
         if ((${#ignored[@]})); then
-            warn "theme: $label is not in trusted-themes, so only its colors and images are used. Ignored:"
+            warn "theme: $label is not a trusted theme, so only its colors and images are used. Ignored:"
             printf '  %s\n' "${ignored[@]}" | printable >&2
         fi
     else
@@ -77,7 +77,7 @@ stage_external() {
     local folder="$1" label="$2"
     rm -rf -- "$NEXT_DIR"
     mkdir -p "$NEXT_DIR"
-    QUIET_IGNORE="shell.toml light.mode" overlay_theme "$folder" "$label" untrusted
+    QUIET_IGNORE="shell.toml light.mode vscode.json" overlay_theme "$folder" "$label" untrusted
     if [[ ! -f "$NEXT_DIR/colors.toml" && -f "$NEXT_DIR/alacritty.toml" ]]; then import_alacritty "$NEXT_DIR"; fi
     rm -f -- "$NEXT_DIR/alacritty.toml"
     # Omarchy marks a light theme with a light.mode file; colors.toml may not say.
