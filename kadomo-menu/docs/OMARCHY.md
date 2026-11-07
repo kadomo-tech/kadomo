@@ -176,8 +176,11 @@ Themes from Git, catalogs, and folders are untrusted data.
 - Git runs with hooks off (`core.hooksPath=/dev/null`), no submodules,
   HTTPS only (`protocol.allow=never`, `protocol.https.allow=always`), no
   symlinks in checkouts, your global and system Git config ignored, no
-  credential prompts, a shallow clone, and a two-minute limit. URLs with
-  credentials, queries, or other transports (`ext::`, `file://`, `ssh`) are refused.
+  credential prompts, a shallow clone, and limits: two minutes, 1 GB or 100,000
+  files in the clone, and 4 MB of output. URLs with credentials, queries, or
+  other transports (`ext::`, `file://`, `ssh`) are refused.
+- A download has a size limit and five minutes in all, however steadily the
+  server keeps sending.
 - Every install is staged in `staging/`, validated, and only then swapped in
   with two renames. A failed install or update leaves the installed version,
   its files, and its appearance as they were; staging is cleaned up.

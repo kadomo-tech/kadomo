@@ -132,9 +132,12 @@ extension OmarchyNames {
     }
 }
 
-/// HTTP with a short timeout and a size cap. Off the main thread by being async.
+/// HTTP with short timeouts and a size cap. Off the main thread by being async.
 struct OmarchyHTTP: Sendable {
     var maxBytes = 12 * 1024 * 1024
+    /// One whole transfer. `timeoutInterval` below only limits the gaps between
+    /// bytes, which a slow server can keep short for as long as it likes.
+    var maxSeconds: TimeInterval = 300
 
     func get(_ urlString: String, accept: String = "*/*", session suppliedSession: URLSession? = nil) async throws(OmarchyInstallError) -> Data? {
         guard let url = URL(string: urlString), url.scheme == "https" else { throw OmarchyInstallError("bad URL \(urlString)") }
@@ -142,7 +145,9 @@ struct OmarchyHTTP: Sendable {
         request.setValue("kadomo-menu", forHTTPHeaderField: "User-Agent")
         request.setValue(accept, forHTTPHeaderField: "Accept")
         // Cancel the transfer on every exit, including a size-limit failure.
-        let session = suppliedSession ?? URLSession(configuration: .ephemeral)
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForResource = maxSeconds
+        let session = suppliedSession ?? URLSession(configuration: configuration)
         defer { session.invalidateAndCancel() }
         let bytes: URLSession.AsyncBytes, response: URLResponse
         do { (bytes, response) = try await session.bytes(for: request) } catch {

@@ -72,6 +72,11 @@ public enum OmarchyNames {
 public enum OmarchyGit {
     public static let executable = "/usr/bin/git"
     public static let timeout: TimeInterval = 120
+    /// A theme keeps at most 300 MB of wallpapers, so a clone past these is not
+    /// one worth keeping, and a stranger's repository must not fill the disk.
+    static let maxCloneBytes: Int64 = 1024 * 1024 * 1024
+    static let maxCloneFiles = 100_000
+    static let maxOutputBytes = 4 * 1024 * 1024
 
     static let safety = [
         "-c", "core.hooksPath=/dev/null", "-c", "protocol.allow=never", "-c", "protocol.https.allow=always",
@@ -80,9 +85,8 @@ public enum OmarchyGit {
     ]
 
     static var environment: [String: String] {
-        // Git's own variables could point it at other config or programs. The
-        // -c settings above are applied after GIT_CONFIG_PARAMETERS, so they win.
-        var env = ProcessInfo.processInfo.environment.filter { !$0.key.hasPrefix("GIT_") || $0.key == "GIT_CONFIG_PARAMETERS" }
+        // Git's own variables could point it at other config or programs.
+        var env = ProcessInfo.processInfo.environment.filter { !$0.key.hasPrefix("GIT_") }
         env["GIT_TERMINAL_PROMPT"] = "0"
         env["GIT_ASKPASS"] = "/usr/bin/false"
         env["GIT_CONFIG_NOSYSTEM"] = "1"
@@ -97,7 +101,7 @@ public enum OmarchyGit {
         var args = safety + ["clone", "--quiet", "--depth", "1", "--no-recurse-submodules", "--no-tags", "--single-branch"]
         if let ref = location.ref { args += ["--branch", ref] }
         args += ["--", location.repository, destination]
-        _ = try run(args)
+        _ = try run(args, watching: destination)
         let sha = try run(safety + ["-C", destination, "rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
         return sha
     }
@@ -112,8 +116,13 @@ public enum OmarchyGit {
         return String(sha)
     }
 
+    /// Runs git and stops it, with a signal and then for good, when it runs too
+    /// long, prints too much, or grows `folder` past the limits. Both pipes are
+    /// read as data arrives, so a server flooding one cannot stall the other.
     @discardableResult
-    static func run(_ args: [String]) throws(OmarchyInstallError) -> String {
+    static func run(_ args: [String], executable: String = OmarchyGit.executable, timeout: TimeInterval = OmarchyGit.timeout,
+                    watching folder: String? = nil, maxBytes: Int64 = OmarchyGit.maxCloneBytes, maxFiles: Int = OmarchyGit.maxCloneFiles,
+                    maxOutput: Int = OmarchyGit.maxOutputBytes) throws(OmarchyInstallError) -> String {
         guard FileManager.default.isExecutableFile(atPath: executable) else {
             throw OmarchyInstallError("needs git (xcode-select --install)")
         }
@@ -126,17 +135,105 @@ public enum OmarchyGit {
         process.standardOutput = out
         process.standardError = err
         process.standardInput = FileHandle.nullDevice
+        let outText = PipeText(limit: maxOutput, keepsEnd: false), errText = PipeText(limit: 64 * 1024, keepsEnd: true)
+        outText.read(out)
+        errText.read(err)
         do { try process.run() } catch { throw OmarchyInstallError("could not run git: \(error.localizedDescription)") }
-        let killer = DispatchWorkItem { if process.isRunning { process.terminate() } }
-        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: killer)
-        let outData = out.fileHandleForReading.readDataToEndOfFile()
-        let errData = err.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        killer.cancel()
-        guard process.terminationStatus == 0 else {
-            let message = String(decoding: errData, as: UTF8.self).split(separator: "\n").last.map(String.init) ?? "exit \(process.terminationStatus)"
-            throw OmarchyInstallError(process.terminationReason == .uncaughtSignal ? "git timed out" : "git: \(message.prefix(200))")
+
+        let deadline = Date() + timeout
+        var nextCheck = Date()
+        var stopped: String?
+        var killAt: Date?
+        while process.isRunning {
+            let now = Date()
+            if stopped == nil {
+                if now >= deadline {
+                    stopped = "git timed out"
+                } else if outText.overflowed {
+                    stopped = "git printed more than \(maxOutput / 1_048_576) MB"
+                } else if let folder, now >= nextCheck {
+                    nextCheck = now + 1
+                    if isOver(folder, maxBytes: maxBytes, maxFiles: maxFiles) {
+                        stopped = "the repository is larger than a theme can be (\(maxBytes / 1_048_576) MB or \(maxFiles) files)"
+                    }
+                }
+                if stopped != nil {
+                    process.terminate()
+                    killAt = now + 2
+                }
+            } else if let at = killAt, now >= at {
+                kill(process.processIdentifier, SIGKILL)
+                killAt = nil
+            }
+            Thread.sleep(forTimeInterval: 0.05)
         }
-        return String(decoding: outData, as: UTF8.self)
+        process.waitUntilExit()
+        // The rest of the output; a child that outlived git may hold a pipe open, so not forever.
+        outText.waitForEnd(seconds: 2)
+        errText.waitForEnd(seconds: 2)
+        if let stopped { throw OmarchyInstallError(stopped) }
+        guard process.terminationStatus == 0 else {
+            let message = errText.string.split(separator: "\n").last.map(String.init) ?? "exit \(process.terminationStatus)"
+            throw OmarchyInstallError("git: \(message.suffix(200))")
+        }
+        return outText.string
+    }
+
+    private static func isOver(_ folder: String, maxBytes: Int64, maxFiles: Int) -> Bool {
+        guard let files = FileManager.default.enumerator(atPath: folder) else { return false }
+        var bytes: Int64 = 0, count = 0
+        while files.nextObject() != nil {
+            count += 1
+            bytes += (files.fileAttributes?[.size] as? NSNumber)?.int64Value ?? 0
+            if bytes > maxBytes || count > maxFiles { return true }
+        }
+        return false
+    }
+}
+
+/// One of git's output pipes, read as data arrives and held up to a limit:
+/// the start of it (and a flag past the limit), or only the end.
+private final class PipeText: @unchecked Sendable {
+    private let lock = NSLock()
+    private var data = Data()
+    private var over = false
+    private let limit: Int
+    private let keepsEnd: Bool
+    private let ended = DispatchSemaphore(value: 0)
+
+    init(limit: Int, keepsEnd: Bool) {
+        self.limit = limit
+        self.keepsEnd = keepsEnd
+    }
+
+    func read(_ pipe: Pipe) {
+        pipe.fileHandleForReading.readabilityHandler = { [self] handle in
+            let chunk = handle.availableData
+            if chunk.isEmpty {
+                handle.readabilityHandler = nil
+                ended.signal()
+            } else {
+                append(chunk)
+            }
+        }
+    }
+
+    private func append(_ chunk: Data) {
+        lock.lock(); defer { lock.unlock() }
+        data.append(chunk)
+        guard data.count > limit else { return }
+        if keepsEnd { data.removeFirst(data.count - limit) } else { over = true; data.removeLast(data.count - limit) }
+    }
+
+    func waitForEnd(seconds: Double) { _ = ended.wait(timeout: .now() + seconds) }
+
+    var overflowed: Bool {
+        lock.lock(); defer { lock.unlock() }
+        return over
+    }
+
+    var string: String {
+        lock.lock(); defer { lock.unlock() }
+        return String(decoding: data, as: UTF8.self)
     }
 }
