@@ -34,11 +34,11 @@ everything back.
 | Front app | The focused app's icon and name | | `front_app.sh`, `icon_map.sh` |
 | Clock | Day and time, 24-hour | Date & Time settings | `clock.sh` |
 | Weather | The temperature from wttr.in, located by IP address | Opens wttr.in | `weather.sh` |
-| Indicators | Only while on: `caffeinate`, Do Not Disturb | | `indicators.sh` |
+| Do Not Disturb | Only while on | | `indicators.sh` |
 | Updates | Outdated Homebrew packages, hidden at zero | Upgrades them in Ghostty | `updates.sh` |
-| Theme | An icon | Switches to a random theme | `theme_random.sh` |
 | Stand-up timer | Only while `~/.hermes/standup_timer.sh` runs | | `standup.sh` |
-| Bluetooth, Wi-Fi, volume, battery | Their state, as an icon. The battery's turns red below 20% | Their settings | `bluetooth.sh`, `wifi.sh`, `volume.sh`, `battery.sh` |
+| Bluetooth, Wi-Fi, volume | Their state, as an icon | Their settings | `bluetooth.sh`, `wifi.sh`, `volume.sh` |
+| Battery | An icon and the percentage, red below 20% | Its settings | `battery.sh` |
 
 Everything from the clock on sits on the right, on every display, which keeps it
 clear of the notch.

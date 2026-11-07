@@ -21,4 +21,6 @@ fi
 
 sketchybar --set "$NAME" \
   icon="$ICON" \
-  icon.color="$COLOR"
+  icon.color="$COLOR" \
+  label="$PERCENTAGE%" \
+  label.color="$COLOR"

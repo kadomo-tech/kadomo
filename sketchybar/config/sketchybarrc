@@ -97,13 +97,12 @@ sketchybar --add item empty_left left \
                  click_script="$PLUGIN_DIR/bar_opacity.sh"
 
 # ---------- Right, left to right ----------
-# clock · weather · indicators · updates · theme · stand-up · bluetooth · network
+# clock · weather · do not disturb · updates · stand-up · bluetooth · network
 # · audio · power. Right items lay out right-to-left in add order, so battery
 # goes first.
 sketchybar --add item battery right \
            --set battery \
                  update_freq=120 \
-                 label.drawing=off \
                  script="$PLUGIN_DIR/battery.sh" \
                  click_script='open "x-apple.systempreferences:com.apple.Battery-Settings.extension"' \
            --subscribe battery system_woke power_source_change
@@ -140,13 +139,6 @@ sketchybar --add item standup right \
                  label.drawing=off \
                  script="$PLUGIN_DIR/standup.sh"
 
-# The current theme. Click = shuffle (plugins/theme_random.sh).
-sketchybar --add item theme_name right \
-           --set theme_name \
-                 icon="󰏘" \
-                 label.drawing=off \
-                 click_script="$PLUGIN_DIR/theme_random.sh"
-
 # Update badge: outdated Homebrew packages, hidden at zero (v4 bar).
 # The click runs the upgrade, then fires brew_upgraded so the badge recounts at once.
 sketchybar --add event brew_upgraded
@@ -158,16 +150,13 @@ sketchybar --add item updates right \
                  click_script="open -na Ghostty --args -e $PLUGIN_DIR/tui.sh sh -c 'brew update && brew upgrade; sketchybar --trigger brew_upgraded'" \
            --subscribe updates system_woke brew_upgraded
 
-# Indicators show only while their state is on (v4 bar).
-for ind in indicator_dnd indicator_awake; do
-  sketchybar --add item "$ind" right \
-             --set "$ind" \
-                   drawing=off \
-                   label.drawing=off \
-                   update_freq=10 \
-                   script="$PLUGIN_DIR/indicators.sh"
-done
-sketchybar --subscribe indicator_awake system_woke
+# Do Not Disturb shows only while it's on (v4 bar).
+sketchybar --add item indicator_dnd right \
+           --set indicator_dnd \
+                 drawing=off \
+                 label.drawing=off \
+                 update_freq=10 \
+                 script="$PLUGIN_DIR/indicators.sh"
 
 sketchybar --add item weather right \
            --set weather \
