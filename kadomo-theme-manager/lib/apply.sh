@@ -32,7 +32,11 @@ overlay_theme() {
                 done
                 continue
             fi
-            if [[ -f "$entry" && ! -L "$entry" ]] && untrusted_allowed "$base"; then
+            if [[ "$base" == btop.theme && -f "$entry" && ! -L "$entry" ]]; then
+                # With no colors left, the template draws it instead.
+                awk -f "$LIB/btop.awk" "$entry" >"$NEXT_DIR/$base"
+                [[ -s "$NEXT_DIR/$base" ]] || rm -f -- "$NEXT_DIR/$base"
+            elif [[ -f "$entry" && ! -L "$entry" ]] && untrusted_allowed "$base"; then
                 cp -P "$entry" "$NEXT_DIR/$base"
             elif [[ " ${QUIET_IGNORE:-} " == *" $base "* ]]; then
                 :   # the provider keeps it for its own use

@@ -455,6 +455,30 @@ check "the bad value and file are still reported" bash -c "grep -q 'ignored red'
 check "  without the escape character" lacks "$WORK/err" "$esc"
 rm -rf -- "$noisy"
 
+echo "someone else's btop.theme gives only colors"
+stranger="$HOME/.config/kadomo/themes/stranger"
+mkdir -p "$stranger"
+printf 'background = "#101010"\n' >"$stranger/colors.toml"
+cat >"$stranger/btop.theme" <<'EOF'
+# a comment
+theme[main_fg]="#AABBCC"
+theme[title]   =   "#112233"   # spaces and a comment, as real themes have
+theme[hi_fg]="10 20 30"
+theme[main_bg]=""
+Title color for boxes
+theme[evil]="$(touch /tmp/kadomo-pwned)"
+theme[bad]="#12345"
+EOF
+"$BIN/theme-set" stranger >/dev/null 2>"$WORK/err"
+check "colors stay" has "$THEME/btop.theme" 'theme[main_fg]="#AABBCC"'
+check "  in every form" bash -c "grep -qxF 'theme[title]=\"#112233\"' '$THEME/btop.theme' && grep -qxF 'theme[hi_fg]=\"10 20 30\"' '$THEME/btop.theme' && grep -qxF 'theme[main_bg]=\"\"' '$THEME/btop.theme'"
+check "the rest goes" bash -c "! grep -qE 'touch|Title color|#12345' '$THEME/btop.theme'"
+check "  and is reported" has "$WORK/err" "dropped 3 lines"
+printf 'nothing useful\n' >"$stranger/btop.theme"
+"$BIN/theme-set" stranger >/dev/null 2>&1
+check "with no colors left, the template draws it" has "$THEME/btop.theme" 'theme[main_fg]='
+rm -rf -- "$stranger"
+
 echo "theme-remove"
 "$BIN/theme-set" evil >/dev/null 2>&1
 "$BIN/theme-remove" evil >/dev/null 2>&1
