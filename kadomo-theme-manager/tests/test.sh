@@ -444,6 +444,17 @@ check "a name with .. is not a theme" bash -c "source '$ROOT/lib/common.sh'; ! t
 check "a path that climbs out of the built-in themes is not trusted" bash -c "source '$ROOT/lib/common.sh'; theme_untrusted \"\$BUILTIN_THEMES/../../x\""
 check "  a built-in theme still is" bash -c "source '$ROOT/lib/common.sh'; ! theme_untrusted \"\$BUILTIN_THEMES/gruvbox\""
 
+echo "a theme's text cannot send escape sequences to your terminal"
+esc=$'\033'
+noisy="$HOME/.config/kadomo/themes/noisy"
+mkdir -p "$noisy"
+printf 'background = "#101010"\nred = "%s]0;title"\n' "$esc" >"$noisy/colors.toml"
+printf 'x\n' >"$noisy/$esc]0;title.lua"
+"$BIN/theme-set" noisy >/dev/null 2>"$WORK/err"
+check "the bad value and file are still reported" bash -c "grep -q 'ignored red' '$WORK/err' && grep -q ']0;title.lua' '$WORK/err'"
+check "  without the escape character" lacks "$WORK/err" "$esc"
+rm -rf -- "$noisy"
+
 echo "theme-remove"
 "$BIN/theme-set" evil >/dev/null 2>&1
 "$BIN/theme-remove" evil >/dev/null 2>&1

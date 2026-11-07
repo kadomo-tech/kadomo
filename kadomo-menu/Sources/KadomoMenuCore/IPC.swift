@@ -17,6 +17,18 @@ public struct IPCResponse: Codable, Sendable, Equatable {
     }
     public static func ok(_ s: String = "") -> IPCResponse { IPCResponse(status: 0, output: s) }
     public static func fail(_ s: String, status: Int32 = 1) -> IPCResponse { IPCResponse(status: status, output: s) }
+
+    /// `output` for a terminal. It can hold text from catalogs and theme files,
+    /// so control characters (escape sequences start with one) become `?`.
+    public var printableOutput: String {
+        var scalars = String.UnicodeScalarView()
+        for scalar in output.unicodeScalars {
+            let v = scalar.value
+            let control = (v < 0x20 && v != 0x09 && v != 0x0A) || (0x7F...0x9F).contains(v)
+            scalars.append(control ? "?" : scalar)
+        }
+        return String(scalars)
+    }
 }
 
 public enum IPCCodec {

@@ -11,7 +11,8 @@
 # - Gradient keys (hyprland_active_border) keep their "colors... angle" text
 #   when it is well formed.
 
-function warn(msg) { printf "theme: %s: %s\n", FILENAME, msg > "/dev/stderr" }
+# A message can quote a value from the file: no terminal escape sequences.
+function warn(msg) { gsub(/[[:cntrl:]]/, "?", msg); printf "theme: %s: %s\n", FILENAME, msg > "/dev/stderr" }
 
 function hexval(h,   i, n, c) {
     n = 0

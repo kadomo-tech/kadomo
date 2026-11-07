@@ -44,8 +44,11 @@ IMAGE_EXTENSIONS="jpg jpeg png webp heic gif tif tiff bmp"
 # looked for there too.
 PATH="$PATH:/opt/homebrew/bin:/usr/local/bin"
 
-warn() { printf '%s\n' "$*" >&2; }
-die() { printf '%s\n' "$*" >&2; exit 1; }
+# Messages can quote theme file names and values, so control characters
+# (terminal escape sequences start with one) become ?. Newlines stay.
+printable() { LC_ALL=C tr '\000-\011\013-\037\177' '?'; }
+warn() { printf '%s\n' "$*" | printable >&2; }
+die() { printf '%s\n' "$*" | printable >&2; exit 1; }
 
 # The apps that follow the theme. borders (JankyBorders, which only AeroSpace
 # used) and terminal (Terminal.app, which Kadomo leaves alone now) are no

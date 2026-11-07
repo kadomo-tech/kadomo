@@ -70,7 +70,7 @@ enum CLI {
             let response = try exchange(request, launch: launch)
             if !response.output.isEmpty {
                 let out = response.status == 0 ? FileHandle.standardOutput : FileHandle.standardError
-                out.write(Data((response.output + "\n").utf8))
+                out.write(Data((response.printableOutput + "\n").utf8))
             }
             return response.status
         } catch Socket.SocketError.timedOut {

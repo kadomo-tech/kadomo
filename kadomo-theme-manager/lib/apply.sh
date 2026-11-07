@@ -41,8 +41,8 @@ overlay_theme() {
             fi
         done
         if ((${#ignored[@]})); then
-            warn "theme: $label is someone else's (from git or another provider), so only its colors and images are used. Ignored:"
-            printf '  %s\n' "${ignored[@]}" >&2
+            warn "theme: $label is not in trusted-themes, so only its colors and images are used. Ignored:"
+            printf '  %s\n' "${ignored[@]}" | printable >&2
         fi
     else
         for entry in "$src"/* "$src"/.[!.]*; do
