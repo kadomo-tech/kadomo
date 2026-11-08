@@ -37,6 +37,23 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
         super.sendEvent(event)
     }
 
+    /// An accessory app has no Edit menu, so the standard editing shortcuts
+    /// would otherwise never reach the field editor.
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        let action: Selector? = switch (flags, event.charactersIgnoringModifiers?.lowercased()) {
+        case ([.command], "v"): #selector(NSText.paste(_:))
+        case ([.command], "c"): #selector(NSText.copy(_:))
+        case ([.command], "x"): #selector(NSText.cut(_:))
+        case ([.command], "a"): #selector(NSText.selectAll(_:))
+        case ([.command], "z"): Selector(("undo:"))
+        case ([.command, .shift], "z"): Selector(("redo:"))
+        default: nil
+        }
+        if let action, NSApp.sendAction(action, to: nil, from: self) { return true }
+        return super.performKeyEquivalent(with: event)
+    }
+
     func windowDidResignKey(_ notification: Notification) { onResignKey?() }
 
     func windowWillReturnFieldEditor(_ sender: NSWindow, to client: Any?) -> Any? {

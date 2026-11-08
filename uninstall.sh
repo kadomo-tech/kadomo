@@ -8,6 +8,10 @@
 # is back once Starship is gone:
 #   Kadomo Menu      the app, its command, the font it added, its config,
 #                    history, and preferences
+#   Neovim IDE       Kadomo's Neovim config and its AI tools; the config
+#                    that was there before comes back, and ripgrep, fd,
+#                    tree-sitter-cli, lazygit, and Claude Code go if Kadomo
+#                    installed them
 #   Configs          the configs Kadomo placed; the files they replaced are
 #                    put back, and JankyBorders goes if an older Kadomo
 #                    installed it
@@ -118,12 +122,13 @@ ASSUME_YES=0
 source "$ROOT/lib/tui.sh"
 source "$ROOT/apps/apps.sh"
 source "$ROOT/developer/dev.sh"
+source "$ROOT/neovim/neovim.sh"
 source "$ROOT/homebrew/homebrew.sh"
 
 case "${1:-}" in
     "") ;;
     --yes|-y) ASSUME_YES=1 ;;
-    -h|--help) sed -n '2,46p' "$ROOT/uninstall.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,50p' "$ROOT/uninstall.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 
@@ -155,12 +160,13 @@ if host_app="$(kadomo_terminal_host)"; then
 fi
 
 # In the order they are removed. The Kadomo Menu uninstaller removes its whole
-# config, so it goes first; the developer tools go before the theme manager,
+# config, so it goes first; the Neovim IDE goes before the theme manager,
+# which takes its lines out of an init.lua the IDE puts back; the developer tools go before the theme manager,
 # which turns the prompt off with theme-starship; the theme manager goes last,
 # because a config the dotfiles put back may still carry its theme lines.
 # Homebrew goes after them all: the others use it to remove what they installed.
-COMPONENTS=(kadomo-menu dotfiles sketchybar omniwm aerospace apps moonlight-mouse developer kadomo-theme-manager homebrew)
-LABELS=("Kadomo Menu" "Configs" "SketchyBar" "OmniWM" "AeroSpace from an older Kadomo" "Apps" "Moonlight Mouse Optimization" "Developer tools" "Theme manager" "Homebrew")
+COMPONENTS=(kadomo-menu neovim dotfiles sketchybar omniwm aerospace apps moonlight-mouse developer kadomo-theme-manager homebrew)
+LABELS=("Kadomo Menu" "Neovim IDE" "Configs" "SketchyBar" "OmniWM" "AeroSpace from an older Kadomo" "Apps" "Moonlight Mouse Optimization" "Developer tools" "Theme manager" "Homebrew")
 # The parts whose uninstaller can stop what runs (--stop) before anything is removed.
 # (AeroSpace's remover stops what runs itself, before it removes anything.)
 STOPPABLE=" kadomo-menu dotfiles sketchybar omniwm apps moonlight-mouse developer "
@@ -179,7 +185,8 @@ known_name() {
         temurin@25) printf 'Java 25' ;; node) printf 'Node.js' ;; rancher) printf 'Rancher Desktop' ;;
         visual-studio-code) printf 'VS Code' ;;
         starship|*/starship) printf 'Starship' ;; ghostty) printf 'Ghostty' ;; moonlight) printf 'Moonlight' ;;
-        firefox) printf 'Firefox' ;; neovim) printf 'Neovim' ;; *) printf '%s' "$1" ;;
+        firefox) printf 'Firefox' ;; neovim) printf 'Neovim' ;; claude-code) printf 'Claude Code' ;;
+        *) printf '%s' "$1" ;;
     esac
 }
 record_names() { # <record file>
@@ -196,6 +203,12 @@ detail_for() {
     case "$1" in
         kadomo-menu) printf 'the app, its command and font, config, history, and preferences' ;;
         dotfiles) printf 'the configs Kadomo placed; the files they replaced come back' ;;
+        neovim)
+            names="$(record_names "$NVIM_MANIFEST")"
+            if nvim_config_recorded; then names="Kadomo's config (yours comes back)${names:+; $names}"
+            else names="the AI tools${names:+; $names}"; fi
+            printf '%s' "$names"
+            ;;
         omniwm)
             if [[ -n "$(awk -F'|' '$1 == "cask"' "$STATE_DIR/omniwm-installed.txt" 2>/dev/null)" ]]; then
                 printf 'OmniWM and its menu entries; its settings stay'
@@ -375,6 +388,7 @@ review() {
         names+=("${ITEM_LABEL[i]}")
         case "${ITEM_COMPONENT[i]}" in
             dotfiles) back+=("the configs Kadomo replaced") ;;
+            neovim) grep -q '^aside|' "$NVIM_MANIFEST" 2>/dev/null && back+=("your Neovim config") ;;
             kadomo-theme-manager) back+=("btop's theme" "the wallpaper" "light/dark mode") ;;
             developer)
                 dev_recorded "enabled|starship" && back+=("your .zshrc")

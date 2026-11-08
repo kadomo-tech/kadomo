@@ -58,7 +58,8 @@ Pick any mix of these when you install. **Kadomo Core** is on by default.
 | Category | Includes |
 | --- | --- |
 | 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager, [SketchyBar](https://github.com/FelixKratz/SketchyBar) status bar, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
-| 🛠 **Developer** | Neovim with Kadomo's Vim/Neovim settings, Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
+| 🛠 **Developer** | Neovim set up as an IDE for Java, JavaScript/TypeScript, Node, and AWS ([LazyVim](https://www.lazyvim.org)), Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
+| 🤖 **AI** | GitHub Copilot in Neovim, and [Claude Code](https://code.claude.com) with its Neovim integration ([details](neovim/README.md#the-ai-tools)) |
 | 🎮 **Gaming** | Moonlight, plus a mouse profile with no acceleration that applies only inside Moonlight (LinearMouse) |
 | 🌐 **Other** | Firefox |
 
@@ -71,7 +72,7 @@ each one on or off.
 theme-set catppuccin
 ```
 
-Switches Ghostty, kitty, OmniWM's focus border, SketchyBar, Kadomo Menu, btop, Neovim,
+Switches Ghostty, kitty, OmniWM's focus border, SketchyBar, Kadomo Menu, btop, Neovim (LazyVim too),
 Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, all
 live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
 `rose-pine`, `sora`. Kadomo Menu can also install
@@ -107,7 +108,7 @@ KADOMO_REF=0.1.2 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/ka
 | --- | --- |
 | *(none)* | Menus: pick categories or single items, review, install |
 | `--yes` | Installs Kadomo Core without asking anything |
-| `--only LIST` | Installs these categories without asking: `core`, `developer`, `gaming`, `other` |
+| `--only LIST` | Installs these categories without asking: `core`, `developer`, `ai`, `gaming`, `other` |
 | `--version` | Prints the Kadomo version |
 
 To update, run the install command again. It downloads the new version and
@@ -196,6 +197,7 @@ scripts run them in order.
 | [`sketchybar/`](sketchybar/README.md) | SketchyBar, its plugins, and what it needs from Homebrew |
 | [`dotfiles/`](dotfiles) | Configs, copied to where each tool reads them |
 | [`apps/`](apps) | Ghostty, kitty, btop, htop, Neovim, Moonlight, and Firefox |
+| [`neovim/`](neovim/README.md) | Kadomo's LazyVim config and what it needs, GitHub Copilot, and Claude Code |
 | [`moonlight-mouse/`](moonlight-mouse/README.md) | The LinearMouse profile for Moonlight |
 | [`kadomo-theme-manager/`](kadomo-theme-manager) | `theme-set` and the themes |
 | [`developer/`](developer/README.md) | Node.js, Java 25, Rancher Desktop, VS Code, and the Starship prompt |

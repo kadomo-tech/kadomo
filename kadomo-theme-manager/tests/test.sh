@@ -391,9 +391,17 @@ check "  with Catppuccin's colors" cmp -s "$THEME/vscode-theme.json" "$VSEXT/kad
 check "  as a dark theme" has "$VSEXT/kadomo.kadomo-theme/package.json" '"uiTheme": "vs-dark"'
 check "  theme.conf now lists vscode" bash -c "grep '^apps' '$HOME/.config/kadomo/theme.conf' 2>/dev/null | grep -qw vscode || [ ! -e '$HOME/.config/kadomo/theme.conf' ]"
 check "  nothing from the Marketplace" same "$(vs_log)" ""
+vs_get() { osascript -l JavaScript "$ROOT/lib/vscode.js" get "$VSUSER/settings.json" "$1" 2>/dev/null; }
+check "  the editor in JetBrainsMono Nerd Font" same "$(vs_get editor.fontFamily)" "'JetBrainsMono Nerd Font', Menlo, monospace"
+check "  the terminal in its Mono variant" same "$(vs_get terminal.integrated.fontFamily)" "'JetBrainsMono Nerd Font Mono', Menlo, monospace"
 KADOMO_THEME_APPS=vscode "$BIN/theme-set" catppuccin-latte >/dev/null
 check "a switch updates the colors" cmp -s "$THEME/vscode-theme.json" "$VSEXT/kadomo.kadomo-theme/themes/kadomo-color-theme.json"
 check "  light now" has "$VSEXT/kadomo.kadomo-theme/package.json" '"uiTheme": "vs"'
+# A font you pick after Kadomo set one stays yours.
+osascript -l JavaScript "$ROOT/lib/vscode.js" set "$VSUSER/settings.json" "Fira Code" terminal.integrated.fontFamily >"$WORK/vs-tmp" && cat "$WORK/vs-tmp" >"$VSUSER/settings.json"
+"$BIN/theme-vscode" apply >/dev/null 2>&1
+check "a terminal font you picked since stays" same "$(vs_get terminal.integrated.fontFamily)" "Fira Code"
+check "  the editor's stays Kadomo's" same "$(vs_get editor.fontFamily)" "'JetBrainsMono Nerd Font', Menlo, monospace"
 
 # An Omarchy theme whose vscode.json names a Marketplace theme: ignored.
 om="$WORK/app support/omarchy/themes/tokyo-vs"
@@ -416,6 +424,9 @@ printf 'extension|enkia.tokyo-night\n' >>"$HOME/.local/state/kadomo/vscode.txt"
 
 "$BIN/theme-vscode" disable >"$WORK/out" 2>&1
 check "disable: your color theme from before comes back" bash -c "grep -q 'Default Dark Modern' '$WORK/out'"
+check "  the fonts Kadomo set go" bash -c "! grep -q 'editor.fontFamily' '$WORK/dotfiles/settings.json'"
+check "  the one you picked stays" same "$(vs_get terminal.integrated.fontFamily)" "Fira Code"
+osascript -l JavaScript "$ROOT/lib/vscode.js" unset "$WORK/dotfiles/settings.json" terminal.integrated.fontFamily >"$WORK/vs-tmp" && cat "$WORK/vs-tmp" >"$WORK/dotfiles/settings.json"
 check "  settings.json exactly as it was" cmp -s "$WORK/vs-settings-before" "$WORK/dotfiles/settings.json"
 check "  still a symlink" [ -L "$VSUSER/settings.json" ]
 check "  the Kadomo extension is gone" [ ! -e "$VSEXT/kadomo.kadomo-theme" ]

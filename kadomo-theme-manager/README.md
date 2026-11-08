@@ -162,7 +162,7 @@ app is not installed or not running.
 | Neovim | the `kadomo` colorscheme: `~/.config/nvim/colors/kadomo.lua` links to the theme's `neovim-colors.lua`, and a block in `init.lua` (or `init.vim`) selects it | every running Neovim showing it loads it again |
 | Neovim with LazyVim | `~/.config/nvim/lua/plugins/theme.lua` links to the theme's `neovim.lua`: `kadomo`, or a colorscheme plugin the theme names | the next time it starts |
 | Vim | the `kadomo` colorscheme: `~/.vim/colors/kadomo.vim` links to the theme's `vim-colors.vim`, and a block in `~/.vimrc` selects it (a new vimrc also keeps Vim's defaults) | the next time it starts: the Vim that comes with macOS cannot be reached while it runs |
-| VS Code | the **Kadomo** color theme, a local extension in `~/.vscode/extensions/kadomo.kadomo-theme` rendered from the theme; selected in `workbench.colorTheme` | the extension's colors are rewritten and VS Code reloads them in open windows ([below](#vs-code)) |
+| VS Code | the **Kadomo** color theme, a local extension in `~/.vscode/extensions/kadomo.kadomo-theme` rendered from the theme; selected in `workbench.colorTheme`, with JetBrainsMono Nerd Font in the editor and terminal | the extension's colors are rewritten and VS Code reloads them in open windows ([below](#vs-code)) |
 | macOS appearance | the theme's `mode` | System Events sets dark or light |
 | Wallpaper | `current/background` | set on every display through NSWorkspace |
 | htop | draws with the terminal's 16 colors | follows the terminal |
@@ -321,14 +321,20 @@ VS Code, so Kadomo never installs one for a theme. Omarchy's themes ship a
 Night); it is ignored, and VS Code shows the Kadomo theme drawn from the
 theme's colors, like every other app.
 
-**What changes.** Only `workbench.colorTheme` in
+**Fonts.** A color theme can't carry a font, so Kadomo sets them in
+`settings.json`, the same for every theme: `editor.fontFamily` is
+JetBrainsMono Nerd Font (the debug console and chat follow the editor) and
+`terminal.integrated.fontFamily` its fixed-pitch Mono variant, as in kitty,
+each falling back to Menlo. A font you pick after Kadomo set one stays yours.
+
+**What changes.** Only `workbench.colorTheme` and those two fonts in
 `~/Library/Application Support/Code/User/settings.json`. That file may have
-comments and trailing commas, so the one line is edited as text and everything
+comments and trailing commas, so those lines are edited as text and everything
 else stays as written; a `settings.json` that is a symlink stays one. VS Code
 Insiders, VSCodium, and Cursor are not touched.
 
-**Disable and uninstall** put back the color theme you had before Kadomo, unless
-you picked another since. They also remove the Kadomo extension, any
+**Disable and uninstall** put back the color theme and fonts you had before
+Kadomo, unless you picked others since. They also remove the Kadomo extension, any
 Marketplace theme an older Kadomo installed for a theme (VS Code uninstalls it,
 or Kadomo takes it out of its registry when VS Code is gone already), and a
 `settings.json` or folders Kadomo made that hold nothing else.

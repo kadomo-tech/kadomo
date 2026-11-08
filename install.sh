@@ -5,19 +5,23 @@
 #                 font, the OmniWM window manager, Ghostty, kitty, btop, htop,
 #                 the Starship prompt, and the theme manager with its themes
 #                                                             (on by default)
-#   Developer     Neovim and Kadomo's Vim and Neovim settings, Node.js,
-#                 Java 25, Rancher Desktop, and VS Code in the theme's colors
+#   Developer     Neovim, Kadomo's Vim and Neovim settings, and Neovim set
+#                 up as an IDE for Java, JavaScript/TypeScript, Node, and AWS
+#                 (LazyVim); Node.js, Java 25, Rancher Desktop, and VS Code in
+#                 the theme's colors
+#   AI            GitHub Copilot in Neovim, and Claude Code with its Neovim
+#                 integration
 #   Gaming        Moonlight, and a Windows-style mouse in it (LinearMouse)
 #   Other         Firefox
 # Each component's own installer does the work: homebrew/, kadomo-menu/, omniwm/,
-# sketchybar/, dotfiles/, apps/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
+# sketchybar/, dotfiles/, apps/, neovim/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
 # older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now) is removed
 # first. Remove everything again with ./uninstall.sh.
 #
 # Usage: ./install.sh [--yes | --only LIST | --version]
 #   --yes         ask nothing, and install Kadomo Core
 #   --only LIST   ask nothing, and install these categories, comma-separated:
-#                 core, developer, gaming, other
+#                 core, developer, ai, gaming, other
 #   --version     print the Kadomo version (from VERSION) and exit
 #
 # Without a checkout, like Homebrew's installer (KADOMO_REF picks a released
@@ -88,17 +92,19 @@ ONLY_CATS=""
 source "$ROOT/lib/tui.sh"
 source "$ROOT/apps/apps.sh"
 source "$ROOT/developer/dev.sh"
+source "$ROOT/neovim/neovim.sh"
 source "$ROOT/homebrew/homebrew.sh"
 OMNIWM_SOURCE_BIN="$ROOT/omniwm/bin"
 source "$ROOT/omniwm/omniwm.sh"
 SKETCHYBAR_SOURCE="$ROOT/sketchybar/config"
 source "$ROOT/sketchybar/sketchybar.sh"
 
-CATS=("Kadomo Core" Developer Gaming Other)
-CAT_KEYS=(core developer gaming other)
+CATS=("Kadomo Core" Developer AI Gaming Other)
+CAT_KEYS=(core developer ai gaming other)
 CAT_BLURB=(
     "Homebrew, Kadomo Menu, OmniWM, SketchyBar, Ghostty, kitty, themes, Starship"
-    "Neovim, Node.js, Java 25, Rancher Desktop, VS Code"
+    "Neovim IDE, Node.js, Java 25, Rancher Desktop, VS Code"
+    "GitHub Copilot and Claude Code, in Neovim"
     "Moonlight, with a Windows-style mouse in it"
     "Firefox"
 )
@@ -107,14 +113,14 @@ case "${1:-}" in
     "") ;;
     --yes|-y) ASSUME_YES=1 ;;
     --only)
-        [[ -n "${2:-}" ]] || die "--only needs a list: core, developer, gaming, other"
+        [[ -n "${2:-}" ]] || die "--only needs a list: core, developer, ai, gaming, other"
         ONLY_CATS="$2"; ASSUME_YES=1
         for key in ${ONLY_CATS//,/ }; do
             [[ " ${CAT_KEYS[*]} " == *" $key "* ]] || die "unknown category for --only: $key (known: ${CAT_KEYS[*]})"
         done
         ;;
     --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
-    -h|--help) sed -n '2,29p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,33p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 
@@ -144,10 +150,13 @@ ITEMS=(
     "Kadomo Core|kadomo-theme-manager|desktop|Wallpaper and light/dark|each theme sets the desktop picture and light or dark mode"
     "Developer|apps|neovim|Neovim|the nvim editor, from Homebrew"
     "Developer|dotfiles|editors|Vim and Neovim settings|line numbers on; your vimrc and init.lua are left alone"
+    "Developer|neovim|ide|Neovim IDE (LazyVim)|Java, JS/TS, Node, AWS; ripgrep, fd, tree-sitter, lazygit; a config there is set aside"
     "Developer|developer|node|Node.js|JavaScript runtime with npm, from Homebrew"
     "Developer|developer|java|Java 25 (Temurin JDK)|from Homebrew, into /Library/Java; asks for your password"
     "Developer|developer|rancher|Rancher Desktop|containers and Kubernetes: docker, nerdctl, kubectl"
     "Developer|developer|vscode|Visual Studio Code|editor from Homebrew; its colors follow the theme, Omarchy's too"
+    "AI|neovim|copilot|GitHub Copilot in Neovim|suggestions as you type; sign in with :Copilot auth (a Copilot plan, Free works)"
+    "AI|neovim|claude|Claude Code|the claude command, and Claude beside your code in Neovim (a Claude plan)"
     "Gaming|apps|moonlight|Moonlight|game streaming client, from Homebrew"
     "Gaming|moonlight-mouse|linearmouse|Moonlight Mouse Optimization|in Moonlight only: no acceleration, Windows-style scrolling (LinearMouse)"
     "Other|apps|firefox|Firefox|web browser, from Homebrew"
@@ -188,6 +197,7 @@ for ((i=0; i<N; i++)); do
         apps:*) app_present "$(app_entry "${ITEM_KEY[i]}")" && present=1 ;;
         developer:starship) dev_present starship && ITEM_DETAIL[i]="already installed; turns it on for zsh, in the theme's colors" ;;
         developer:*) dev_present "${ITEM_KEY[i]}" && present=1 ;;
+        neovim:*) nvim_present "${ITEM_KEY[i]}" && present=1 ;;
     esac
     if ((present)); then
         ITEM_PRESENT[i]=1
@@ -206,6 +216,7 @@ needs_brew() {
         omniwm:*) ! omniwm_app >/dev/null ;;
         sketchybar:*) return 0 ;;
         moonlight-mouse:*) ! app_path LinearMouse.app >/dev/null ;;
+        neovim:*) nvim_needs_brew "${ITEM_KEY[$1]}" ;;
         *) return 1 ;;
     esac
 }
@@ -438,6 +449,9 @@ review() {
     ((${#asks[@]} == 0)) || fields+=("Asks you${TAB}your Mac password, for $(wrap_list "$width" "${asks[@]}" | sed 's/, \([^,]*\)$/ and \1/')")
     ! item_on homebrew homebrew || fields+=("Homebrew${TAB}installs first; it adds the Xcode Command Line Tools"$'\n'"if they are missing, which can take a few minutes")
     ! component_on dotfiles || fields+=("Backups${TAB}a config that differs is backed up next to itself;"$'\n'"$KADOMO_UNINSTALL_CMD puts it back")
+    if item_on neovim ide && nvim_other_config; then
+        fields+=("Neovim${TAB}your config in ~/.config/nvim is set aside, not deleted;"$'\n'"$KADOMO_UNINSTALL_CMD puts it back")
+    fi
     ((off == 0)) || fields+=("Not selected${TAB}$off $( ((off == 1)) && echo item || echo items)")
     while :; do
         clear_screen; logo
@@ -465,7 +479,7 @@ run_component() { # <label> <step or step_open> <component> [args...]
 }
 
 install_selected() {
-    local keys dev_args=()
+    local keys later dev_args=()
     # First: everything after it installs with Homebrew. It asks for your password, so it runs in the open.
     if component_on homebrew; then
         if [[ -t 0 ]]; then run_component "Homebrew" step_open homebrew; else run_component "Homebrew" step homebrew; fi
@@ -483,6 +497,15 @@ install_selected() {
     [[ -z "$keys" ]] || run_component "Configs" step dotfiles --only "$keys"
     keys="$(keys_for apps)"
     [[ -z "$keys" ]] || run_component "Apps: $(labels_for apps)" step apps --only "$keys"
+    # After Neovim itself, which downloads the plugins. Node.js and Java come
+    # later (developer/), so it does not remind you about them when they are picked.
+    keys="$(keys_for neovim)"
+    if [[ -n "$keys" ]]; then
+        later=""
+        ! item_on developer node || later="node"
+        ! item_on developer java || later="${later:+$later,}java"
+        run_component "$(labels_for neovim)" step neovim --only "$keys" ${later:+--later "$later"}
+    fi
     ! component_on moonlight-mouse || run_component "Moonlight Mouse Optimization" step moonlight-mouse
     ! component_on omniwm || run_component "OmniWM" step omniwm
     # After OmniWM, whose settings it changes; the theme manager then gives it its colors.

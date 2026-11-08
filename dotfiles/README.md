@@ -53,3 +53,7 @@ so in Ghostty or kitty it follows the current theme.
 They go in each editor's `plugin` folder, which it loads at startup after your
 own `~/.vimrc` or `init.lua` (LazyVim too), so your config files are left as
 they are. They take effect the next time the editor starts.
+
+For Neovim set up as a full IDE (LazyVim, for Java, JavaScript and
+TypeScript, Node, and AWS), see [`neovim/`](../neovim/README.md). These
+settings load along with it.
