@@ -4,7 +4,7 @@
 #   {{ key }}            #7aa2f7
 #   {{ key_strip }}      7aa2f7
 #   {{ key_rgb }}        122,162,247
-#   {{ key_argb }}       0xff7aa2f7 (SketchyBar and the like)
+#   {{ key_argb }}       0xff7aa2f7 (menu bars and the like)
 #   {{ mix a b 30% }}    a blended 30% toward b; also mix_strip, mix_rgb,
 #                        mix_argb. a and b are keys or literal colors, the
 #                        amount 0.3 or 30%.

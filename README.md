@@ -57,7 +57,7 @@ Pick any mix of these when you install. **Kadomo Core** is on by default.
 
 | Category | Includes |
 | --- | --- |
-| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager, [SketchyBar](https://github.com/FelixKratz/SketchyBar) status bar, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
+| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager with its own menu bar, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
 | 🛠 **Developer** | Neovim set up as an IDE for Java, JavaScript/TypeScript, Node, and AWS ([LazyVim](https://www.lazyvim.org)), Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
 | 🤖 **AI** | GitHub Copilot in Neovim, and [Claude Code](https://code.claude.com) with its Neovim integration ([details](neovim/README.md#the-ai-tools)) |
 | 🎮 **Gaming** | Moonlight, plus a mouse profile with no acceleration that applies only inside Moonlight (LinearMouse) |
@@ -72,7 +72,7 @@ each one on or off.
 theme-set catppuccin
 ```
 
-Switches Ghostty, kitty, OmniWM's focus border, SketchyBar, Kadomo Menu, btop, Neovim (LazyVim too),
+Switches Ghostty, kitty, OmniWM's focus border, Kadomo Menu, btop, Neovim (LazyVim too),
 Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, all
 live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
 `rose-pine`, `sora`. Kadomo Menu can also install
@@ -83,8 +83,9 @@ live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
 
 ## Requirements
 
-- **macOS**. OmniWM needs **macOS 26 or later on Apple silicon**. On any other
-  Mac, Kadomo installs everything except the window manager.
+- **macOS**. OmniWM needs **macOS 26 or later on Apple silicon**, and version
+  **0.8 or later** for its own menu bar; Kadomo upgrades a copy it installed.
+  On any other Mac, Kadomo installs everything except the window manager.
 - **An administrator account**, if Homebrew isn't installed yet. Homebrew's
   installer asks for your password once, and may add the Xcode Command Line
   Tools, which can take a few minutes.
@@ -155,6 +156,11 @@ Uninstalling leaves the clone itself in place.
 - **Upgrading from an older Kadomo** removes the AeroSpace setup it installed
   (Kadomo's build, its commands and login agents, its config, and
   JankyBorders). An AeroSpace you installed yourself stays.
+- **SketchyBar is gone.** OmniWM 0.8 draws its own menu bar, so Kadomo no
+  longer installs SketchyBar. What an older Kadomo installed for it is
+  removed (its config, menu entries, and packages, if Kadomo installed
+  them), and the macOS menu bar and OmniWM's settings go back to how they
+  were.
 
 </details>
 
@@ -193,8 +199,7 @@ scripts run them in order.
 | --- | --- |
 | [`homebrew/`](homebrew) | Installs Homebrew if it's missing, and adds the PATH block to `~/.zprofile` |
 | [`kadomo-menu/`](kadomo-menu) | The launcher app, the `kadomo-menu` command, and its font |
-| [`omniwm/`](omniwm/README.md) | OmniWM, plus `kadomo-omniwm` for themed borders and the menu's keybinds |
-| [`sketchybar/`](sketchybar/README.md) | SketchyBar, its plugins, and what it needs from Homebrew |
+| [`omniwm/`](omniwm/README.md) | OmniWM, plus `kadomo-omniwm` for themed borders and the menu's keybinds, and what it removes from an older Kadomo (AeroSpace, SketchyBar) |
 | [`dotfiles/`](dotfiles) | Configs, copied to where each tool reads them |
 | [`apps/`](apps) | Ghostty, kitty, btop, htop, Neovim, Moonlight, and Firefox |
 | [`neovim/`](neovim/README.md) | Kadomo's LazyVim config and what it needs, GitHub Copilot, and Claude Code |

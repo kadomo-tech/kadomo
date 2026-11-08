@@ -36,7 +36,7 @@ PREVIEWS="$CACHE/theme-selector/previews"
 
 # Every app the installer can wire. theme.conf's apps line picks the ones that
 # follow the theme; KADOMO_THEME_APPS overrides it (tests set it to none).
-ALL_APPS="ghostty kitty btop omniwm sketchybar kadomo-menu neovim vim vscode starship appearance wallpaper"
+ALL_APPS="ghostty kitty btop omniwm kadomo-menu neovim vim vscode starship appearance wallpaper"
 
 IMAGE_EXTENSIONS="jpg jpeg png webp heic gif tif tiff bmp"
 
@@ -51,8 +51,9 @@ warn() { printf '%s\n' "$*" | printable >&2; }
 die() { printf '%s\n' "$*" | printable >&2; exit 1; }
 
 # The apps that follow the theme. borders (JankyBorders, which only AeroSpace
-# used) and terminal (Terminal.app, which Kadomo leaves alone now) are no
-# longer ones; an older theme.conf that lists them is read without them.
+# used), terminal (Terminal.app, which Kadomo leaves alone now), and sketchybar
+# (OmniWM's own menu bar replaces it) are no longer ones; an older theme.conf
+# that lists them is read without them.
 enabled_apps() {
     local apps
     if [[ -n "${KADOMO_THEME_APPS+set}" ]]; then
@@ -65,6 +66,7 @@ enabled_apps() {
     apps=" $apps "
     apps="${apps// borders / }"
     apps="${apps// terminal / }"
+    apps="${apps// sketchybar / }"
     apps="${apps# }"
     printf '%s' "${apps% }"
 }

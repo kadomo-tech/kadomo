@@ -14,9 +14,10 @@
 #   Gaming        Moonlight, and a Windows-style mouse in it (LinearMouse)
 #   Other         Firefox
 # Each component's own installer does the work: homebrew/, kadomo-menu/, omniwm/,
-# sketchybar/, dotfiles/, apps/, neovim/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
-# older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now) is removed
-# first. Remove everything again with ./uninstall.sh.
+# dotfiles/, apps/, neovim/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
+# older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now) and for
+# SketchyBar (OmniWM's own menu bar replaces it) is removed first. Remove
+# everything again with ./uninstall.sh.
 #
 # Usage: ./install.sh [--yes | --only LIST | --version]
 #   --yes         ask nothing, and install Kadomo Core
@@ -96,13 +97,11 @@ source "$ROOT/neovim/neovim.sh"
 source "$ROOT/homebrew/homebrew.sh"
 OMNIWM_SOURCE_BIN="$ROOT/omniwm/bin"
 source "$ROOT/omniwm/omniwm.sh"
-SKETCHYBAR_SOURCE="$ROOT/sketchybar/config"
-source "$ROOT/sketchybar/sketchybar.sh"
 
 CATS=("Kadomo Core" Developer AI Gaming Other)
 CAT_KEYS=(core developer ai gaming other)
 CAT_BLURB=(
-    "Homebrew, Kadomo Menu, OmniWM, SketchyBar, Ghostty, kitty, themes, Starship"
+    "Homebrew, Kadomo Menu, OmniWM, Ghostty, kitty, themes, Starship"
     "Neovim IDE, Node.js, Java 25, Rancher Desktop, VS Code"
     "GitHub Copilot and Claude Code, in Neovim"
     "Moonlight, with a Windows-style mouse in it"
@@ -120,7 +119,7 @@ case "${1:-}" in
         done
         ;;
     --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
-    -h|--help) sed -n '2,33p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,34p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 
@@ -136,8 +135,7 @@ ITEMS=(
     "Kadomo Core|kadomo-menu|app|Kadomo Menu|the launcher, in ~/Applications, and the kadomo-menu command"
     "Kadomo Core|kadomo-menu|font|JetBrainsMono Nerd Font|for the launcher and kitty; 7 MB from GitHub"
     "Kadomo Core|kadomo-menu|start|Start Kadomo Menu|opens it now; it starts at login by default"
-    "Kadomo Core|omniwm|omniwm|OmniWM|window manager: scrolling and tiling, its border in the theme's colors"
-    "Kadomo Core|sketchybar|sketchybar|SketchyBar|status bar in the theme's colors, with workspaces; replaces the macOS menu bar"
+    "Kadomo Core|omniwm|omniwm|OmniWM|window manager: scrolling and tiling, its border in the theme's colors, its own menu bar"
     "Kadomo Core|apps|ghostty|Ghostty|terminal app, from Homebrew"
     "Kadomo Core|dotfiles|ghostty|Ghostty config|~/.config/ghostty; a different file there is backed up"
     "Kadomo Core|apps|kitty|kitty|terminal app, from Homebrew"
@@ -191,9 +189,11 @@ for ((i=0; i<N; i++)); do
         omniwm:omniwm)
             if ! omniwm_supported; then present=1; ITEM_DETAIL[i]="not on this Mac: OmniWM $(omniwm_requirement)"
             elif omniwm_up_to_date; then present=1
-            elif omniwm_app >/dev/null; then ITEM_DETAIL[i]="OmniWM is already installed; makes it Kadomo's window manager"; fi
+            elif omniwm_app >/dev/null; then
+                if omniwm_version_ok; then ITEM_DETAIL[i]="OmniWM is already installed; makes it Kadomo's window manager"
+                else ITEM_DETAIL[i]="OmniWM is older than $OMNIWM_MIN_VERSION; upgrades it if Kadomo installed it"; fi
+            fi
             ;;
-        sketchybar:*) sketchybar_up_to_date && present=1 ;;
         apps:*) app_present "$(app_entry "${ITEM_KEY[i]}")" && present=1 ;;
         developer:starship) dev_present starship && ITEM_DETAIL[i]="already installed; turns it on for zsh, in the theme's colors" ;;
         developer:*) dev_present "${ITEM_KEY[i]}" && present=1 ;;
@@ -214,7 +214,6 @@ needs_brew() {
         apps:*|developer:node|developer:java|developer:rancher|developer:vscode) return 0 ;;
         developer:starship) ! dev_present starship ;;
         omniwm:*) ! omniwm_app >/dev/null ;;
-        sketchybar:*) return 0 ;;
         moonlight-mouse:*) ! app_path LinearMouse.app >/dev/null ;;
         neovim:*) nvim_needs_brew "${ITEM_KEY[$1]}" ;;
         *) return 1 ;;
@@ -443,6 +442,9 @@ review() {
     if aerospace_leftovers; then
         fields+=("Removes${TAB}what an older Kadomo installed for AeroSpace"$'\n'"(Kadomo uses OmniWM only now)")
     fi
+    if sketchybar_leftovers; then
+        fields+=("Removes${TAB}what an older Kadomo installed for SketchyBar"$'\n'"(OmniWM's own menu bar replaces it now)")
+    fi
     asks=()
     ! item_on homebrew homebrew || asks+=("Homebrew")
     ! item_on developer java || asks+=("Java 25 (it installs in /Library/Java)")
@@ -491,6 +493,11 @@ install_selected() {
         step "Removing AeroSpace from an older Kadomo" "$ROOT/omniwm/remove-aerospace.sh" || failed+=("Removing AeroSpace")
         step "Removing AeroSpace's config and JankyBorders" "$ROOT/dotfiles/uninstall.sh" --retired || failed+=("Removing AeroSpace's config")
     fi
+    # OmniWM's own menu bar replaces SketchyBar now: a SketchyBar from an older
+    # Kadomo goes, whatever else is picked.
+    if sketchybar_leftovers; then
+        step "Removing SketchyBar from an older Kadomo" "$ROOT/omniwm/remove-sketchybar.sh" || failed+=("Removing SketchyBar")
+    fi
     keys="$(keys_for kadomo-menu)"
     [[ -z "$keys" ]] || run_component "Kadomo Menu" step kadomo-menu --only "$keys"
     keys="$(keys_for dotfiles)"
@@ -508,8 +515,6 @@ install_selected() {
     fi
     ! component_on moonlight-mouse || run_component "Moonlight Mouse Optimization" step moonlight-mouse
     ! component_on omniwm || run_component "OmniWM" step omniwm
-    # After OmniWM, whose settings it changes; the theme manager then gives it its colors.
-    ! component_on sketchybar || run_component "SketchyBar" step sketchybar
     # After the configs and apps it wires.
     keys="$(keys_for kadomo-theme-manager)"
     [[ -z "$keys" ]] || run_component "Theme manager and themes" step kadomo-theme-manager --only "$keys"

@@ -2,7 +2,11 @@
 
 [OmniWM](https://github.com/BarutSRB/OmniWM) is Kadomo's window manager. It
 does niri-style scrolling columns and dwindle tiling, and it draws its own
-border around the focused window. It needs macOS 26 or later on Apple silicon.
+border around the focused window. It needs macOS 26 or later on Apple silicon,
+and version 0.8 or later, whose own menu bar is why Kadomo no longer installs
+SketchyBar. A copy Kadomo installed is upgraded to 0.8 automatically; one you
+installed yourself is left for you to upgrade (its own updater, or
+`brew upgrade --cask omniwm` if you used Homebrew).
 
 ```sh
 ./install.sh     # or: ./install.sh --dry-run
@@ -52,6 +56,17 @@ saved choices. A regular AeroSpace you installed yourself stays, but is quit.
 The top-level `install.sh` and `uninstall.sh` and this folder's `install.sh`
 run it; `dotfiles/uninstall.sh --retired` removes AeroSpace's config and
 JankyBorders.
+
+## SketchyBar from an older Kadomo
+
+Kadomo used to ship SketchyBar as its status bar. OmniWM 0.8 and later draw
+their own menu bar, so Kadomo no longer installs SketchyBar, and
+`remove-sketchybar.sh` removes what an older Kadomo installed for it: its
+config, Kadomo Menu entries, the fonts it registered, and what it installed
+from Homebrew; the macOS menu bar and OmniWM's IPC and top gap go back to how
+they were. A SketchyBar you installed yourself stays, but is stopped if
+Kadomo had been running it. The top-level `install.sh` and `uninstall.sh` and
+this folder's `install.sh` run it.
 
 ## Border colors from the theme
 

@@ -13,10 +13,13 @@
 #   ~/.config/omniwm/settings.toml            Ctrl+Option+Left / Right for previous / next
 #                                             workspace, when those are free
 # Nothing of Kadomo's runs at login: OmniWM starts itself, once you turn that on
-# in its settings. What an older Kadomo installed for AeroSpace, and its OmniWM
-# login agent, are removed (remove-aerospace.sh). macOS asks once to allow
-# OmniWM in Privacy & Security › Accessibility (and Input Monitoring).
-# OmniWM needs macOS 26 or later on Apple silicon.
+# in its settings. What an older Kadomo installed for AeroSpace and SketchyBar,
+# and its OmniWM login agent, are removed (remove-aerospace.sh,
+# remove-sketchybar.sh): OmniWM's own menu bar (0.8 and later) replaces
+# SketchyBar now. macOS asks once to allow OmniWM in Privacy & Security ›
+# Accessibility (and Input Monitoring).
+# OmniWM needs macOS 26 or later on Apple silicon, and version 0.8 or later;
+# one Kadomo installed is upgraded to it.
 #
 # Usage: ./install.sh [--dry-run]
 #
@@ -31,7 +34,7 @@ DRY_RUN=0
 case "${1:-}" in
     "") ;;
     --dry-run) DRY_RUN=1 ;;
-    -h|--help) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,26p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
 esac
 
@@ -51,7 +54,15 @@ find_brew() {
 todo=()
 
 if app="$(omniwm_app)"; then
-    echo "  =  OmniWM (already installed, ${app/#$HOME/~})"
+    if omniwm_version_ok; then
+        echo "  =  OmniWM (already installed, ${app/#$HOME/~})"
+    elif brew="$(find_brew)" && [[ -n "$(omniwm_recorded cask)" ]]; then
+        echo "  ~  OmniWM ($(omniwm_app_version) → $OMNIWM_MIN_VERSION or later, brew upgrade --cask $OMNIWM_CASK)"
+        run "$brew" upgrade --cask "$OMNIWM_CASK" || echo "  !  could not upgrade OmniWM; run: brew upgrade --cask $OMNIWM_CASK" >&2
+    else
+        echo "  !  OmniWM $(omniwm_app_version) is older than $OMNIWM_MIN_VERSION, which Kadomo needs for its menu bar" >&2
+        todo+=("Upgrade OmniWM to $OMNIWM_MIN_VERSION or later (its own updater, or brew upgrade --cask $OMNIWM_CASK if Homebrew installed it); Kadomo did not install this copy, so it leaves it to you.")
+    fi
 else
     brew="$(find_brew)" || { echo "  !  OmniWM needs Homebrew (https://brew.sh)" >&2; exit 1; }
     echo "  +  OmniWM (brew install --cask $OMNIWM_CASK)"
@@ -72,11 +83,14 @@ if [[ -e "$OMNIWM_AGENT_PLIST" ]]; then
     run rm -f -- "$OMNIWM_AGENT_PLIST"
 fi
 
-# Before OmniWM starts: an AeroSpace from an older Kadomo would fight it.
+# Before OmniWM starts: an AeroSpace from an older Kadomo would fight it, and
+# a SketchyBar from an older Kadomo would fight OmniWM's own menu bar.
 remove_args=()
 ((DRY_RUN == 0)) || remove_args=(--dry-run)
 "$HERE/remove-aerospace.sh" ${remove_args[@]+"${remove_args[@]}"} \
     || echo "  !  could not remove everything an older Kadomo installed for AeroSpace" >&2
+"$HERE/remove-sketchybar.sh" ${remove_args[@]+"${remove_args[@]}"} \
+    || echo "  !  could not remove everything an older Kadomo installed for SketchyBar" >&2
 
 # Writes the menu and starts OmniWM.
 if ((DRY_RUN)); then

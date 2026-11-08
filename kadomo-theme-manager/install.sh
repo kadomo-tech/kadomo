@@ -5,7 +5,6 @@
 #   Ghostty and kitty   a line in their config that reads the theme's colors
 #   Kadomo Menu         its theme set to "kadomo", plus a Desktop Themes list
 #   OmniWM              its focus border colors in settings.toml (kadomo-omniwm)
-#   SketchyBar          its colors, and the theme's name on the bar
 #   Neovim and Vim      a "kadomo" colorscheme in tmac2k's style, selected in
 #                       init.lua (or LazyVim's plugins) and ~/.vimrc
 #   VS Code             a "Kadomo" color theme drawn from the theme, in
@@ -42,7 +41,7 @@ while (($#)); do
                 [[ ",$KEYS," == *",$key,"* ]] || { echo "Unknown item for --only: $key (known: $KEYS)" >&2; exit 2; }
             done
             ;;
-        -h|--help) sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
     esac
     shift
@@ -93,7 +92,7 @@ if [[ ! -e "$HOOKS_DIR/notify.sample" ]]; then
 fi
 
 # Which apps follow the theme. theme.conf is yours to edit afterwards.
-apps="ghostty kitty borders omniwm sketchybar kadomo-menu neovim vim vscode starship"
+apps="ghostty kitty borders omniwm kadomo-menu neovim vim vscode starship"
 selected btop && apps="$apps btop"
 selected desktop && apps="$apps appearance wallpaper"
 echo "  +  $(short_path "$SETTINGS") (apps = $apps)"

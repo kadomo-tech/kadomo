@@ -5,6 +5,9 @@
 OMNIWM_APP_NAME="OmniWM.app"
 OMNIWM_ID="com.barut.OmniWM"
 OMNIWM_CASK="omniwm"
+# OmniWM 0.8 and later draw their own menu bar, which is why Kadomo no longer
+# installs SketchyBar (remove-sketchybar.sh removes what an older Kadomo did).
+OMNIWM_MIN_VERSION="0.8"
 OMNIWM_BIN="$HOME/.local/bin/kadomo-omniwm"
 # The login agent older Kadomo installs used to start OmniWM (kadomo-omniwm login).
 # OmniWM now starts at login by its own setting; install.sh and uninstall.sh remove this.
@@ -40,10 +43,35 @@ omniwm_app() {
     return 1
 }
 
+# The installed OmniWM's own version (CFBundleShortVersionString), or nothing.
+omniwm_app_version() {
+    local app
+    app="$(omniwm_app)" || return 1
+    /usr/bin/plutil -extract CFBundleShortVersionString raw -o - "$app/Contents/Info.plist" 2>/dev/null
+}
+
+# Whether dotted, numeric version $1 is $2 or later.
+omniwm_version_at_least() {
+    local IFS=.
+    local a=($1) b=($2) i n
+    n=${#a[@]}; ((${#b[@]} <= n)) || n=${#b[@]}
+    for ((i=0; i<n; i++)); do
+        ((10#${a[i]:-0} == 10#${b[i]:-0})) || { ((10#${a[i]:-0} > 10#${b[i]:-0})); return; }
+    done
+    return 0
+}
+
+# Whether the installed OmniWM is $OMNIWM_MIN_VERSION or later, which Kadomo
+# needs for its own menu bar.
+omniwm_version_ok() {
+    local v
+    v="$(omniwm_app_version)" && [[ -n "$v" ]] && omniwm_version_at_least "$v" "$OMNIWM_MIN_VERSION"
+}
+
 # Whether everything install.sh puts in place is there and current.
 omniwm_up_to_date() {
     [[ -n "${OMNIWM_SOURCE_BIN:-}" ]] || return 1
-    omniwm_app >/dev/null && cmp -s "$OMNIWM_SOURCE_BIN/kadomo-omniwm" "$OMNIWM_BIN" \
+    omniwm_app >/dev/null && omniwm_version_ok && cmp -s "$OMNIWM_SOURCE_BIN/kadomo-omniwm" "$OMNIWM_BIN" \
         && [[ -f "$OMNIWM_MENU_FILE" && ! -e "$OMNIWM_AGENT_PLIST" ]]
 }
 
@@ -78,4 +106,12 @@ aerospace_leftovers() {
         [[ -e "$path" ]] && return 0
     done
     [[ -f "$state/dotfiles-installed.txt" ]] && grep -qE '/\.config/(aerospace|borders)/' "$state/dotfiles-installed.txt"
+}
+
+# Whether an older Kadomo left anything for SketchyBar on this Mac: it no
+# longer ships it, OmniWM's own menu bar does its job. remove-sketchybar.sh
+# removes what install.sh put there.
+sketchybar_leftovers() {
+    local state="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}"
+    [[ -s "$state/sketchybar-installed.txt" ]]
 }

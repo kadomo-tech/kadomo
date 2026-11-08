@@ -18,8 +18,10 @@
 #   OmniWM           kadomo-omniwm and its menu entries; the border colors
 #                    from before Kadomo come back, and OmniWM goes if Kadomo
 #                    installed it (its settings stay)
-#   SketchyBar       the bar, its config and menu entries; the menu bar and OmniWM's settings go
-#                    back, and its packages go if Kadomo installed them
+#   SketchyBar from an older Kadomo
+#                    its config and menu entries; the menu bar and OmniWM's
+#                    settings go back, and its packages go if Kadomo installed
+#                    them (Kadomo's own menu bar is OmniWM's now)
 #   AeroSpace from an older Kadomo
 #                    Kadomo's build, its commands, login agents, and settings
 #                    (Kadomo uses OmniWM only now); a regular AeroSpace you
@@ -128,7 +130,7 @@ source "$ROOT/homebrew/homebrew.sh"
 case "${1:-}" in
     "") ;;
     --yes|-y) ASSUME_YES=1 ;;
-    -h|--help) sed -n '2,50p' "$ROOT/uninstall.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,52p' "$ROOT/uninstall.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 
@@ -166,15 +168,16 @@ fi
 # because a config the dotfiles put back may still carry its theme lines.
 # Homebrew goes after them all: the others use it to remove what they installed.
 COMPONENTS=(kadomo-menu neovim dotfiles sketchybar omniwm aerospace apps moonlight-mouse developer kadomo-theme-manager homebrew)
-LABELS=("Kadomo Menu" "Neovim IDE" "Configs" "SketchyBar" "OmniWM" "AeroSpace from an older Kadomo" "Apps" "Moonlight Mouse Optimization" "Developer tools" "Theme manager" "Homebrew")
+LABELS=("Kadomo Menu" "Neovim IDE" "Configs" "SketchyBar from an older Kadomo" "OmniWM" "AeroSpace from an older Kadomo" "Apps" "Moonlight Mouse Optimization" "Developer tools" "Theme manager" "Homebrew")
 # The parts whose uninstaller can stop what runs (--stop) before anything is removed.
-# (AeroSpace's remover stops what runs itself, before it removes anything.)
-STOPPABLE=" kadomo-menu dotfiles sketchybar omniwm apps moonlight-mouse developer "
+# (AeroSpace's and SketchyBar's removers stop what runs themselves, before they remove anything.)
+STOPPABLE=" kadomo-menu dotfiles omniwm apps moonlight-mouse developer "
 
-# Each part's uninstaller. Kadomo no longer ships AeroSpace: only its remover is left.
+# Each part's uninstaller. Kadomo no longer ships AeroSpace or SketchyBar: only their removers are left.
 uninstaller_for() {
     case "$1" in
         aerospace) printf '%s' "$ROOT/omniwm/remove-aerospace.sh" ;;
+        sketchybar) printf '%s' "$ROOT/omniwm/remove-sketchybar.sh" ;;
         *) printf '%s' "$ROOT/$1/uninstall.sh" ;;
     esac
 }
@@ -216,7 +219,7 @@ detail_for() {
                 printf 'its menu entries; OmniWM stays, its border colors go back'
             fi
             ;;
-        sketchybar) printf 'the bar, its config and menu entries; the menu bar and OmniWM settings go back' ;;
+        sketchybar) printf "what an older Kadomo installed for it: its config and menu entries; the menu bar and OmniWM's settings go back" ;;
         aerospace) printf "Kadomo's build, its commands and login agents; a regular AeroSpace you installed stays" ;;
         apps) names="$(record_names "$APPS_MANIFEST")"; printf '%s' "${names:-the apps Kadomo installed}" ;;
         moonlight-mouse) printf 'the Moonlight profile and login agent; LinearMouse if Kadomo installed it' ;;
