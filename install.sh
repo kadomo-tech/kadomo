@@ -2,7 +2,7 @@
 # Installs Kadomo. Pick what to set up by category, or go through every item
 # under Advanced; nothing is installed until you confirm the review.
 #   Kadomo Core   Homebrew (when it is not here yet), Kadomo Menu and its
-#                 font, the OmniWM window manager, Ghostty, kitty, btop, htop,
+#                 font, the OmniWM window manager, Ghostty, btop, htop,
 #                 the Starship prompt, and the theme manager with its themes
 #                                                             (on by default)
 #   Developer     Neovim, Kadomo's Vim and Neovim settings, and Neovim set
@@ -15,9 +15,9 @@
 #   Other         Firefox
 # Each component's own installer does the work: homebrew/, kadomo-menu/, omniwm/,
 # dotfiles/, apps/, neovim/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
-# older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now) and for
-# SketchyBar (OmniWM's own menu bar replaces it) is removed first. Remove
-# everything again with ./uninstall.sh.
+# older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now), for
+# SketchyBar (OmniWM's own menu bar replaces it), and for kitty (no longer
+# installed) is removed first. Remove everything again with ./uninstall.sh.
 #
 # Usage: ./install.sh [--yes | --only LIST | --version]
 #   --yes         ask nothing, and install Kadomo Core
@@ -101,7 +101,7 @@ source "$ROOT/omniwm/omniwm.sh"
 CATS=("Kadomo Core" Developer AI Gaming Other)
 CAT_KEYS=(core developer ai gaming other)
 CAT_BLURB=(
-    "Homebrew, Kadomo Menu, OmniWM, Ghostty, kitty, themes, Starship"
+    "Homebrew, Kadomo Menu, OmniWM, Ghostty, themes, Starship"
     "Neovim IDE, Node.js, Java 25, Rancher Desktop, VS Code"
     "GitHub Copilot and Claude Code, in Neovim"
     "Moonlight, with a Windows-style mouse in it"
@@ -133,17 +133,15 @@ esac
 ITEMS=(
     "Kadomo Core|homebrew|homebrew|Homebrew|the package manager the apps come from; asks for your password"
     "Kadomo Core|kadomo-menu|app|Kadomo Menu|the launcher, in ~/Applications, and the kadomo-menu command"
-    "Kadomo Core|kadomo-menu|font|JetBrainsMono Nerd Font|for the launcher and kitty; 7 MB from GitHub"
+    "Kadomo Core|kadomo-menu|font|JetBrainsMono Nerd Font|for the launcher and VS Code's terminal; 7 MB from GitHub"
     "Kadomo Core|kadomo-menu|start|Start Kadomo Menu|opens it now; it starts at login by default"
     "Kadomo Core|omniwm|omniwm|OmniWM|window manager: scrolling and tiling, its border in the theme's colors, its own menu bar"
     "Kadomo Core|apps|ghostty|Ghostty|terminal app, from Homebrew"
     "Kadomo Core|dotfiles|ghostty|Ghostty config|~/.config/ghostty; a different file there is backed up"
-    "Kadomo Core|apps|kitty|kitty|terminal app, from Homebrew"
-    "Kadomo Core|dotfiles|kitty|kitty config|~/.config/kitty; a different file there is backed up"
     "Kadomo Core|apps|btop|btop|system monitor, from Homebrew"
     "Kadomo Core|apps|htop|htop|process viewer, from Homebrew"
     "Kadomo Core|developer|starship|Starship prompt|zsh prompt in the theme's colors; a marked block in .zshrc"
-    "Kadomo Core|kadomo-theme-manager|themes|Theme manager and themes|theme-set and 5 themes; Ghostty, kitty, OmniWM, and editors follow it"
+    "Kadomo Core|kadomo-theme-manager|themes|Theme manager and themes|theme-set and 5 themes; Ghostty, OmniWM, and editors follow it"
     "Kadomo Core|kadomo-theme-manager|btop|btop follows the theme|btop's color theme follows Kadomo's"
     "Kadomo Core|kadomo-theme-manager|desktop|Wallpaper and light/dark|each theme sets the desktop picture and light or dark mode"
     "Developer|apps|neovim|Neovim|the nvim editor, from Homebrew"
@@ -168,7 +166,8 @@ for row in "${ITEMS[@]}"; do
 done
 N=${#ITEM_KEY[@]}
 
-# Both variants: the launcher's Nerd Font and the fixed-pitch Nerd Font Mono kitty uses.
+# Both variants: the launcher's Nerd Font and the fixed-pitch Nerd Font Mono
+# VS Code's integrated terminal uses.
 font_installed() {
     local name
     for name in JetBrainsMonoNerdFont-Regular.ttf JetBrainsMonoNerdFontMono-Regular.ttf; do
@@ -445,6 +444,9 @@ review() {
     if sketchybar_leftovers; then
         fields+=("Removes${TAB}what an older Kadomo installed for SketchyBar"$'\n'"(OmniWM's own menu bar replaces it now)")
     fi
+    if kitty_leftovers; then
+        fields+=("Removes${TAB}kitty (app and config) from an older Kadomo"$'\n'"(no longer installed)")
+    fi
     asks=()
     ! item_on homebrew homebrew || asks+=("Homebrew")
     ! item_on developer java || asks+=("Java 25 (it installs in /Library/Java)")
@@ -497,6 +499,12 @@ install_selected() {
     # Kadomo goes, whatever else is picked.
     if sketchybar_leftovers; then
         step "Removing SketchyBar from an older Kadomo" "$ROOT/omniwm/remove-sketchybar.sh" || failed+=("Removing SketchyBar")
+    fi
+    # kitty is no longer installed: an older Kadomo's app and config go,
+    # whatever else is picked.
+    if kitty_leftovers; then
+        step "Removing kitty from an older Kadomo" "$ROOT/apps/uninstall.sh" --retired || failed+=("Removing kitty")
+        step "Removing kitty's config" "$ROOT/dotfiles/uninstall.sh" --retired || failed+=("Removing kitty's config")
     fi
     keys="$(keys_for kadomo-menu)"
     [[ -z "$keys" ]] || run_component "Kadomo Menu" step kadomo-menu --only "$keys"

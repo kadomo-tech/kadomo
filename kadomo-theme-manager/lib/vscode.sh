@@ -30,7 +30,7 @@ VSCODE_APP="Visual Studio Code.app"
 # <setting>|<value>. A color theme cannot carry a font, so these go in
 # settings.json, the same for every theme: JetBrainsMono Nerd Font in the
 # editor (the debug console and chat follow it), the fixed-pitch Mono variant
-# in the terminal, as in kitty. Menlo stands in when it is not installed.
+# in the terminal. Menlo stands in when it is not installed.
 VSCODE_FONTS=(
     "editor.fontFamily|'JetBrainsMono Nerd Font', Menlo, monospace"
     "terminal.integrated.fontFamily|'JetBrainsMono Nerd Font Mono', Menlo, monospace"

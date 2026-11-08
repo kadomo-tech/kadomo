@@ -7,13 +7,29 @@
 # The key is what --only takes.
 APPS=(
     "ghostty|cask|ghostty|Ghostty.app"
-    "kitty|cask|kitty|kitty.app"
     "moonlight|cask|moonlight|Moonlight.app"
     "neovim|formula|neovim|nvim"
     "btop|formula|btop|btop"
     "htop|formula|htop|htop"
     "firefox|cask|firefox|Firefox.app"
 )
+
+# Apps this checkout no longer installs, but an older Kadomo might have: same
+# shape as APPS, so app_entry and app_path can still find and quit them.
+# uninstall.sh --retired removes them from the manifest; install.sh runs it.
+RETIRED=(
+    "kitty|cask|kitty|kitty.app"
+)
+
+# Whether <kind> <name> is one of the apps this checkout still installs (not
+# merely RETIRED). A manifest line that fails this is retired.
+in_apps() {
+    local entry
+    for entry in "${APPS[@]}"; do
+        [[ "$(app_field "$entry" 2)|$(app_field "$entry" 3)" == "$1|$2" ]] && return 0
+    done
+    return 1
+}
 
 # Where macOS apps live. KADOMO_APP_DIRS (colon-separated) overrides it for testing.
 if [[ -n "${KADOMO_APP_DIRS:-}" ]]; then
@@ -25,6 +41,15 @@ fi
 # One line per app Kadomo installed: <cask or formula>|<Homebrew name>.
 STATE_DIR="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}"
 APPS_MANIFEST="$STATE_DIR/apps-installed.txt"
+
+# Whether an older Kadomo left anything for kitty on this Mac: the app from
+# Homebrew, or its config (dotfiles' own manifest). apps/uninstall.sh --retired
+# and dotfiles/uninstall.sh --retired remove them. The top-level install.sh runs both.
+kitty_leftovers() {
+    local dotfiles_manifest="$STATE_DIR/dotfiles-installed.txt"
+    { [[ -f "$APPS_MANIFEST" ]] && grep -qxF "cask|kitty" "$APPS_MANIFEST"; } ||
+        { [[ -f "$dotfiles_manifest" ]] && grep -q '/\.config/kitty/' "$dotfiles_manifest"; }
+}
 
 app_field() { # <entry> <1-4>
     printf '%s' "$1" | cut -d'|' -f"$2"
@@ -44,6 +69,13 @@ app_entry() { # <key>, or <kind> <name>
             printf '%s' "$entry"; return 0
         fi
     done
+    # A key names only a current app; a retired one is found by kind+name only,
+    # so a manifest entry for it can still be resolved to an app bundle.
+    if [[ $# -eq 2 ]]; then
+        for entry in "${RETIRED[@]}"; do
+            [[ "$(app_field "$entry" 2)|$(app_field "$entry" 3)" == "$1|$2" ]] && { printf '%s' "$entry"; return 0; }
+        done
+    fi
     return 1
 }
 

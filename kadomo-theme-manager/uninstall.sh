@@ -2,7 +2,7 @@
 # Removes everything install.sh put in place and puts back what it changed:
 # the theme-* commands and built-in themes, the current theme, the theme lists
 # in Kadomo Menu (whose own theme goes back to what it was), the
-# lines added to your Ghostty, kitty, Neovim, and Vim configs and their
+# lines added to your Ghostty, Neovim, and Vim configs and their
 # "kadomo" colorscheme links, Kadomo's Starship block in .zshrc and its
 # config (Starship itself stays installed), btop's old theme, Neovim's theme link,
 # VS Code's color theme from before (and the Kadomo theme extension and any
@@ -154,7 +154,6 @@ run rmdir "$(dirname "$SHARE")" 2>/dev/null || true
 # Apps still showing the theme go back to their own colors.
 if ! ((DRY_RUN)); then
     [[ "$following" != *" ghostty "* ]] || reload_ghostty
-    [[ "$following" != *" kitty "* ]] || reload_kitty
     [[ "$following" != *" btop "* ]] || reload_btop
     # OmniWM gets back the border colors it had before Kadomo's theme.
     if [[ "$following" == *" omniwm "* && -x "$HOME/.local/bin/kadomo-omniwm" ]]; then

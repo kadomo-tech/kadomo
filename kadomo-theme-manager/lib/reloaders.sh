@@ -34,12 +34,6 @@ reload_ghostty() {
     done < <(ghostty_processes)
 }
 
-# kitty includes current/theme/kitty.conf and reloads its config on SIGUSR1.
-reload_kitty() {
-    pgrep -xq kitty 2>/dev/null || return 0
-    pkill -USR1 -x kitty 2>/dev/null || warn "theme: could not signal kitty; press Ctrl+Cmd+, in it"
-}
-
 # btop shows ~/.config/btop/themes/current.theme, a link to current/theme/btop.theme.
 # btop 1.3 and later reload their config, theme included, on SIGUSR2; an
 # older one would quit on that signal.

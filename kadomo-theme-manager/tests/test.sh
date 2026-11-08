@@ -38,7 +38,7 @@ settings() { grep -v '^#' "$1" | grep -v '^$'; }
 echo "tmac2k matches the theme the dotfiles carried"
 "$BIN/theme-set" tmac2k >/dev/null 2>"$WORK/err"
 check "applies without warnings" [ ! -s "$WORK/err" ]
-for pair in "ghostty.conf:dotfiles/ghostty/themes/tmac2k" "btop.theme:dotfiles/btop/themes/tmac2k.theme" "kitty.conf:dotfiles/kitty/themes/tmac2k.conf"; do
+for pair in "ghostty.conf:dotfiles/ghostty/themes/tmac2k" "btop.theme:dotfiles/btop/themes/tmac2k.theme"; do
     git -C "$REPO" show "main:${pair#*:}" >"$WORK/original" 2>/dev/null || continue
     settings "$THEME/${pair%%:*}" | grep -v '_border_color ' >"$WORK/now"
     settings "$WORK/original" >"$WORK/was"
@@ -83,7 +83,7 @@ printf 'background = #123456\n' >"$HOME/.config/kadomo/themes/catppuccin/ghostty
 "$BIN/theme-refresh" >/dev/null
 check "Ghostty uses it" same "$(cat "$THEME/ghostty.conf")" "background = #123456"
 check "wallpaper unchanged" same "$(bg)" 1-horizon.png
-check "the other files are still the built-in theme's" has "$THEME/kitty.conf" "background #1e1e2e"
+check "the other files are still the built-in theme's" has "$THEME/kadomo-menu.toml" 'background = "#1e1e2e"'
 
 echo "5. your template overrides the built-in one for every theme"
 mkdir -p "$HOME/.config/kadomo/themed"
@@ -106,7 +106,7 @@ for kind in archive worktree symlink; do
     if [[ "$kind" == symlink ]]; then ln -s "$review_theme" "$HOME/.config/kadomo/themes/review-link"; target=review-link; fi
     "$BIN/theme-set" "$target" >/dev/null 2>"$WORK/err"
     check "$kind cannot supply Lua" lacks "$THEME/neovim.lua" security-review-marker
-    check "$kind retains palette" has "$THEME/kitty.conf" '#123456'
+    check "$kind retains palette" has "$THEME/kadomo-menu.toml" '#123456'
 done
 printf '%s\n' "$review_theme" >>"$HOME/.config/kadomo/trusted-themes"
 "$BIN/theme-set" review >/dev/null 2>&1
@@ -152,7 +152,7 @@ check "  no symlink in the current theme" [ -z "$(find "$THEME" -type l)" ]
 check "  its vscode.json is not kept" [ ! -e "$THEME/vscode.json" ]
 check "  its ghostty.conf is not used" lacks "$THEME/ghostty.conf" "command"
 check "  its neovim.lua is not used" lacks "$THEME/neovim.lua" "kadomo-pwned"
-check "  its colors are" has "$THEME/kitty.conf" "background #101010"
+check "  its colors are" has "$THEME/kadomo-menu.toml" 'background = "#101010"'
 check "  values that are not colors are dropped" has "$WORK/err" "ignored red"
 check "  the real wallpaper is used" same "$(bg)" 1-real.png
 check "  nothing ran" [ ! -e /tmp/kadomo-pwned ]
@@ -168,8 +168,8 @@ for round in 1 2 3 4 5; do
     [[ "$(cat "$CUR/theme.name")" == catppuccin-latte ]] || break
 done
 check "catppuccin-latte is current, five rounds running" same "$(cat "$CUR/theme.name")" catppuccin-latte
-check "its files are in place" has "$THEME/kitty.conf" "background #eff1f5"
-check "every generated file is there" bash -c "cd '$THEME' && ls btop.theme ghostty.conf kadomo-menu.toml kitty.conf omniwm.toml palette.tsv >/dev/null"
+check "its files are in place" has "$THEME/kadomo-menu.toml" 'background = "#eff1f5"'
+check "every generated file is there" bash -c "cd '$THEME' && ls btop.theme ghostty.conf kadomo-menu.toml omniwm.toml palette.tsv >/dev/null"
 check "no staging folder left" [ ! -e "$CUR/next-theme" -a ! -e "$CUR/old-theme" ]
 check "the lock is released" [ ! -e "$HOME/.local/state/kadomo/theme.lock" ]
 
@@ -210,9 +210,9 @@ red = "0xcc4444"
 red = "0xff6666"
 EOF
 "$BIN/theme-set" old-school >/dev/null 2>&1
-check "alacritty.toml becomes colors.toml" has "$THEME/kitty.conf" "background #1c1c1c"
-check "  with its ANSI colors" has "$THEME/kitty.conf" "color1 #cc4444"
-check "  and color0 kept" has "$THEME/kitty.conf" "color0 #303030"
+check "alacritty.toml becomes colors.toml" has "$THEME/kadomo-menu.toml" 'background = "#1c1c1c"'
+check "  with its ANSI colors" has "$THEME/vim-colors.vim" "terminal_color_1  = '#cc4444'"
+check "  and color0 kept" has "$THEME/vim-colors.vim" "terminal_color_0  = '#303030'"
 printf '[colors]\naccent = "#abcdef"\n' >"$HOME/.config/kadomo/themes/catppuccin/kadomo-menu.colors.toml"
 "$BIN/theme-set" catppuccin >/dev/null
 check "kadomo-menu.colors.toml replaces [colors]" has "$THEME/kadomo-menu.toml" 'accent = "#abcdef"'
@@ -303,8 +303,8 @@ cp "$ROOT/themes/gruvbox/backgrounds/1-horizon.png" "$ext/backgrounds/1-two.png"
 "$BIN/theme-set" --external "$ext" omarchy-tokyo-test "Tokyo Test" >"$WORK/out" 2>"$WORK/err"
 check "prints its label" has "$WORK/out" "Theme: Tokyo Test"
 check "every app gets its palette" same "$(key "$THEME" background)" "#eff1f5"
-check "  kitty too" has "$THEME/kitty.conf" "background #eff1f5"
-check "  and the launcher, with its label" has "$THEME/kadomo-menu.toml" 'name = "Kadomo (Tokyo Test)"'
+check "  the launcher too" has "$THEME/kadomo-menu.toml" 'background = "#eff1f5"'
+check "  with its label" has "$THEME/kadomo-menu.toml" 'name = "Kadomo (Tokyo Test)"'
 check "light mode" same "$(key "$THEME" mode)" light
 check "its btop.theme is used" has "$THEME/btop.theme" '#010203'
 check "its ghostty.conf is not" lacks "$THEME/ghostty.conf" "kadomo-pwned"
@@ -548,7 +548,6 @@ check "commands linked into ~/.local/bin" [ -L "$HOME/.local/bin/theme-set" -a -
 check "tmac2k applied" same "$(cat "$HOME/.config/kadomo/current/theme.name")" tmac2k
 check "Ghostty config reads the theme" has "$HOME/.config/ghostty/config" 'config-file = ?"~/.config/kadomo/current/theme/ghostty.conf"'
 check "  and keeps your settings" has "$HOME/.config/ghostty/config" "font-size = 14"
-check "kitty.conf made to read it" has "$HOME/.config/kitty/kitty.conf" "include ~/.config/kadomo/current/theme/kitty.conf"
 check "btop shows the current theme" has "$HOME/.config/btop/btop.conf" 'color_theme = "current"'
 check "  through current.theme" same "$(readlink "$HOME/.config/btop/themes/current.theme")" "$HOME/.config/kadomo/current/theme/btop.theme"
 check "the installed commands work" same "$("$HOME/.local/bin/theme-current")" tmac2k

@@ -53,7 +53,6 @@ BLOCK_END="<<< kadomo theme"
 
 # Config files and the line that makes each app read the current theme.
 GHOSTTY_LINE="config-file = ?\"~/.config/kadomo/current/theme/ghostty.conf\""
-KITTY_LINE="include ~/.config/kadomo/current/theme/kitty.conf"
 NVIM_LUA_LINES='vim.o.termguicolors = true
 pcall(vim.cmd.colorscheme, "kadomo")'
 NVIM_VIM_LINES='set termguicolors
@@ -79,7 +78,6 @@ ghostty_config() {
     done
     printf '%s' "$HOME/.config/ghostty/config.ghostty"
 }
-kitty_config() { printf '%s' "$HOME/.config/kitty/kitty.conf"; }
 nvim_config() {
     [[ ! -f "$HOME/.config/nvim/init.vim" || -f "$HOME/.config/nvim/init.lua" ]] \
         && printf '%s' "$HOME/.config/nvim/init.lua" || printf '%s' "$HOME/.config/nvim/init.vim"

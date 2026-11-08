@@ -154,7 +154,6 @@ app is not installed or not running.
 | App | How it reads the theme | After a switch |
 | --- | --- | --- |
 | Ghostty | `config-file = ?"~/.config/kadomo/current/theme/ghostty.conf"` in its config | `SIGUSR2` reloads it (1.2 and later) |
-| kitty | `include ~/.config/kadomo/current/theme/kitty.conf` | `SIGUSR1` reloads it |
 | btop | `color_theme = "current"`: `~/.config/btop/themes/current.theme` links to the theme's `btop.theme` | `SIGUSR2` reloads it (1.3 and later) |
 | OmniWM | `kadomo-omniwm theme` puts `omniwm.toml`'s color tables in `~/.config/omniwm/settings.toml`, in place of the border colors there (width, glow, and the rest stay yours; the colors from before Kadomo come back on uninstall) | OmniWM reloads settings.toml when it changes |
 | Kadomo Menu | its theme is set to `kadomo`, which reads `kadomo-menu.toml` | it watches the file; set back to `kadomo` if its config named another theme |
@@ -177,7 +176,7 @@ picture each Space and display had before (a dynamic or aerial wallpaper
 included) wherever Kadomo's is still showing; one you chose since stays.
 
 `theme-osc` is not sent to every open terminal: colors set by escape codes
-would stop Ghostty and kitty from taking later themes from their configs.
+would stop Ghostty from taking later themes from its config.
 
 ## Starship
 
@@ -323,7 +322,7 @@ theme's colors, like every other app.
 **Fonts.** A color theme can't carry a font, so Kadomo sets them in
 `settings.json`, the same for every theme: `editor.fontFamily` is
 JetBrainsMono Nerd Font (the debug console and chat follow the editor) and
-`terminal.integrated.fontFamily` its fixed-pitch Mono variant, as in kitty,
+`terminal.integrated.fontFamily` its fixed-pitch Mono variant,
 each falling back to Menlo. A font you pick after Kadomo set one stays yours.
 
 **What changes.** Only `workbench.colorTheme` and those two fonts in

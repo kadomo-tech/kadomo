@@ -2,7 +2,7 @@
 # Installs the theme manager: the theme-* commands in ~/.local/bin, the
 # built-in themes (tmac2k, Catppuccin, Catppuccin Latte, Gruvbox,
 # Rosé Pine, Sora), and the wiring that makes each app follow the current theme:
-#   Ghostty and kitty   a line in their config that reads the theme's colors
+#   Ghostty             a line in its config that reads the theme's colors
 #   Kadomo Menu         its theme set to "kadomo", plus a Desktop Themes list
 #   OmniWM              its focus border colors in settings.toml (kadomo-omniwm)
 #   Neovim and Vim      a "kadomo" colorscheme in tmac2k's style, selected in
@@ -92,7 +92,7 @@ if [[ ! -e "$HOOKS_DIR/notify.sample" ]]; then
 fi
 
 # Which apps follow the theme. theme.conf is yours to edit afterwards.
-apps="ghostty kitty borders omniwm kadomo-menu neovim vim vscode starship"
+apps="ghostty borders omniwm kadomo-menu neovim vim vscode starship"
 selected btop && apps="$apps btop"
 selected desktop && apps="$apps appearance wallpaper"
 echo "  +  $(short_path "$SETTINGS") (apps = $apps)"
@@ -108,7 +108,6 @@ fi
 # --- wiring ------------------------------------------------------------------
 
 wire "$(ghostty_config)" "$GHOSTTY_LINE"
-wire "$(kitty_config)" "$KITTY_LINE"
 wire_editors
 selected btop && btop_install
 

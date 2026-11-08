@@ -3,10 +3,10 @@
 #
 # Usage: theme-osc
 #   Writes OSC 4 (colors 0-15), 10 (text), 11 (background), 12 (cursor), 17 and
-#   19 (selection) to this terminal. Ghostty and kitty already follow the
-#   theme on their own; this is for other terminals and for ssh sessions.
-#   It is not sent to other terminals: colors set this way would stop Ghostty
-#   and kitty from taking later theme changes from their configs.
+#   19 (selection) to this terminal. Ghostty already follows the theme on its
+#   own; this is for other terminals and for ssh sessions. It is not sent to
+#   other terminals: colors set this way would stop Ghostty from taking later
+#   theme changes from its config.
 set -euo pipefail
 self="$0"; while [[ -L "$self" ]]; do link="$(readlink "$self")"; case "$link" in /*) self="$link" ;; *) self="$(dirname "$self")/$link" ;; esac; done
 source "$(dirname "$self")/../lib/common.sh"

@@ -99,8 +99,8 @@ starship_zshrc() {
 }
 
 # icons default: nerd when a Nerd Font is installed (Kadomo installs
-# JetBrainsMono Nerd Font for the launcher and kitty; Ghostty has the
-# symbols built in), plain otherwise. KADOMO_FONT_DIRS overrides where to look.
+# JetBrainsMono Nerd Font for the launcher; Ghostty has the symbols built
+# in), plain otherwise. KADOMO_FONT_DIRS overrides where to look.
 starship_default_icons() {
     local dirs=() dir file
     if [[ -n "${KADOMO_FONT_DIRS+set}" ]]; then IFS=: read -r -a dirs <<<"$KADOMO_FONT_DIRS"

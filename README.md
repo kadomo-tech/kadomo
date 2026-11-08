@@ -46,8 +46,8 @@ the configs Kadomo replaced come back. Once nothing of Kadomo is left, its
 downloaded copy is deleted too.
 
 > [!IMPORTANT]
-> Uninstall from macOS's own **Terminal** app, not Ghostty or kitty. The
-> uninstaller has to quit those apps, which would stop it partway through.
+> Uninstall from macOS's own **Terminal** app, not Ghostty. The
+> uninstaller has to quit that app, which would stop it partway through.
 
 ---
 
@@ -57,7 +57,7 @@ Pick any mix of these when you install. **Kadomo Core** is on by default.
 
 | Category | Includes |
 | --- | --- |
-| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager with its own menu bar, Ghostty and kitty terminals, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
+| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager with its own menu bar, the Ghostty terminal, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
 | 🛠 **Developer** | Neovim set up as an IDE for Java, JavaScript/TypeScript, Node, and AWS ([LazyVim](https://www.lazyvim.org)), Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
 | 🤖 **AI** | GitHub Copilot in Neovim, and [Claude Code](https://code.claude.com) with its Neovim integration ([details](neovim/README.md#the-ai-tools)) |
 | 🎮 **Gaming** | Moonlight, plus a mouse profile with no acceleration that applies only inside Moonlight (LinearMouse) |
@@ -72,7 +72,7 @@ each one on or off.
 theme-set catppuccin
 ```
 
-Switches Ghostty, kitty, OmniWM's focus border, Kadomo Menu, btop, Neovim (LazyVim too),
+Switches Ghostty, OmniWM's focus border, Kadomo Menu, btop, Neovim (LazyVim too),
 Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, all
 live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
 `rose-pine`, `sora`. Kadomo Menu can also install
@@ -201,7 +201,7 @@ scripts run them in order.
 | [`kadomo-menu/`](kadomo-menu) | The launcher app, the `kadomo-menu` command, and its font |
 | [`omniwm/`](omniwm/README.md) | OmniWM, plus `kadomo-omniwm` for themed borders and the menu's keybinds, and what it removes from an older Kadomo (AeroSpace, SketchyBar) |
 | [`dotfiles/`](dotfiles) | Configs, copied to where each tool reads them |
-| [`apps/`](apps) | Ghostty, kitty, btop, htop, Neovim, Moonlight, and Firefox |
+| [`apps/`](apps) | Ghostty, btop, htop, Neovim, Moonlight, and Firefox |
 | [`neovim/`](neovim/README.md) | Kadomo's LazyVim config and what it needs, GitHub Copilot, and Claude Code |
 | [`moonlight-mouse/`](moonlight-mouse/README.md) | The LinearMouse profile for Moonlight |
 | [`kadomo-theme-manager/`](kadomo-theme-manager) | `theme-set` and the themes |

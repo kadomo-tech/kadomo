@@ -6,14 +6,14 @@
 # trying to remove its parent.
 FILES=(
     "ghostty/config.ghostty|$HOME/.config/ghostty/config.ghostty"
-    "kitty/kitty.conf|$HOME/.config/kitty/kitty.conf"
     "editors/kadomo.vim|$HOME/.vim/plugin/kadomo.vim"
     "editors/kadomo.lua|$HOME/.config/nvim/plugin/kadomo.lua"
 )
 
 # Configs and formulae older installs placed that this checkout no longer ships
-# (AeroSpace's config, and JankyBorders with its bordersrc) are still in the
-# records below; uninstall.sh --retired removes them, and install.sh runs it.
+# (kitty's config, AeroSpace's config, and JankyBorders with its bordersrc) are
+# still in the records below; uninstall.sh --retired removes them, and
+# install.sh runs it.
 
 # One line per installed file: <destination>|<backup of the original, or
 # empty>|<SHA-256 of the copy Kadomo placed>. The checksum tells Kadomo's own
@@ -80,13 +80,6 @@ reload() {
                     echo "  ↻  Ghostty is running: press Cmd+Shift+, in it to reload its config"
                 fi
             done < <(ghostty_processes)
-            ;;
-        kitty)
-            # kitty reloads kitty.conf on SIGUSR1.
-            if pgrep -xq kitty 2>/dev/null; then
-                echo "  ↻  reloading kitty"
-                run pkill -USR1 -x kitty || echo "  !  could not signal kitty; press Ctrl+Cmd+, in it" >&2
-            fi
             ;;
     esac
 }

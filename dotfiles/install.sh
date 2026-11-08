@@ -4,15 +4,15 @@
 # as <name>.bak.<timestamp> before being replaced. Every file placed and the
 # backup of whatever was there before Kadomo first replaced it are recorded so
 # uninstall.sh can undo exactly that. First, what older installs placed that
-# this checkout no longer ships (AeroSpace's config, JankyBorders and its
-# bordersrc) is removed: uninstall.sh --retired.
-# Colors are not here: Ghostty and kitty read them from the current Kadomo
-# theme, which kadomo-theme-manager installs and switches.
+# this checkout no longer ships (kitty's config, AeroSpace's config,
+# JankyBorders and its bordersrc) is removed: uninstall.sh --retired.
+# Colors are not here: Ghostty reads them from the current Kadomo theme,
+# which kadomo-theme-manager installs and switches.
 #
 # Usage: ./install.sh [--dry-run] [--only LIST]
 #   --dry-run     show what would change without touching anything
 #   --only LIST   install only these tools, comma-separated
-#                 (ghostty,kitty,editors)
+#                 (ghostty,editors)
 #
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail

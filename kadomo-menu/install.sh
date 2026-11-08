@@ -38,7 +38,8 @@ FONT_VERSION="3.5.1"
 FONT_URL="https://github.com/ryanoasis/nerd-fonts/releases/download/v$FONT_VERSION/JetBrainsMono.tar.xz"
 FONT_SHA256="04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf"
 # Both variants: "Nerd Font" for the launcher and Terminal, and the strictly
-# monospaced "Nerd Font Mono" for kitty, which lists only fixed-pitch fonts.
+# monospaced "Nerd Font Mono" for VS Code's integrated terminal, which lists
+# only fixed-pitch fonts.
 FONT_GLOBS=("JetBrainsMonoNerdFont-*.ttf" "JetBrainsMonoNerdFontMono-*.ttf")
 FONT_DIR="$HOME/Library/Fonts"
 # Files this script added, so uninstall.sh removes only those. Follows the app's state dir.
@@ -58,7 +59,7 @@ font_installed() {
 ITEM_LABEL=("Install Kadomo Menu" "Install JetBrainsMono Nerd Font" "Start the launcher")
 ITEM_DETAIL=(
     "~/Applications/KadomoMenu.app and ~/.local/bin/kadomo-menu"
-    "for the launcher, Terminal, and kitty; ~/Library/Fonts, 7 MB download from GitHub"
+    "for the launcher and Terminal; ~/Library/Fonts, 7 MB download from GitHub"
     "opens it now; it starts at login by default"
 )
 ITEM_ON=(1 1 1)

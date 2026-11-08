@@ -221,7 +221,7 @@ Customize Current Theme writes a starter file. Reference:
 Appearance › Omarchy Themes browses Omarchy's official themes and the
 community catalog, installs from Git or a folder, previews a theme while it
 is selected, and applies it: to the launcher, and with the theme manager to
-every app it styles (Ghostty, kitty, btop, Neovim, Vim, ...) and the wallpaper. It is a separate theme
+every app it styles (Ghostty, btop, Neovim, Vim, ...) and the wallpaper. It is a separate theme
 library with its own storage; Kadomo's themes never depend on it, and
 `[omarchy] enabled = false` turns it off. Back to Kadomo's theme with Use
 Kadomo Theme or any Kadomo theme. Details, safety, and limits:

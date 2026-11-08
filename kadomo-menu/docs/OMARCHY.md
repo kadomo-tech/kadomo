@@ -51,14 +51,14 @@ which treats the folder as someone else's theme and uses it in place:
 
 | What | From the Omarchy theme |
 | --- | --- |
-| Ghostty, kitty, Terminal, the window borders, Neovim and Vim (the `kadomo` colorscheme), the Starship prompt | rendered from its `colors.toml` by the theme manager's templates, like any Kadomo theme |
+| Ghostty, Terminal, the window borders, Neovim and Vim (the `kadomo` colorscheme), the Starship prompt | rendered from its `colors.toml` by the theme manager's templates, like any Kadomo theme |
 | btop | its own `btop.theme` when it ships one, else rendered |
 | VS Code | the Kadomo color theme rendered from its `colors.toml`. Its `vscode.json` (a Marketplace extension to install) is ignored: Kadomo never installs an extension for a theme. See the theme manager's [VS Code](../../kadomo-theme-manager/README.md#vs-code) |
 | Wallpaper | its `backgrounds/` (still images), first one first; `theme-bg-next` and Appearance › Backgrounds cycle through them. A theme with none (or only videos or Git LFS files) gets one drawn from its background and accent colors, so the wallpaper always changes |
 | macOS light or dark mode | its `mode`, or a `light.mode` file |
 | The launcher | the Omarchy theme's own look, from its `[launcher]` colors (below) |
 
-Its own `ghostty.conf`, `kitty.conf`, `neovim.lua` (a LazyVim plugin spec),
+Its own `ghostty.conf`, `neovim.lua` (a LazyVim plugin spec),
 `hyprland.*`, scripts, and every other file are not used: they can run
 programs. Neovim and Vim get the theme's colors through the theme manager's
 `kadomo` colorscheme instead. `theme-current` shows the Omarchy theme's name,
@@ -208,7 +208,7 @@ Run it after an Omarchy release.
 ## Known limitations
 
 - The other apps follow an Omarchy theme only through the theme manager's
-  templates: an Omarchy theme's hand-made configs for Ghostty, kitty, or
+  templates: an Omarchy theme's hand-made configs for Ghostty or
   Neovim (and its LazyVim colorscheme plugin) are not used, because they can
   run programs. btop's is used.
 - `shell.toml` is read for `[launcher]`/`[menu]` colors only; its sizes,
