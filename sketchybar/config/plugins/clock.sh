@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Day and time. A click flips between 24-hour and 12-hour time; a right click
-# opens Date & Time settings.
+# Short date and time, like Sat Nov 7 19:26. A click flips between 24-hour
+# and 12-hour time; a right click opens Date & Time settings.
 source "$CONFIG_DIR/colors.sh"
 
 # Present while 12-hour, so a reload keeps the choice. Not in CONFIG_DIR:
@@ -20,9 +20,10 @@ if [ "$SENDER" = "mouse.clicked" ]; then
 fi
 
 if [ -e "$TWELVE_FILE" ]; then
-  # %l pads the hour with a space; drop it.
-  label="$(date '+%A %l:%M %p' | tr -s ' ')"
+  label="$(date '+%a %b %e %l:%M %p')"
 else
-  label="$(date '+%A %H:%M')"
+  label="$(date '+%a %b %e %H:%M')"
 fi
+# %e and %l pad with a space; drop it.
+label="$(tr -s ' ' <<<"$label")"
 sketchybar --set "$NAME" label="$label"
