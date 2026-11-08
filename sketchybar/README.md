@@ -32,7 +32,7 @@ everything back.
 | Menu bar | Highlighted while the macOS menu bar shows | Shows it, or puts it back; so does ⌥⇧M. See [The macOS menu bar](#the-macos-menu-bar) | `menu_bar.sh` |
 | Workspaces 1–9 | The focused one is a dot, the others dim numbers | Goes to that workspace | `omniwm.sh` |
 | Front app | The focused app's icon and name | | `front_app.sh`, `icon_map.sh` |
-| Clock | Day and time, 24-hour | Date & Time settings | `clock.sh` |
+| Clock | Day and time, 24-hour or 12-hour | Switch 24-hour and 12-hour; right click: Date & Time settings | `clock.sh` |
 | Weather | The temperature from wttr.in, located by IP address | Opens wttr.in | `weather.sh` |
 | Do Not Disturb | Only while on | | `indicators.sh` |
 | Updates | Outdated Homebrew packages, hidden at zero | Upgrades them in Ghostty | `updates.sh` |

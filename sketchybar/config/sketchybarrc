@@ -173,7 +173,7 @@ sketchybar --add item clock right \
                  icon.drawing=off \
                  padding_right=6 \
                  script="$PLUGIN_DIR/clock.sh" \
-                 click_script='open "x-apple.systempreferences:com.apple.Date-Time-Settings.extension"'
+           --subscribe clock mouse.clicked
 
 # Invisible, to catch clicks, like empty_left: between the notch and the right items.
 sketchybar --add item empty_right right \
