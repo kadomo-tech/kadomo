@@ -22,7 +22,7 @@ knows which provider it came from (`kadomo-menu theme provider`).
 | --- | --- |
 | Omarchy Themes › Installed | your Omarchy themes; ↩ applies, ⇥ for Update, Show in Finder, Remove |
 | Omarchy Themes › Official Themes | the themes in Omarchy's repository (Load Official Themes the first time), plus official themes Omarchy has since dropped, from the release the community catalog names (Osaka Jade from v4.0.6, say) |
-| Omarchy Themes › Community Themes | the omarchytheme.com catalog; type to search by name, author, or description |
+| Omarchy Themes › Community Themes | the omarchytheme.com catalog, plus a few themes Kadomo bundles (`OmarchyCatalogFormat.bundledCommunity`, such as Robzee84); type to search by name, author, or description |
 | Omarchy Themes › Install from Git | type or paste an `https://` URL, then ↩ |
 | Omarchy Themes › Import Local Theme… | pick a folder with a `colors.toml` |
 | Omarchy Themes › Check for Updates | fetch newer versions of everything installed |

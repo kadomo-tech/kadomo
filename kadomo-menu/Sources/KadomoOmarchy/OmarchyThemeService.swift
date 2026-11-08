@@ -49,7 +49,7 @@ public struct OmarchyThemeService: Sendable {
     /// The third-party community catalog. Optional infrastructure: when it is
     /// down or changes shape, the last good listing stays cached.
     public func discoverCommunityThemes() async throws(OmarchyInstallError) -> OmarchyCommunityListing {
-        let themes = try OmarchyCatalogFormat.community(try await http.require(endpoints.communityCatalog, accept: "application/json"))
+        let themes = OmarchyCatalogFormat.withBundled(try OmarchyCatalogFormat.community(try await http.require(endpoints.communityCatalog, accept: "application/json")))
         let listing = OmarchyCommunityListing(themes: themes, fetchedAt: Date())
         var cache = loadCache()
         cache.community = listing

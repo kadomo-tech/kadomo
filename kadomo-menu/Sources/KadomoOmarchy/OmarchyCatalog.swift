@@ -122,6 +122,32 @@ public enum OmarchyCatalogFormat {
         guard !themes.isEmpty || list.isEmpty else { throw OmarchyInstallError("the community catalog's entries changed format") }
         return themes
     }
+
+    /// Community themes Kadomo lists even when omarchytheme.com does not.
+    /// A catalog entry with the same slug wins, so these step aside once the
+    /// catalog picks them up.
+    public static let bundledCommunity: [OmarchyCommunityTheme] = [
+        OmarchyCommunityTheme(
+            slug: "robzee84", name: "Robzee84", author: "robzolkos",
+            description: "A dark synthwave Omarchy theme inspired by SynthWave '84.",
+            repository: "https://github.com/robzolkos/omarchy-robzee84-theme", builtin: false,
+            previewURL: "https://raw.githubusercontent.com/robzolkos/omarchy-robzee84-theme/master/preview.png",
+            colors: [
+                "accent": "#ff7edb", "cursor": "#f97e72", "foreground": "#ffffff", "background": "#000000",
+                "selection_foreground": "#ffffff", "selection_background": "#614D85",
+                "color0": "#262335", "color1": "#fe4450", "color2": "#72f1b8", "color3": "#f3e70f",
+                "color4": "#03edf9", "color5": "#ff7edb", "color6": "#03edf9", "color7": "#ffffff",
+                "color8": "#495495", "color9": "#fe4450", "color10": "#72f1b8", "color11": "#fede5d",
+                "color12": "#03edf9", "color13": "#ff7edb", "color14": "#03edf9", "color15": "#ffffff",
+            ],
+            securityWarnings: []),
+    ]
+
+    /// The catalog's themes plus the bundled ones it does not list.
+    public static func withBundled(_ themes: [OmarchyCommunityTheme]) -> [OmarchyCommunityTheme] {
+        let listed = Set(themes.map(\.slug))
+        return themes + bundledCommunity.filter { !listed.contains($0.slug) }
+    }
 }
 
 extension OmarchyNames {

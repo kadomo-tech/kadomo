@@ -527,6 +527,17 @@ let png = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0])
         #expect(themes[1].securityWarnings.count == 1)
     }
 
+    @Test func bundledCommunityThemesJoinTheCatalogOnce() throws {
+        let catalog = try OmarchyCatalogFormat.community(Data(#"{"themes":[{"slug":"lumon","name":"Lumon","repository":"https://github.com/OldJobobo/omarchy-lumon-theme"}]}"#.utf8))
+        let merged = OmarchyCatalogFormat.withBundled(catalog)
+        #expect(merged.map(\.slug) == ["lumon", "robzee84"])
+        #expect(merged.allSatisfy { OmarchyNames.isValid($0.slug) && $0.repository.hasPrefix("https://") })
+        let listed = OmarchyCommunityTheme(slug: "robzee84", name: "Robzee 84", author: nil, description: nil,
+                                           repository: "https://github.com/robzolkos/omarchy-robzee84-theme", builtin: false,
+                                           previewURL: nil, colors: [:], securityWarnings: [])
+        #expect(OmarchyCatalogFormat.withBundled([listed]).map(\.name) == ["Robzee 84"])
+    }
+
     @Test func officialRepositoryLinksAreSentToTheOfficialInstaller() {
         let service = OmarchyThemeService(library: OmarchyLibrary(root: Scratch().path))
         #expect(throws: OmarchyInstallError.self) { try service.installFromGit("https://github.com/omacom/omarchy/tree/quattro/themes/nord") }
