@@ -21,8 +21,9 @@ MENU_BEFORE="$RECORD_DIR/kadomo-menu-theme.txt"      # the launcher's theme id
 APPEARANCE_BEFORE="$RECORD_DIR/appearance.txt"       # dark or light
 WALLPAPER_BEFORE="$RECORD_DIR/wallpapers.txt"        # one picture per display
 WALLPAPER_STORE_BEFORE="$RECORD_DIR/wallpaper-store.plist" # macOS's wallpaper store: every Space
-# btop's previous theme, "created" or "previous|<color_theme>". Same file the
-# dotfiles used before the theme manager took btop over.
+# btop's previous theme, "created" or "previous|<color_theme>", then, once
+# Kadomo turned theme_background off, "background|<theme_background>". Same
+# file the dotfiles used before the theme manager took btop over.
 BTOP_MANIFEST="$STATE_DIR/btop-theme.txt"
 # The record older dotfiles kept of a Terminal profile they made. Kadomo leaves
 # Terminal alone now; uninstall.sh only deletes this record.
@@ -163,26 +164,30 @@ unwire() {
 short_path() { case "$1" in "$HOME"/*) printf '~%s' "${1#"$HOME"}" ;; *) printf '%s' "$1" ;; esac; }
 
 # --- btop -------------------------------------------------------------------
-# btop rewrites btop.conf (adding all its defaults) when it quits, so only its
-# color_theme line is set, to "current": ~/.config/btop/themes/current.theme,
-# a link to the current theme's btop.theme.
+# btop rewrites btop.conf (adding all its defaults) when it quits, so only two
+# lines are set: color_theme, to "current" (~/.config/btop/themes/current.theme,
+# a link to the current theme's btop.theme), and theme_background, to false, so
+# a theme's own btop.theme that sets main_bg still shows Ghostty's opacity.
 
 BTOP_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/btop/btop.conf"
 BTOP_LINK="${XDG_CONFIG_HOME:-$HOME/.config}/btop/themes/current.theme"
 
-btop_theme() {
+btop_get() {
     [[ -f "$BTOP_CONF" ]] || return 0
-    sed -n 's/^color_theme *= *//p' "$BTOP_CONF" | tail -n 1
+    sed -n "s/^$1 *= *//p" "$BTOP_CONF" | tail -n 1
 }
 
-btop_set_theme() {
-    if ((DRY_RUN)); then echo "    would set color_theme = $1 in $BTOP_CONF"; return 0; fi
-    if grep -q '^color_theme *=' "$BTOP_CONF"; then
-        sed -i '' "s|^color_theme *=.*|color_theme = $1|" "$BTOP_CONF"
+btop_set() {
+    if ((DRY_RUN)); then echo "    would set $1 = $2 in $BTOP_CONF"; return 0; fi
+    if grep -q "^$1 *=" "$BTOP_CONF"; then
+        sed -i '' "s|^$1 *=.*|$1 = $2|" "$BTOP_CONF"
     else
-        printf 'color_theme = %s\n' "$1" >>"$BTOP_CONF"
+        printf '%s = %s\n' "$1" "$2" >>"$BTOP_CONF"
     fi
 }
+
+btop_theme() { btop_get color_theme; }
+btop_set_theme() { btop_set color_theme "$1"; }
 
 btop_install() {
     local label current
@@ -205,7 +210,7 @@ btop_install() {
         echo "  +  $label (color_theme = current)"
         make_dirs "$(dirname "$BTOP_CONF")"
         if ! ((DRY_RUN)); then
-            printf '# Kadomo: show the current theme. btop adds its other settings when it quits.\ncolor_theme = "current"\n' >"$BTOP_CONF"
+            printf '# Kadomo: show the current theme. btop adds its other settings when it quits.\ncolor_theme = "current"\ntheme_background = false\n' >"$BTOP_CONF"
         fi
         # A record from an earlier install is kept: it knows what was there first.
         [[ -s "$BTOP_MANIFEST" ]] || ((DRY_RUN)) || { mkdir -p "$STATE_DIR"; echo created >"$BTOP_MANIFEST"; }
@@ -214,23 +219,39 @@ btop_install() {
         btop_set_theme '"current"'
         [[ -s "$BTOP_MANIFEST" ]] || ((DRY_RUN)) || { mkdir -p "$STATE_DIR"; printf 'previous|%s\n' "$current" >"$BTOP_MANIFEST"; }
     fi
+    current="$(btop_get theme_background)"
+    if [[ "$current" != false ]]; then
+        echo "  ~  $label (theme_background ${current:-unset} → false, for the terminal's opacity)"
+        btop_set theme_background false
+        grep -qs '^background|' "$BTOP_MANIFEST" || ((DRY_RUN)) || { mkdir -p "$STATE_DIR"; printf 'background|%s\n' "$current" >>"$BTOP_MANIFEST"; }
+    fi
 }
 
-# Puts btop's old theme back. Also undoes the dotfiles' older tmac2k selection.
+# Puts btop's old theme and theme_background back. Also undoes the dotfiles'
+# older tmac2k selection.
 btop_uninstall() {
     [[ -s "$BTOP_MANIFEST" ]] || return 0
-    local label record previous now
+    local label record background previous now
     label="$(short_path "$BTOP_CONF")"
-    record="$(cat "$BTOP_MANIFEST")"
+    record="$(grep -v '^background|' "$BTOP_MANIFEST" | head -n 1)"
+    background=""
+    # Unset before, or a btop.conf Kadomo wrote: btop's own default is on.
+    if grep -q '^background|' "$BTOP_MANIFEST" || [[ "$record" == created ]]; then
+        background="$(sed -n 's/^background|//p' "$BTOP_MANIFEST" | head -n 1)"
+        background="${background:-true}"
+    fi
     now="$(btop_theme)"
-    if [[ "$now" != '"current"' && "$now" != '"tmac2k"' ]]; then
+    if [[ -z "$record" ]]; then
+        : # Only theme_background was changed.
+    elif [[ "$now" != '"current"' && "$now" != '"tmac2k"' ]]; then
         # Another theme was picked since: that choice stays.
         [[ ! -f "$BTOP_CONF" ]] || echo "  =  $label (theme changed since install; left as is)"
     elif [[ "$record" == created ]]; then
-        if [[ "$(grep -v '^#' "$BTOP_CONF" | grep -c .)" == 1 ]]; then
-            # Still only the line Kadomo wrote: btop never ran, so remove the file.
+        if [[ "$(grep -v '^#' "$BTOP_CONF" | grep -Evc '^(color_theme|theme_background) *=')" == 0 ]]; then
+            # Still only the lines Kadomo wrote: btop never ran, so remove the file.
             echo "  -  $label"
             run rm -f -- "$BTOP_CONF"
+            background=""
         else
             echo "  ~  $label (color_theme → Default; btop's other settings kept)"
             btop_set_theme '"Default"'
@@ -239,6 +260,10 @@ btop_uninstall() {
         previous="${record#previous|}"
         echo "  ↩  $label (color_theme → ${previous:-Default})"
         btop_set_theme "${previous:-\"Default\"}"
+    fi
+    if [[ -n "$background" && -f "$BTOP_CONF" && "$(btop_get theme_background)" == false ]]; then
+        echo "  ↩  $label (theme_background → $background)"
+        btop_set theme_background "$background"
     fi
     run rm -f -- "$BTOP_MANIFEST"
 }
