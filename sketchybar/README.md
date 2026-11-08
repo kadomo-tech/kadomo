@@ -37,7 +37,7 @@ everything back.
 | Do Not Disturb | Only while on | | `indicators.sh` |
 | Updates | Outdated Homebrew packages, hidden at zero | Upgrades them in Ghostty | `updates.sh` |
 | Stand-up timer | Only while `~/.hermes/standup_timer.sh` runs | | `standup.sh` |
-| Bluetooth, Wi-Fi, volume | Their state, as an icon | Their settings | `bluetooth.sh`, `wifi.sh`, `volume.sh` |
+| Bluetooth, network, volume | Their state, as an icon (Wi-Fi or ethernet for the network) | Their settings | `bluetooth.sh`, `wifi.sh`, `volume.sh` |
 | Battery | An icon and the percentage, red below 20% | Its settings | `battery.sh` |
 
 Everything from the clock on sits on the right, on every display, which keeps it
