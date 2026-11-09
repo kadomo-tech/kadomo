@@ -70,18 +70,31 @@ for name in $themes; do
     check "$name: applies without warnings" [ ! -s "$WORK/err" ]
     pal="$HOME/.config/kadomo/current/theme/starship-palette.toml"
     bg="$(awk -F'\t' '$1 == "background" { print $2 }' "$HOME/.config/kadomo/current/theme/palette.tsv")"
-    # WCAG contrast of each role against the theme's background.
-    check "  all nine roles, each readable on $bg" awk -v bg="$bg" '
+    # WCAG contrast of each chip's text against that chip's own background
+    # (not the terminal background: each role is a solid color block now),
+    # and of success/error (the plain ❯/✗) against the terminal background.
+    check "  all 12 roles; each chip's text reads on its own chip" awk -v bg="$bg" '
         function h(x) { return index("0123456789abcdef", tolower(x)) - 1 }
         function c8(s, i) { return h(substr(s, i, 1)) * 16 + h(substr(s, i + 1, 1)) }
         function lin(v) { v /= 255; return v <= 0.04045 ? v / 12.92 : exp(2.4 * log((v + 0.055) / 1.055)) }
         function L(s) { return 0.2126 * lin(c8(s, 2)) + 0.7152 * lin(c8(s, 4)) + 0.0722 * lin(c8(s, 6)) }
         function cr(a, b) { a = L(a); b = L(b); return a > b ? (a + .05) / (b + .05) : (b + .05) / (a + .05) }
-        /^[a-z]+ = "#/ { k = $1; v = $3; gsub(/"/, "", v); need = (k == "text") ? 4.5 : (k == "separator") ? 2 : 3
-                         n++; if (cr(v, bg) < need - 0.001) { printf "      %s %s is %.2f\n", k, v, cr(v, bg); bad = 1 } }
-        END { exit bad || n != 9 }' "$pal"
+        /^[a-z_]+ = "#/ { k = $1; v = $3; gsub(/"/, "", v); C[k] = v; n++ }
+        END {
+            if (n != 12) { print "      " n " roles, wanted 12"; bad = 1 }
+            for (k in C) {
+                if (k !~ /_fg$/) continue
+                base = substr(k, 1, length(k) - 3)
+                if (cr(C[k], C[base]) < 4.5 - 0.001) {
+                    printf "      %s %s on %s %s is %.2f\n", k, C[k], base, C[base], cr(C[k], C[base]); bad = 1
+                }
+            }
+            if (cr(C["success"], bg) < 3 - 0.001) { printf "      success %s on %s is %.2f\n", C["success"], bg, cr(C["success"], bg); bad = 1 }
+            if (cr(C["error"], bg) < 3 - 0.001) { printf "      error %s on %s is %.2f\n", C["error"], bg, cr(C["error"], bg); bad = 1 }
+            exit bad
+        }' "$pal"
 done
-check "tmac2k: success and failure differ" bash -c "! '$BIN/theme-starship' list | awk '\$1 == \"tmac2k\" { exit \$6 != \$7 }'"
+check "tmac2k: success and failure differ" bash -c "! '$BIN/theme-starship' list | awk '\$1 == \"tmac2k\" { exit \$12 != \$13 }'"
 
 echo "Every theme, also future ones, gets a valid, deterministic config"
 mkdir -p "$HOME/.config/kadomo/themes/my-new-theme"
@@ -114,7 +127,7 @@ if schema:
 bad = 0
 for f in sorted(glob.glob(work + "/gen-*.toml")):
     d = tomllib.load(open(f, "rb"))
-    assert d["palette"] == "kadomo" and len(d["palettes"]["kadomo"]) == 9, f
+    assert d["palette"] == "kadomo" and len(d["palettes"]["kadomo"]) == 12, f
     if props:
         for k, v in d.items():
             if k not in props: print("unknown key", k, f); bad = 1; continue
@@ -165,6 +178,12 @@ check "  the config is Catppuccin's" has "$(TOML)" "theme=catppuccin"
 check "  status: on" bash -c "'$BIN/theme-starship' status | grep -q 'on for zsh'"
 check "  .zshrc and init.zsh are valid zsh" zsh -n "$HOME/.zshrc" "$HOME/.config/kadomo/starship/init.zsh"
 check "  zsh points STARSHIP_CONFIG at it and starts Starship" same "$(zsh_run)" "$(TOML)|STAR> "
+check "  bright, bold ls colors" same \
+    "$(zsh -fc 'source "$1"; print -r -- "$CLICOLOR|$LSCOLORS|$LS_COLORS"' zsh "$HOME/.zshrc" 2>&1)" \
+    "1|ExGxFxdxCxegedabagacad|di=1;34:ln=1;36:so=1;35:pi=33:ex=1;32"
+check "  a CLICOLOR/LSCOLORS/LS_COLORS already set wins" same \
+    "$(CLICOLOR=0 LSCOLORS=mine LS_COLORS=mine zsh -fc 'source "$1"; print -r -- "$CLICOLOR|$LSCOLORS|$LS_COLORS"' zsh "$HOME/.zshrc" 2>&1)" \
+    "0|mine|mine"
 rm -f "$WORK/inits"
 check "  once, even when .zshrc is read twice" bash -c "zsh -fc 'source ~/.zshrc; source ~/.zshrc' && [ \$(wc -l <'$WORK/inits') -eq 1 ]"
 "$BIN/theme-starship" enable >/dev/null 2>&1
@@ -198,9 +217,9 @@ snapshot >"$WORK/after"
 check "no file under HOME changed" cmp -s "$WORK/before" "$WORK/after"
 check "  every theme previewed" same "$(grep -c 'simulated preview' "$WORK/preview")" 6
 check "  all five scenarios" bash -c "for s in 'A folder' 'with changes' 'Node.js project' 'failed command' 'slow command'; do grep -q \"\$s\" '$WORK/preview' || exit 1; done"
-dircolor="$(sed -n 's/^directory = "#\(.*\)"/\1/p' "$(TOML)")"
+dircolor="$(sed -n 's/^seg_dir = "#\(.*\)"/\1/p' "$(TOML)")"
 "$BIN/theme-starship" preview >"$WORK/preview-current" 2>&1
-check "  the preview's colors are the config's" has "$WORK/preview-current" "38;2;$((16#${dircolor:0:2}));$((16#${dircolor:2:2}));$((16#${dircolor:4:2}))m"
+check "  the preview's colors are the config's" has "$WORK/preview-current" "48;2;$((16#${dircolor:0:2}));$((16#${dircolor:2:2}));$((16#${dircolor:4:2}))m"
 
 echo "Rollback: a config that fails to validate never replaces the working one"
 cp "$(TOML)" "$WORK/good.toml"

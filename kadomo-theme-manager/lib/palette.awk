@@ -136,6 +136,7 @@ END {
     fill("brown", mix(P["orange"], "#000000", 0.45))
     split("red green yellow blue magenta cyan", base, " ")
     for (i = 1; i <= 6; i++) fill("bright_" base[i], mix(P[base[i]], toward, 0.15))
+    fill("bright_orange", mix(P["orange"], toward, 0.15))
 
     fill("accent", P["blue"])
     # Semantic colors (the Starship prompt): success, failure, and changes.

@@ -202,6 +202,15 @@ it and starts Starship once), `settings.conf` (`match`, `theme`, `icons`), and
 gets one marked block that sources `init.zsh`, after a backup to
 `.zshrc.kadomo-backup.<time>`:
 
+`init.zsh` also turns on bright `ls` colors: `CLICOLOR`, `LSCOLORS` (macOS's
+own `ls -G`), and `LS_COLORS` (GNU tools: `eza`, coreutils `ls`, `grep
+--color`, ...) — bold directories, symlinks, and executables, in the basic 8
+ANSI slots rather than hex, so no per-theme rendering is needed: a terminal's
+bold colors already follow its own bright ANSI palette, and Ghostty sets that
+from the theme's `bright_*` colors ([above](#colorstoml)), so `ls` comes out
+theme-matched automatically. A `CLICOLOR`, `LSCOLORS`, or `LS_COLORS` you set
+yourself (here or earlier in your zsh startup) is kept.
+
 ```zsh
 # >>> kadomo starship (added by theme-starship; theme-starship disable removes it)
 [[ -r "$HOME/.config/kadomo/starship/init.zsh" ]] && source "$HOME/.config/kadomo/starship/init.zsh"
@@ -231,7 +240,7 @@ turns matching off and keeps that prompt through any theme change;
 shows each theme's prompt too while Starship is on.
 
 **Safety.** The config is built next to the old one, checked (well-formed
-lines, all nine colors, and, when Starship is installed, Starship rendering
+lines, all 12 colors, and, when Starship is installed, Starship rendering
 it with no config warning), then moved over it in one step; anything that
 fails keeps the previous config. A failure during `theme-set` is reported
 (`theme: the Starship prompt kept its old colors; retry with theme-starship apply`)
@@ -246,51 +255,65 @@ uninstalls Starship; uninstalling the theme manager disables it the same way.
 
 ### The prompt
 
-One layout for every theme, two lines (shown with `icons plain`):
+Styled after oh-my-posh's [M365Princess](https://github.com/JanDeDobbeleer/oh-my-posh/blob/main/themes/M365Princess.omp.json):
+one row of solid color blocks, merged edge to edge by powerline chevrons,
+two lines (shown with `icons plain`):
 
 ```
-~/code/kadomo on main [!?] via node v26.13.0 took 12s
+ ~/code/kadomo  main [!?]  node v26.13.0 
 ❯
 ```
 
-The folder (up to 3 levels, from the repository root), the Git branch and
-state, Node.js, Java, Python, Rust, or Go when the folder is a project for it,
-the time a command took over 2 s, and `❯`, or `✗` after a failure. User and host
-only over SSH or as root; no cloud accounts, no custom commands. With
-`icons plain` the symbols become text (`via node v26.13.0`).
+A block for the folder (up to 3 levels, from the repository root), the Git
+branch and state, Node.js, Java, Python, Rust, or Go when the folder is a
+project for it, and the time a command took over 2 s; then a plain `❯`, or
+`✗` after a failure. User and host get their own leading block, only over
+SSH or as root. The chevrons between blocks are fixed in place, as in
+oh-my-posh's own presets, so a block with nothing to show (no SSH, no Git
+repo, a fast command) just leaves a thin sliver of color rather than
+breaking the chain. With `icons plain` the chevrons and icons drop out,
+leaving plain color blocks flush against each other (still full color;
+nothing here needs a Nerd Font to show).
 
 The colors come from `themed/starship-palette.toml.tpl`, rendered for every
-theme like any other template (so a new theme gets a prompt with nothing
-else to do), and each is moved just far enough to read on the theme's
-background (WCAG 4.5 for text, 3 for the rest, 2 for separators):
+theme like any other template (so a new theme, or an Omarchy theme applied
+with `theme-set --external`, gets a prompt with nothing else to do). Each
+block is one of the theme's own hues, bright where the theme has one, so the
+blocks read clearly even on a dim terminal background; its text is nudged
+toward black or
+white, whichever the block needs, until it reads WCAG 4.5 on that block's own
+background rather than the terminal's, so a light theme (catppuccin-latte)
+gets dark text on its pale blocks and a dark theme gets light text, instead
+of M365Princess's fixed white. `success`/`error` (the plain `❯`/`✗`) are
+nudged to read on the terminal background instead, at 3.
 
 | Role | From | Used for |
 | --- | --- | --- |
-| `text` | `foreground` | user and host |
-| `secondary` | `dark_foreground` | how long a command took |
-| `directory` | `accent` | the folder |
-| `branch` | `magenta` | the Git branch |
+| `seg_user` | `accent` | user and host (SSH or root only) |
+| `seg_dir` | `bright_blue` | the folder |
+| `seg_git` | `bright_orange` | the Git branch, state, and status |
+| `seg_runtime` | `bright_cyan` | Node.js, Java, ... versions |
+| `seg_duration` | `comment` | how long a command took |
 | `success` | `success` (`green`) | `❯` |
 | `error` | `error` (`red`) | `✗`, read-only folders |
-| `changes` | `warning` (`yellow`) | Git status and state |
-| `runtime` | `cyan` | Node.js, Java, ... versions |
-| `separator` | `comment` | the words on, via, took |
 
-Every theme and its prompt colors (`theme-starship list`; the prompt themes
-share the theme's id):
+Each `seg_X` pairs with a `seg_X_fg` of the same name (its computed text
+color), 12 roles in all. Every theme and its block colors (`theme-starship
+list`; the prompt themes share the theme's id):
 
-| Theme | text | secondary | directory | branch | success | error | changes | runtime | separator |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| tmac2k (dark) | `#d1d1d1` | `#707070` | `#ba5aff` | `#5ea2ff` | `#5ac8ff` | `#ff4f9a` | `#905aff` | `#5ac8ff` | `#555555` |
-| catppuccin (dark) | `#cdd6f4` | `#a6adc8` | `#89b4fa` | `#f5c2e7` | `#a6e3a1` | `#f38ba8` | `#f9e2af` | `#94e2d5` | `#64687d` |
-| catppuccin-latte (light) | `#4c4f69` | `#6c6f85` | `#1e66f5` | `#c764ad` | `#3d9829` | `#d20f39` | `#be7919` | `#179299` | `#a5a7b4` |
-| gruvbox (dark) | `#ebdbb2` | `#a89984` | `#d79921` | `#b16286` | `#98971a` | `#d13a34` | `#d79921` | `#689d6a` | `#76705f` |
-| rose-pine (Dawn, light) | `#575279` | `#797593` | `#c27571` | `#907aa9` | `#286983` | `#b4637a` | `#bb7e2a` | `#c27571` | `#b0aab5` |
-| sora (dark) | `#c8d0e0` | `#9aa4b8` | `#80c8e0` | `#b0a0d8` | `#90c8a0` | `#c46c78` | `#d4b878` | `#78b8b0` | `#586478` |
+| Theme | seg_user | seg_dir | seg_git | seg_runtime | seg_duration | success | error |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| tmac2k (dark) | `#ba5aff` | `#5c78ff` | `#a173ff` | `#5ac8ff` | `#555555` | `#5ac8ff` | `#ff4f9a` |
+| catppuccin (dark) | `#89b4fa` | `#89b4fa` | `#fbbe99` | `#94e2d5` | `#64687d` | `#a6e3a1` | `#f38ba8` |
+| catppuccin-latte (light) | `#1e66f5` | `#1e66f5` | `#d85509` | `#179299` | `#aeb0bd` | `#3d9829` | `#d20f39` |
+| gruvbox (dark) | `#d79921` | `#83a598` | `#dc7532` | `#8ec07c` | `#76705f` | `#98971a` | `#d13a34` |
+| rose-pine (Dawn, light) | `#d7827e` | `#56949f` | `#b76f6b` | `#d7827e` | `#b9b3bf` | `#286983` | `#b4637a` |
+| sora (dark) | `#80c8e0` | `#98d8f0` | `#d7b59a` | `#90d0c8` | `#586478` | `#90c8a0` | `#c46c78` |
 
-tmac2k's six hues all run violet to cyan, so it sets `success` (its cyan),
-`error` (a neon pink), and `warning` (violet) itself. A theme can also ship its own
-`starship-palette.toml` with the nine `role = "#rrggbb"` lines.
+tmac2k's six hues all run violet to cyan, so several blocks share a color and
+it sets `success` (its cyan), `error` (a neon pink), and `warning` itself. A
+theme can also ship its own `starship-palette.toml` with the 12
+`role = "#rrggbb"` lines.
 
 ## VS Code
 
