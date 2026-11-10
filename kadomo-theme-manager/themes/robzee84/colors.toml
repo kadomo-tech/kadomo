@@ -1,0 +1,56 @@
+# robzee84: Rob Zolkos's Omarchy synthwave cityscapes
+# (https://github.com/robzolkos/omarchy-robzee84-theme), in tmac2k's
+# violet-to-cyan palette instead of the original neon pink/mint/yellow.
+mode = "dark"
+
+accent = "#ba5aff"
+selection = "#2f2f2f"
+muted = "#707070"
+
+background = "#000000"
+dark_background = "#000000"
+darker_background = "#000000"
+lighter_background = "#2f2f2f"
+
+foreground = "#d1d1d1"
+dark_foreground = "#707070"
+light_foreground = "#e8e8e8"
+bright_foreground = "#ffffff"
+
+# The six hues run violet to cyan, so "red" here is violet.
+red = "#ba5aff"
+green = "#905aff"
+yellow = "#685aff"
+blue = "#5c78ff"
+magenta = "#5ea2ff"
+cyan = "#5ac8ff"
+orange = "#905aff"
+brown = "#685aff"
+bright_red = "#ba5aff"
+bright_green = "#905aff"
+bright_yellow = "#685aff"
+bright_blue = "#5c78ff"
+bright_magenta = "#5ea2ff"
+bright_cyan = "#5ac8ff"
+
+# Slots where tmac2k differs from the usual mapping.
+cursor = "#d1d1d1"
+color0 = "#2f2f2f"
+color7 = "#ffffff"
+color8 = "#2f2f2f"
+
+# Semantic colors (the Starship prompt). The hues above have no red or green,
+# so success is the cyan end, and a neon pink outside the ramp marks failure.
+success = "#5ac8ff"
+error = "#ff4f9a"
+warning = "#905aff"
+
+# Editor shades for Vim and Neovim, as in the original tmac2k colorschemes.
+comment = "#555555"
+shade = "#0f0f0f"
+dim_background = "#0a0a0a"
+diff_background = "#0a0a1a"
+
+# Window borders: violet at the top left to cyan at the bottom right.
+hyprland_active_border = "rgba(ba5affff) rgba(5ac8ffff) 45deg"
+inactive_border = "#2f2f2f"

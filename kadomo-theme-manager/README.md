@@ -14,8 +14,9 @@ goes straight there), and a wallpaper under **Appearance › Backgrounds**
 (Ctrl+Option+Space). Every theme there styles every app, the menu included.
 
 Built in: **tmac2k** (the original Kadomo look with its neon wallpapers, and the default),
-Catppuccin, Catppuccin Latte (light), Gruvbox, Rosé Pine (Dawn, light), and
-[Sora](https://soratheme.com/).
+Catppuccin, Catppuccin Latte (light), Gruvbox, Rosé Pine (Dawn, light),
+[Sora](https://soratheme.com/), and [Robzee84](https://github.com/robzolkos/omarchy-robzee84-theme)
+(its synthwave cityscape wallpapers, in tmac2k's colors).
 
 ## Install
 
@@ -304,11 +305,15 @@ list`; the prompt themes share the theme's id):
 | Theme | seg_user | seg_dir | seg_git | seg_runtime | seg_duration | success | error |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | tmac2k (dark) | `#ba5aff` | `#5c78ff` | `#a173ff` | `#5ac8ff` | `#555555` | `#5ac8ff` | `#ff4f9a` |
+| robzee84 (dark) | `#ba5aff` | `#5c78ff` | `#a173ff` | `#5ac8ff` | `#555555` | `#5ac8ff` | `#ff4f9a` |
 | catppuccin (dark) | `#89b4fa` | `#89b4fa` | `#fbbe99` | `#94e2d5` | `#64687d` | `#a6e3a1` | `#f38ba8` |
 | catppuccin-latte (light) | `#1e66f5` | `#1e66f5` | `#d85509` | `#179299` | `#aeb0bd` | `#3d9829` | `#d20f39` |
 | gruvbox (dark) | `#d79921` | `#83a598` | `#dc7532` | `#8ec07c` | `#76705f` | `#98971a` | `#d13a34` |
 | rose-pine (Dawn, light) | `#d7827e` | `#56949f` | `#b76f6b` | `#d7827e` | `#b9b3bf` | `#286983` | `#b4637a` |
 | sora (dark) | `#80c8e0` | `#98d8f0` | `#d7b59a` | `#90d0c8` | `#586478` | `#90c8a0` | `#c46c78` |
+
+robzee84 ships tmac2k's `colors.toml` verbatim under its own synthwave
+wallpapers, so its row is identical; only the backgrounds differ.
 
 tmac2k's six hues all run violet to cyan, so several blocks share a color and
 it sets `success` (its cyan), `error` (a neon pink), and `warning` itself. A
