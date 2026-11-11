@@ -260,7 +260,7 @@ write_menu_commands() {
             [[ "$name" != "$current" ]] || printf 'hint = "current"\norder = -1\n'
             printf 'exec = "%s"\nargs = ["%s"]\n\n' "$(toml_escape "$bin/theme-set")" "$(toml_escape "$name")"
         done < <(theme_names)
-        printf '[[command]]\nid = "kadomo-theme-bg-next"\ntitle = "Next Background"\ncategory = "appearance/backgrounds"\nicon = "arrow.right.circle"\norder = -2\nexec = "%s"\n\n' "$(toml_escape "$bin/theme-bg-next")"
+        printf '[[command]]\nid = "kadomo-theme-bg-next"\ntitle = "Next Background"\ncategory = "appearance/backgrounds"\nicon = "arrow.right.circle"\norder = -2\nkeep_open = true\nexec = "%s"\n\n' "$(toml_escape "$bin/theme-bg-next")"
         printf '[[command]]\nid = "kadomo-theme-refresh"\ntitle = "Refresh Theme"\nsubtitle = "Apply template edits"\ncategory = "appearance/themes"\nicon = "arrow.clockwise"\norder = 100\nexec = "%s"\n\n' "$(toml_escape "$bin/theme-refresh")"
         if [[ -n "$current" ]]; then
             while IFS= read -r file; do
