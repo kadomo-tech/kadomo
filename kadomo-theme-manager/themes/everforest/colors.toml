@@ -1,11 +1,12 @@
 # Everforest: Omarchy's forest-green palette, warm and low-contrast like
-# sunlight through leaves. Its signature sage green as the accent, the
-# muted reds, yellows, and aquas of the original Everforest colorscheme,
-# and a plain #2c353a backdrop instead of a photo.
+# sunlight through leaves. Omarchy's own colors.toml sets its accent to
+# the aqua-blue, not the green, so that's what borders and highlights use
+# here too; the rest is the muted reds, yellows, and aquas of the original
+# Everforest colorscheme, with a plain #2c353a backdrop instead of a photo.
 mode = "dark"
 
-accent = "#a7c080"
-selection = "#425047"
+accent = "#7fbbb3"
+selection = "#3a515d"
 muted = "#7a8478"
 
 background = "#2c353a"
@@ -38,6 +39,7 @@ bright_cyan = "#a2d0ad"
 # Editor shades for Vim and Neovim.
 comment = "#859289"
 
-# Window borders: sage green at the top left to aqua at the bottom right.
-hyprland_active_border = "rgba(a7c080ff) rgba(83c092ff) 45deg"
+# Window borders: Omarchy's aqua-blue accent at the top left to sage green
+# at the bottom right.
+hyprland_active_border = "rgba(7fbbb3ff) rgba(a7c080ff) 45deg"
 inactive_border = "#343f44"
