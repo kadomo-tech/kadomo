@@ -33,5 +33,6 @@ bright_cyan = "#c1f6fe"
 bright_blue = "#9698fd"
 bright_magenta = "#e39efe"
 
-hyprland_active_border = "rgba(21e4f8ee) rgba(d563feee) 45deg"
+# Window borders: magenta at the top left to cyan at the bottom right.
+hyprland_active_border = "rgba(d563feee) rgba(21e4f8ee) 45deg"
 hyprland_inactive_border = "rgba(665a8caa)"
