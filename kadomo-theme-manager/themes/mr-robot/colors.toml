@@ -1,0 +1,42 @@
+# Mr. Robot: Elliot's desktop and the show's posters. A slate-black wall, the
+# washed-out greys of the posters, and the dark cyan glow of his desktop as
+# the accent, with the blue path of his root prompt. Red is kept for errors.
+mode = "dark"
+
+accent = "#3a9e9e"
+selection = "#1d3a3e"
+muted = "#55707a"
+
+background = "#0f1619"
+dark_background = "#0b1114"
+darker_background = "#070b0d"
+lighter_background = "#18252a"
+
+foreground = "#d0d8d7"
+dark_foreground = "#8a999c"
+light_foreground = "#e1e7e6"
+bright_foreground = "#f2f5f4"
+
+red = "#c8484c"
+green = "#6fa58a"
+yellow = "#c9b07a"
+orange = "#c98a5e"
+blue = "#5a7fd6"
+magenta = "#8a7fc0"
+cyan = "#3fa7a7"
+brown = "#6e5444"
+
+bright_red = "#e06a6e"
+bright_green = "#8fc4a8"
+bright_yellow = "#e0cb98"
+bright_orange = "#e0a67e"
+bright_blue = "#7f9ee6"
+bright_magenta = "#a79ddb"
+bright_cyan = "#7fd0cc"
+
+# Editor shades for Vim and Neovim.
+comment = "#4f6870"
+
+# Window borders: desktop teal at the top left to deep sea blue at the bottom right.
+hyprland_active_border = "rgba(4fb8b8ff) rgba(1f5a6aff) 45deg"
+inactive_border = "#18252a"
