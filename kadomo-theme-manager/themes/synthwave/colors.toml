@@ -1,0 +1,37 @@
+# Synthwave (dark), from bjarneo's 100-themes
+# (https://github.com/bjarneo/100-themes/tree/main/synthwave/dark), with a
+# solid dark-blue background instead of its photo wallpapers.
+mode = "dark"
+
+accent = "#d563fe"
+selection = "#441e5d"
+muted = "#665a8c"
+
+background = "#0c031f"
+dark_background = "#090217"
+darker_background = "#060210"
+lighter_background = "#190f2e"
+
+foreground = "#e8e6ef"
+dark_foreground = "#9b97a6"
+light_foreground = "#cbc9d4"
+bright_foreground = "#faf9fd"
+
+red = "#fe288f"
+yellow = "#fde3c9"
+orange = "#fe9f8b"
+green = "#fc9afe"
+cyan = "#21e4f8"
+blue = "#766dff"
+magenta = "#d563fe"
+brown = "#7f5046"
+
+bright_red = "#fe83af"
+bright_yellow = "#fdf7f2"
+bright_green = "#fed5fe"
+bright_cyan = "#c1f6fe"
+bright_blue = "#9698fd"
+bright_magenta = "#e39efe"
+
+hyprland_active_border = "rgba(21e4f8ee) rgba(d563feee) 45deg"
+hyprland_inactive_border = "rgba(665a8caa)"
