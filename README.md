@@ -75,7 +75,7 @@ theme-set catppuccin
 Switches Ghostty, OmniWM's focus border, Kadomo Menu, btop, Neovim (LazyVim too),
 Vim, VS Code, the Starship prompt, the wallpaper, and light/dark mode, all
 live. Included themes: `tmac2k`, `catppuccin`, `catppuccin-latte`, `gruvbox`,
-`rose-pine`, `sora`. Kadomo Menu can also install
+`rose-pine`, `sora`, `solaris`. Kadomo Menu can also install
 [Omarchy themes](kadomo-menu/docs/OMARCHY.md)
 (Appearance › Omarchy Themes).
 

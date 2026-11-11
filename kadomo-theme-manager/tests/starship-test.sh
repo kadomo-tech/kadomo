@@ -64,7 +64,7 @@ snapshot() { (cd "$HOME" && find . -type f -o -type l | LC_ALL=C sort | while IF
 echo "Prompt colors: every theme, every role, readable"
 fresh colors
 themes="$("$BIN/theme-list" --names)"
-check "seven built-in themes" same "$(printf '%s\n' "$themes" | wc -l | tr -d ' ')" 7
+check "nine built-in themes" same "$(printf '%s\n' "$themes" | wc -l | tr -d ' ')" 9
 for name in $themes; do
     "$BIN/theme-set" "$name" >/dev/null 2>"$WORK/err"
     check "$name: applies without warnings" [ ! -s "$WORK/err" ]
@@ -100,7 +100,7 @@ echo "Every theme, also future ones, gets a valid, deterministic config"
 mkdir -p "$HOME/.config/kadomo/themes/my-new-theme"
 printf 'background = "#202020"\nforeground = "#dddddd"\naccent = "#ff8800"\n' >"$HOME/.config/kadomo/themes/my-new-theme/colors.toml"
 "$BIN/theme-starship" list >"$WORK/list"
-check "theme-starship list has every theme" same "$(grep -vc '^THEME' "$WORK/list")" 8
+check "theme-starship list has every theme" same "$(grep -vc '^THEME' "$WORK/list")" 10
 check "  a new theme with only colors.toml included" has "$WORK/list" "my-new-theme"
 check "  none without colors" lacks "$WORK/list" "no prompt colors"
 (
@@ -215,7 +215,7 @@ snapshot >"$WORK/before"
 "$BIN/theme-starship" preview gruvbox >/dev/null 2>&1
 snapshot >"$WORK/after"
 check "no file under HOME changed" cmp -s "$WORK/before" "$WORK/after"
-check "  every theme previewed" same "$(grep -c 'simulated preview' "$WORK/preview")" 7
+check "  every theme previewed" same "$(grep -c 'simulated preview' "$WORK/preview")" 9
 check "  all five scenarios" bash -c "for s in 'A folder' 'with changes' 'Node.js project' 'failed command' 'slow command'; do grep -q \"\$s\" '$WORK/preview' || exit 1; done"
 dircolor="$(sed -n 's/^seg_dir = "#\(.*\)"/\1/p' "$(TOML)")"
 "$BIN/theme-starship" preview >"$WORK/preview-current" 2>&1

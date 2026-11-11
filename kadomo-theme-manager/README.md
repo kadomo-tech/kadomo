@@ -16,7 +16,8 @@ goes straight there), and a wallpaper under **Appearance › Backgrounds**
 Built in: **tmac2k** (the original Kadomo look with its neon wallpapers, and the default),
 Catppuccin, Catppuccin Latte (light), Gruvbox, Rosé Pine (Dawn, light),
 [Sora](https://soratheme.com/), and [Robzee84](https://github.com/robzolkos/omarchy-robzee84-theme)
-(its synthwave cityscape wallpapers, in tmac2k's colors).
+(its synthwave cityscape wallpapers, in tmac2k's colors), and Solaris (the purple
+CDE desktop of Sun's Solaris workstations).
 
 ## Install
 
@@ -311,6 +312,7 @@ list`; the prompt themes share the theme's id):
 | gruvbox (dark) | `#d79921` | `#83a598` | `#dc7532` | `#8ec07c` | `#76705f` | `#98971a` | `#d13a34` |
 | rose-pine (Dawn, light) | `#d7827e` | `#56949f` | `#b76f6b` | `#d7827e` | `#b9b3bf` | `#286983` | `#b4637a` |
 | sora (dark) | `#80c8e0` | `#98d8f0` | `#d7b59a` | `#90d0c8` | `#586478` | `#90c8a0` | `#c46c78` |
+| solaris (dark) | `#b48ee6` | `#a8b6f4` | `#f0b48a` | `#9edcdc` | `#6f6283` | `#8fbf8f` | `#e0707f` |
 
 robzee84 ships tmac2k's `colors.toml` verbatim under its own synthwave
 wallpapers, so its row is identical; only the backgrounds differ.

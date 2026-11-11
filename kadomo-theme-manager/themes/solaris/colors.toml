@@ -1,0 +1,42 @@
+# Solaris: the purple CDE desktop of Sun's Solaris workstations. A deep plum
+# backdrop, CDE's lavender window frames as the accent, and the front panel's
+# muted workspace colors (mauve, teal, tan, rose) as the hues.
+mode = "dark"
+
+accent = "#b48ee6"
+selection = "#3e2d55"
+muted = "#7a6a8f"
+
+background = "#1b1226"
+dark_background = "#150e1e"
+darker_background = "#100a17"
+lighter_background = "#2a1f38"
+
+foreground = "#ddd3e8"
+dark_foreground = "#9a8fab"
+light_foreground = "#ebe4f2"
+bright_foreground = "#faf7fd"
+
+red = "#e0707f"
+green = "#8fbf8f"
+yellow = "#e3c47a"
+orange = "#e09a6a"
+blue = "#8a9be8"
+magenta = "#c39be8"
+cyan = "#7cc4c4"
+brown = "#a07a5a"
+
+bright_red = "#f0909c"
+bright_green = "#aad6aa"
+bright_yellow = "#f0d898"
+bright_orange = "#f0b48a"
+bright_blue = "#a8b6f4"
+bright_magenta = "#d8b8f4"
+bright_cyan = "#9edcdc"
+
+# Editor shades for Vim and Neovim.
+comment = "#6f6283"
+
+# Window borders: CDE lavender at the top left to Sun's indigo at the bottom right.
+hyprland_active_border = "rgba(b48ee6ff) rgba(6a5acdff) 45deg"
+inactive_border = "#2a1f38"
