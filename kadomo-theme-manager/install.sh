@@ -92,9 +92,17 @@ if [[ ! -e "$HOOKS_DIR/notify.sample" ]]; then
 fi
 
 # Which apps follow the theme. theme.conf is yours to edit afterwards.
+# With --only, an app an earlier install turned on stays on, so installing one
+# part again never turns off another (the wallpaper, say).
+previous=""
+if [[ -n "$ONLY" && -f "$SETTINGS" ]]; then
+    previous=" $(sed -n 's/^[[:space:]]*apps[[:space:]]*=[[:space:]]*//p' "$SETTINGS" | tail -n 1) "
+fi
+kept() { [[ "$previous" == *" $1 "* ]]; }
 apps="ghostty borders omniwm kadomo-menu neovim vim vscode starship"
-selected btop && apps="$apps btop"
-selected desktop && apps="$apps appearance wallpaper"
+if selected btop || kept btop; then apps="$apps btop"; fi
+if selected desktop || kept appearance; then apps="$apps appearance"; fi
+if selected desktop || kept wallpaper; then apps="$apps wallpaper"; fi
 echo "  +  $(short_path "$SETTINGS") (apps = $apps)"
 if ! ((DRY_RUN)); then
     cat >"$SETTINGS" <<EOF

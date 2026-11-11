@@ -562,6 +562,8 @@ ln -s "$HOME/.local/share/kadomo/theme-manager/bin/theme-install" "$HOME/.local/
 "$ROOT/install.sh" --only themes,btop >/dev/null 2>&1
 check "installing again removes the old theme-install link" [ ! -L "$HOME/.local/bin/theme-install" ]
 check "installing again adds nothing twice" same "$(grep -c 'kadomo/current' "$HOME/.config/ghostty/config")" 1
+"$ROOT/install.sh" --only themes >/dev/null 2>&1
+check "installing one part again keeps the apps an earlier install turned on" has "$HOME/.config/kadomo/theme.conf" 'apps = ghostty borders omniwm kadomo-menu neovim vim vscode starship btop'
 "$HOME/.local/bin/theme-set" gruvbox >/dev/null
 "$ROOT/install.sh" --only themes,btop >/dev/null 2>&1
 check "  and keeps the theme you had" same "$(cat "$HOME/.config/kadomo/current/theme.name")" gruvbox
