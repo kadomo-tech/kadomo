@@ -5,3 +5,5 @@ config-file = ?"~/.config/kadomo/current/theme/ghostty.conf"
 # Translucent, blurred window background.
 background-opacity = 0.75
 background-blur = 20
+
+font-size = 12
