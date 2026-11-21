@@ -1,0 +1,47 @@
+# Milk: a futuristic light theme. A milk-white backdrop, tan and sand panels,
+# dark umber text, and copper as the accent; the hues are earthy and dusty
+# (terracotta, olive, ochre, slate, mauve, sage) so nothing breaks the beige.
+mode = "light"
+
+accent = "#9c5523"
+selection = "#ddd0b8"
+muted = "#a89880"
+
+background = "#f3ede2"
+dark_background = "#ebe3d5"
+darker_background = "#e0d6c4"
+lighter_background = "#faf7f0"
+
+foreground = "#3d342a"
+dark_foreground = "#6b5e4e"
+light_foreground = "#4f4437"
+bright_foreground = "#2a231b"
+
+red = "#a5402c"
+green = "#5c6b2a"
+yellow = "#876510"
+orange = "#a8561d"
+blue = "#3f6475"
+magenta = "#835166"
+cyan = "#3a7069"
+brown = "#7a5838"
+
+bright_red = "#c04a32"
+bright_green = "#6d7e33"
+bright_yellow = "#9e7716"
+bright_orange = "#bb6226"
+bright_blue = "#4d7a8e"
+bright_magenta = "#9c6079"
+bright_cyan = "#418277"
+
+cursor = "#9c5523"
+
+# Editor shades for Vim and Neovim.
+comment = "#93836c"
+
+# Window borders: copper at the top left to sand at the bottom right.
+hyprland_active_border = "rgba(9c5523ff) rgba(c9a97cff) 45deg"
+inactive_border = "#e0d6c4"
+
+# OmniWM's workspace bar text: the copper, not the sage cyan.
+bar_text = "#9c5523"

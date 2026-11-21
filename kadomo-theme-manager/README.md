@@ -19,8 +19,9 @@ Catppuccin, Catppuccin Latte (light), Gruvbox, Rosé Pine (Dawn, light),
 (its synthwave cityscape wallpapers, in tmac2k's colors), Solaris (the purple
 CDE desktop of Sun's Solaris workstations), Mr. Robot (the dark cyan of Elliot's
 desktop and the show's slate posters, with a hex dump wallpaper that says hello),
-and Everforest (Omarchy's forest-green palette, with a plain backdrop instead of
-a photo).
+Everforest (Omarchy's forest-green palette, with a plain backdrop instead of
+a photo), and Milk (light: a futuristic milk white, sand, and umber with a
+copper accent).
 
 ## Install
 
