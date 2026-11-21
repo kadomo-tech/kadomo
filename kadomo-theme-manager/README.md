@@ -146,6 +146,7 @@ then the built-in one.
 | `{{ mix background foreground 30% }}` | a blend (also `mix_strip`, `mix_rgb`, `mix_argb`; `0.3` works too) |
 | `{{ toml_gradient hyprland_active_border accent }}` | `["#bb9af7", "#7aa2f7"]` |
 | `{{ omniwm_borders hyprland_active_border accent }}` | OmniWM's `[borders.color]` table (the first color), plus `[borders.gradient]` when there are two |
+| `{{ omniwm_color workspaceBar.textColor cyan }}` | `cyan` as an OmniWM color table named `[workspaceBar.textColor]` |
 | `{{ readable accent background 3 }}` | `accent`, or `accent` moved toward black or white just far enough for a WCAG contrast of 3 against `background` |
 | `{{ gradient_start key fallback }}`, `{{ shell_gradient ... }}`, `{{ hypr_gradient ... }}` | the first color; colors and angle; Hyprland's form |
 | `{{ theme }}`, `{{ theme_name }}`, `{{ mode }}` | `rose-pine`, `Rose Pine`, `light` |
@@ -160,7 +161,7 @@ app is not installed or not running.
 | --- | --- | --- |
 | Ghostty | `config-file = ?"~/.config/kadomo/current/theme/ghostty.conf"` in its config | `SIGUSR2` reloads it (1.2 and later) |
 | btop | `color_theme = "current"`: `~/.config/btop/themes/current.theme` links to the theme's `btop.theme` | `SIGUSR2` reloads it (1.3 and later) |
-| OmniWM | `kadomo-omniwm theme` puts `omniwm.toml`'s color tables in `~/.config/omniwm/settings.toml`, in place of the border colors there (width, glow, and the rest stay yours; the colors from before Kadomo come back on uninstall) | OmniWM reloads settings.toml when it changes |
+| OmniWM | `kadomo-omniwm theme` puts `omniwm.toml`'s color tables in `~/.config/omniwm/settings.toml`, in place of the border colors there, and its `[workspaceBar.textColor]` in the default profile of `~/.config/omniwm/shell/shell.toml` (OmniWM's Custom Text Color; width, glow, and the rest stay yours; the colors from before Kadomo come back on uninstall) | OmniWM reloads both files when they change |
 | Kadomo Menu | its theme is set to `kadomo`, which reads `kadomo-menu.toml` | it watches the file; set back to `kadomo` if its config named another theme |
 | Neovim | the `kadomo` colorscheme: `~/.config/nvim/colors/kadomo.lua` links to the theme's `neovim-colors.lua`, and a block in `init.lua` (or `init.vim`) selects it | every running Neovim showing it loads it again |
 | Neovim with LazyVim | `~/.config/nvim/lua/plugins/theme.lua` links to the theme's `neovim.lua`: `kadomo`, or a colorscheme plugin the theme names | the next time it starts |

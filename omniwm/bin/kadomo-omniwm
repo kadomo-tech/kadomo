@@ -6,8 +6,8 @@
 #   kadomo-omniwm start            start OmniWM (and write the Kadomo Menu entries)
 #   kadomo-omniwm stop             quit OmniWM
 #   kadomo-omniwm status           whether OmniWM runs
-#   kadomo-omniwm theme            put the Kadomo theme's border colors in OmniWM's settings.toml
-#   kadomo-omniwm restore-borders  put back the border colors settings.toml had before Kadomo
+#   kadomo-omniwm theme            put the Kadomo theme's border and bar text colors in OmniWM's settings
+#   kadomo-omniwm restore-borders  put back the colors OmniWM had before Kadomo
 #   kadomo-omniwm workspace-keys   once, give next / previous workspace Kadomo's keys in settings.toml
 #   kadomo-omniwm restore-workspace-keys
 #                                  take those keys off again, unless you have changed them
@@ -18,7 +18,9 @@
 # which theme-set renders; theme-set runs "kadomo-omniwm theme". Only the
 # border colors in settings.toml change ([borders.color] and, for a gradient,
 # [borders.gradient]); the border width, glow, and everything else stay as you
-# set them. OmniWM reloads settings.toml when it changes.
+# set them. The workspace bar's text color ([workspaceBar.textColor], OmniWM's
+# Custom Text Color) goes to the default shell profile in shell/shell.toml,
+# where OmniWM keeps it. OmniWM reloads both files when they change.
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
 
@@ -28,8 +30,12 @@ KADOMO_CONFIG="${KADOMO_CONFIG_DIR:-$HOME/.config/kadomo}"
 THEME_FILE="$KADOMO_CONFIG/current/theme/omniwm.toml"
 MENU_FILE="$KADOMO_CONFIG/menu/commands/omniwm.toml"
 SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/settings.toml"
+SHELL_TOML="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/shell/shell.toml"
+TEXT_TABLE="profiles.default.workspaceBar.textColor"
 STATE_DIR="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}"
 BORDERS_BEFORE="$STATE_DIR/omniwm-borders-before.toml"
+# The bar's text color shell.toml had before Kadomo; empty when it had none.
+TEXT_BEFORE="$STATE_DIR/omniwm-text-before.toml"
 # Written once workspace-keys has run: the hotkey ids it changed, one per line.
 WORKSPACE_KEYS_SET="$STATE_DIR/omniwm-workspace-keys.txt"
 SELF="$HOME/.local/bin/kadomo-omniwm"
@@ -121,9 +127,9 @@ replace_borders() {
         }' "$1" >"$3"
 }
 
-# settings.toml itself, following a link to where it really is.
+# settings.toml (or the file $1) itself, following a link to where it really is.
 settings_target() {
-    local path="$SETTINGS" link
+    local path="${1:-$SETTINGS}" link
     while [[ -L "$path" ]]; do
         link="$(readlink "$path")"
         case "$link" in /*) path="$link" ;; *) path="$(dirname "$path")/$link" ;; esac
@@ -157,15 +163,84 @@ apply_fragment() {
     mv -f "$tmp" "$target"
 }
 
+# --- the bar's text color ------------------------------------------------------
+
+# The lines of table $2 in TOML file $1, without its header and comments.
+table_body() {
+    awk -v t="[$2]" '$0 == t { on = 1; next } /^[ \t]*\[/ { on = 0 } on && !/^[ \t]*(#.*)?$/' "$1"
+}
+
+# Whether a file holds only a color table's values (or nothing).
+valid_color() {
+    awk '
+        /^[ \t]*(#.*)?$/ { next }
+        /^(red|green|blue|alpha) = -?[0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)?$/ { next }
+        { bad = 1; exit }
+        END { exit bad }' "$1"
+}
+
+# Writes TOML file $1 to $4 with table $2 taken out and, when the file $3 has
+# values, put back at the end with them.
+set_table() {
+    awk -v t="[$2]" -v body="$3" '
+        $0 == t { skip = 1; next }
+        skip && /^[ \t]*\[/ { skip = 0 }
+        skip { next }
+        /^[ \t]*$/ { blank++; next }
+        { while (blank > 0) { print ""; blank-- } print }
+        END {
+            n = 0
+            while ((getline l < body) > 0) {
+                if (l ~ /^[ \t]*(#.*)?$/) continue
+                if (n++ == 0) { print ""; print t }
+                print l
+            }
+        }' "$1" >"$4"
+}
+
+# Puts the color table values in $1 (none turns Custom Text Color off) in the
+# default shell profile. With "save", the color there before Kadomo first
+# changed it is kept in $TEXT_BEFORE. Nothing happens until OmniWM has written
+# shell.toml.
+apply_text() {
+    local body="$1" save="${2:-}" target tmp
+    target="$(settings_target "$SHELL_TOML")"
+    [[ -f "$target" ]] || return 0
+    valid_color "$body" || die "not a color, left shell.toml alone: $body"
+    if [[ "$save" == save && ! -e "$TEXT_BEFORE" ]]; then
+        mkdir -p "$STATE_DIR"
+        table_body "$target" "$TEXT_TABLE" >"$TEXT_BEFORE"
+    fi
+    tmp="$(dirname "$target")/.shell.toml.kadomo.$$"
+    set_table "$target" "$TEXT_TABLE" "$body" "$tmp"
+    if cmp -s "$tmp" "$target"; then rm -f -- "$tmp"; return 0; fi
+    # Same folder, so the rename is atomic; OmniWM sees the new file and reloads it.
+    mv -f "$tmp" "$target"
+}
+
+# The theme's omniwm.toml holds the border tables and [workspaceBar.textColor]:
+# the border tables go to settings.toml, the text color to shell.toml.
 theme() {
+    local work status=0
     [[ -f "$THEME_FILE" ]] || return 0
-    apply_fragment "$THEME_FILE" save
+    work="$(mktemp -d "${TMPDIR:-/tmp}/kadomo-omniwm.XXXXXX")"
+    awk '/^\[workspaceBar\.textColor\]$/ { skip = 1; next } skip && /^[ \t]*\[/ { skip = 0 } !skip' \
+        "$THEME_FILE" >"$work/borders.toml"
+    table_body "$THEME_FILE" workspaceBar.textColor >"$work/text.toml"
+    ( apply_fragment "$work/borders.toml" save && apply_text "$work/text.toml" save ) || status=$?
+    rm -rf -- "$work"
+    return "$status"
 }
 
 restore_borders() {
-    [[ -s "$BORDERS_BEFORE" ]] || return 0
-    if [[ -f "$(settings_target)" ]]; then apply_fragment "$BORDERS_BEFORE"; fi
-    rm -f -- "$BORDERS_BEFORE"
+    if [[ -s "$BORDERS_BEFORE" ]]; then
+        if [[ -f "$(settings_target)" ]]; then apply_fragment "$BORDERS_BEFORE"; fi
+        rm -f -- "$BORDERS_BEFORE"
+    fi
+    if [[ -e "$TEXT_BEFORE" ]]; then
+        if [[ -f "$(settings_target "$SHELL_TOML")" ]]; then apply_text "$TEXT_BEFORE"; fi
+        rm -f -- "$TEXT_BEFORE"
+    fi
 }
 
 # --- the keys for next and previous workspace ---------------------------------
@@ -284,7 +359,7 @@ write_keybinds() {
 
 # Kadomo Menu › Services › OmniWM.
 write_menu() {
-    local sub="Scrolling and tiling, borders in the theme's colors" verb title note sym n=1
+    local sub="Scrolling and tiling, borders and bar text in the theme's colors" verb title note sym n=1
     app >/dev/null || sub="Not installed: brew install --cask $OMNIWM_CASK"
     mkdir -p "$(dirname "$MENU_FILE")"
     {
@@ -300,7 +375,7 @@ write_menu() {
         done <<EOF
 start|Start|Start OmniWM|play
 stop|Stop|Quit OmniWM|stop
-theme|Match Theme Borders|Border colors from the current Kadomo theme again|paintpalette
+theme|Match Theme Colors|Border and bar text colors from the current Kadomo theme again|paintpalette
 EOF
         printf '[[command]]\nid = "kadomo-omniwm-settings"\ntitle = "Edit Settings"\n'
         printf 'subtitle = "OmniWM'\''s settings.toml; it reloads when saved"\n'

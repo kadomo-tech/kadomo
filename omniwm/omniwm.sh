@@ -18,10 +18,12 @@ OMNIWM_SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/settings.toml"
 
 # One <key>|<value> line per fact: cask (Kadomo installed OmniWM with Homebrew).
 # borders-before.toml is the border colors settings.toml had before Kadomo's
-# theme first changed them; kadomo-omniwm restore-borders puts them back.
+# theme first changed them, and text-before.toml the workspace bar's text color
+# (empty when there was none); kadomo-omniwm restore-borders puts them back.
 OMNIWM_STATE_DIR="${KADOMO_STATE_DIR:-$HOME/Library/Application Support/kadomo}"
 OMNIWM_MANIFEST="$OMNIWM_STATE_DIR/omniwm-installed.txt"
 OMNIWM_BORDERS_BEFORE="$OMNIWM_STATE_DIR/omniwm-borders-before.toml"
+OMNIWM_TEXT_BEFORE="$OMNIWM_STATE_DIR/omniwm-text-before.toml"
 # The next / previous workspace keys Kadomo set; kadomo-omniwm restore-workspace-keys takes them off.
 OMNIWM_WORKSPACE_KEYS="$OMNIWM_STATE_DIR/omniwm-workspace-keys.txt"
 

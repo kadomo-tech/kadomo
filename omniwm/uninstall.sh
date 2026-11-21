@@ -32,7 +32,7 @@ esac
 run() { if ((DRY_RUN)); then echo "    would run: $*"; else "$@"; fi; }
 
 if [[ ! -s "$OMNIWM_MANIFEST" && ! -e "$OMNIWM_BIN" && ! -e "$OMNIWM_AGENT_PLIST" && ! -e "$OMNIWM_MENU_FILE" \
-      && ! -s "$OMNIWM_BORDERS_BEFORE" && ! -e "$OMNIWM_WORKSPACE_KEYS" ]]; then
+      && ! -s "$OMNIWM_BORDERS_BEFORE" && ! -e "$OMNIWM_TEXT_BEFORE" && ! -e "$OMNIWM_WORKSPACE_KEYS" ]]; then
     echo "  =  no omniwm installed"
     exit 0
 fi
@@ -63,11 +63,11 @@ if [[ -n "$cask" ]] && pgrep -xq OmniWM 2>/dev/null; then
 fi
 ((STOP_ONLY == 0)) || exit 0
 
-# The border colors from before Kadomo's theme, while kadomo-omniwm is still here.
-if [[ -s "$OMNIWM_BORDERS_BEFORE" ]]; then
-    echo "  ↩  OmniWM's border colors (from before Kadomo's theme)"
-    if [[ -x "$OMNIWM_BIN" ]]; then run "$OMNIWM_BIN" restore-borders || echo "  !  could not put OmniWM's border colors back" >&2
-    else run "$HERE/bin/kadomo-omniwm" restore-borders || echo "  !  could not put OmniWM's border colors back" >&2; fi
+# The colors from before Kadomo's theme, while kadomo-omniwm is still here.
+if [[ -s "$OMNIWM_BORDERS_BEFORE" || -e "$OMNIWM_TEXT_BEFORE" ]]; then
+    echo "  ↩  OmniWM's border and bar text colors (from before Kadomo's theme)"
+    if [[ -x "$OMNIWM_BIN" ]]; then run "$OMNIWM_BIN" restore-borders || echo "  !  could not put OmniWM's colors back" >&2
+    else run "$HERE/bin/kadomo-omniwm" restore-borders || echo "  !  could not put OmniWM's colors back" >&2; fi
 fi
 
 # The workspace keys Kadomo set, also while kadomo-omniwm is still here.

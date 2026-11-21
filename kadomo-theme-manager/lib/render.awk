@@ -17,6 +17,8 @@
 #   {{ omniwm_borders key fallback }}   OmniWM's [borders.color] table (the
 #                        first color), and a [borders.gradient] when there
 #                        are two or more
+#   {{ omniwm_color table c }}          c as an OmniWM settings.toml color
+#                        table named table (workspaceBar.textColor)
 #
 # A gradient helper reads key as "colors... angle" (hyprland_active_border);
 # when the theme has no such key it uses fallback, another key or a color.
@@ -137,6 +139,11 @@ function evaluate(expr,   n, w, i, out, a, b, form, base, sfx) {
         a = color(w[2]); b = color(w[3])
         if (a == "" || b == "" || w[4] !~ /^[0-9]+(\.[0-9]+)?$/) return NOFILL
         return readable(a, b, w[4] + 0)
+    }
+    if (w[1] == "omniwm_color" && n == 3) {
+        a = color(w[3])
+        if (a == "" || w[2] !~ /^[A-Za-z]+(\.[A-Za-z]+)*$/) return NOFILL
+        return omniwm_color(w[2], a, "ff")
     }
     if (n == 3 && gradient(w[2], w[3])) {
         if (w[1] == "gradient_start") return G[1]

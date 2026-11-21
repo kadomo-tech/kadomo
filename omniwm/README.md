@@ -18,7 +18,7 @@ installed yourself is left for you to upgrade (its own updater, or
 | OmniWM | `/Applications/OmniWM.app`, from Homebrew (`brew install --cask omniwm`) unless it is already on the Mac |
 | `kadomo-omniwm` | `~/.local/bin`: start, stop, status, theme, restore-borders, menu. A command that runs and exits; nothing of Kadomo's runs in the background |
 | Workspace keys | Ctrl+Option+Left / Right for previous / next workspace, in `~/.config/omniwm/settings.toml` |
-| Kadomo Menu | Services › OmniWM: Start, Stop, Match Theme Borders, Edit Settings, and OmniWM's keys in Keybinds (`~/.config/kadomo/menu/commands/omniwm.toml`) |
+| Kadomo Menu | Services › OmniWM: Start, Stop, Match Theme Colors, Edit Settings, and OmniWM's keys in Keybinds (`~/.config/kadomo/menu/commands/omniwm.toml`) |
 
 macOS asks once to allow OmniWM under Privacy & Security › Accessibility and
 Input Monitoring. OmniWM also needs "Displays have separate Spaces" on
