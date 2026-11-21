@@ -15,9 +15,9 @@
 #   Other         Firefox
 # Each component's own installer does the work: homebrew/, kadomo-menu/, omniwm/,
 # dotfiles/, apps/, neovim/, moonlight-mouse/, kadomo-theme-manager/, developer/. What an
-# older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now), for
-# SketchyBar (OmniWM's own menu bar replaces it), and for kitty (no longer
-# installed) is removed first. Remove everything again with ./uninstall.sh.
+# older Kadomo installed for AeroSpace (Kadomo uses OmniWM only now) and for
+# SketchyBar (OmniWM's own menu bar replaces it) is removed first. Remove
+# everything again with ./uninstall.sh.
 #
 # Usage: ./install.sh [--yes | --only LIST | --version]
 #   --yes         ask nothing, and install Kadomo Core
@@ -444,9 +444,6 @@ review() {
     if sketchybar_leftovers; then
         fields+=("Removes${TAB}what an older Kadomo installed for SketchyBar"$'\n'"(OmniWM's own menu bar replaces it now)")
     fi
-    if kitty_leftovers; then
-        fields+=("Removes${TAB}kitty (app and config) from an older Kadomo"$'\n'"(no longer installed)")
-    fi
     asks=()
     ! item_on homebrew homebrew || asks+=("Homebrew")
     ! item_on developer java || asks+=("Java 25 (it installs in /Library/Java)")
@@ -499,12 +496,6 @@ install_selected() {
     # Kadomo goes, whatever else is picked.
     if sketchybar_leftovers; then
         step "Removing SketchyBar from an older Kadomo" "$ROOT/omniwm/remove-sketchybar.sh" || failed+=("Removing SketchyBar")
-    fi
-    # kitty is no longer installed: an older Kadomo's app and config go,
-    # whatever else is picked.
-    if kitty_leftovers; then
-        step "Removing kitty from an older Kadomo" "$ROOT/apps/uninstall.sh" --retired || failed+=("Removing kitty")
-        step "Removing kitty's config" "$ROOT/dotfiles/uninstall.sh" --retired || failed+=("Removing kitty's config")
     fi
     keys="$(keys_for kadomo-menu)"
     [[ -z "$keys" ]] || run_component "Kadomo Menu" step kadomo-menu --only "$keys"

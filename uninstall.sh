@@ -137,7 +137,7 @@ esac
 [[ "$(uname -s)" == Darwin ]] || die "Kadomo is for macOS."
 ((EUID != 0)) || die "run this as your own user, not with sudo."
 
-# The terminal app Kadomo installed (Ghostty or kitty) that this runs inside,
+# The terminal app Kadomo installed (Ghostty) that this runs inside,
 # or nothing. The uninstall quits and removes those apps, and quitting the one
 # this runs in would end the uninstall halfway, so it has to run elsewhere.
 kadomo_terminal_host() {
@@ -145,7 +145,7 @@ kadomo_terminal_host() {
     [[ -s "$APPS_MANIFEST" ]] || return 1
     while IFS='|' read -r kind name; do
         [[ "$kind" == cask ]] || continue
-        case "$name" in ghostty|kitty) ;; *) continue ;; esac
+        case "$name" in ghostty) ;; *) continue ;; esac
         entry="$(app_entry cask "$name")" && app="$(app_path "$(app_field "$entry" 4)")" || continue
         runs_inside "$app" && { basename "$app" .app; return 0; }
     done <"$APPS_MANIFEST"

@@ -11,7 +11,7 @@ FILES=(
 )
 
 # Configs and formulae older installs placed that this checkout no longer ships
-# (kitty's config, AeroSpace's config, and JankyBorders with its bordersrc) are
+# (AeroSpace's config, and JankyBorders with its bordersrc) are
 # still in the records below; uninstall.sh --retired removes them, and
 # install.sh runs it.
 

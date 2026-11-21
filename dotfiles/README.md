@@ -19,8 +19,7 @@ replaces, and records what it did in
 reads that record, removes the copies, and restores the backups. Both take
 `--dry-run`. The top-level `install.sh` and `uninstall.sh` run them for you.
 
-Older installs also placed a kitty config (Kadomo no longer installs kitty),
-an AeroSpace config, and JankyBorders (from Homebrew, recorded in
+Older installs also placed an AeroSpace config and JankyBorders (from Homebrew, recorded in
 `packages-installed.txt`) with its `bordersrc`. Kadomo uses OmniWM now, which
 draws its own border, so `install.sh` first runs `uninstall.sh --retired`: it
 removes the files this folder no longer ships (keeping a copy of one you

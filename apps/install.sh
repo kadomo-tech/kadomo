@@ -1,7 +1,6 @@
 #!/bin/bash
 # Installs apps with Homebrew: Ghostty, Moonlight, Neovim, btop, htop, and
-# Firefox. First, an app this checkout no longer installs (kitty) that an
-# older Kadomo put here is removed: uninstall.sh --retired.
+# Firefox.
 # An app that is already on this Mac, however it got there, is left alone.
 # Each app Kadomo installs is recorded so uninstall.sh removes exactly those.
 #
@@ -28,18 +27,13 @@ while (($#)); do
                 app_entry "$key" >/dev/null || { echo "Unknown app for --only: $key (known: $(app_keys))" >&2; exit 2; }
             done
             ;;
-        -h|--help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
     esac
     shift
 done
 
 selected() { [[ -z "$ONLY" || ",$ONLY," == *",$1,"* ]]; }
-
-# What older installs put here that this checkout no longer ships.
-retired_args=(--retired)
-((DRY_RUN == 0)) || retired_args+=(--dry-run)
-"$HERE/uninstall.sh" "${retired_args[@]}"
 
 record() {
     ((DRY_RUN)) && return 0

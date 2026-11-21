@@ -5,11 +5,9 @@
 # own data (settings, browser profiles), as with a plain `brew uninstall`.
 # The terminal app this runs in is kept: quitting it would end this script.
 #
-# Usage: ./uninstall.sh [--dry-run] [--stop | --retired]
+# Usage: ./uninstall.sh [--dry-run] [--stop]
 #   --dry-run   show what would change without touching anything
 #   --stop      only quit the apps Kadomo installed; remove nothing
-#   --retired   only remove apps this checkout no longer installs (such as an
-#               older Kadomo's kitty); install.sh runs it
 #
 # Runs on the Bash 3.2 that ships with macOS.
 set -euo pipefail
@@ -18,14 +16,12 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/apps.sh"
 DRY_RUN=0
 STOP_ONLY=0
-RETIRED_ONLY=0
 
 while (($#)); do
     case "$1" in
         --dry-run) DRY_RUN=1 ;;
         --stop) STOP_ONLY=1 ;;
-        --retired) RETIRED_ONLY=1 ;;
-        -h|--help) sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
     esac
     shift
@@ -34,7 +30,7 @@ done
 run() { if ((DRY_RUN)); then echo "    would run: $*"; else "$@"; fi; }
 
 if [[ ! -s "$APPS_MANIFEST" ]]; then
-    ((RETIRED_ONLY)) || echo "  =  no apps installed"
+    echo "  =  no apps installed"
     exit 0
 fi
 
@@ -44,13 +40,11 @@ recorded_app() { # <kind> <name>
     [[ "$1" == cask ]] && entry="$(app_entry "$1" "$2")" && app_path "$(app_field "$entry" 4)"
 }
 
-# Every app first, so nothing is removed while it runs. With --retired, only
-# the apps this checkout no longer installs; one it still ships is left running.
+# Every app first, so nothing is removed while it runs.
 stop_all() {
     local kind name app
     while IFS='|' read -r kind name; do
         [[ -n "$name" ]] || continue
-        ((RETIRED_ONLY == 0)) || ! in_apps "$kind" "$name" || continue
         if app="$(recorded_app "$kind" "$name")"; then stop_app "$app" || true
         else
             case "$name" in btop|htop) stop_command "$name" ;; esac
@@ -69,14 +63,8 @@ fi
 
 failed=0
 kept=()
-# With --retired, the records of apps this checkout still ships stay as they are.
-still_shipped=()
 while IFS='|' read -r kind name; do
     [[ -n "$name" ]] || continue
-    if ((RETIRED_ONLY)) && in_apps "$kind" "$name"; then
-        still_shipped+=("$kind|$name")
-        continue
-    fi
     if ! "$brew" list "--$kind" "$name" >/dev/null 2>&1; then
         echo "  =  $name (already removed)"
         continue
@@ -94,13 +82,8 @@ while IFS='|' read -r kind name; do
 done <"$APPS_MANIFEST"
 
 if ((failed == 0 && ${#kept[@]} == 0)); then
-    if ((${#still_shipped[@]})); then
-        # --retired: only the records of what is gone go.
-        ((DRY_RUN)) || printf '%s\n' "${still_shipped[@]}" >"$APPS_MANIFEST"
-    else
-        run rm -f -- "$APPS_MANIFEST"
-        run rmdir "$STATE_DIR" 2>/dev/null || true
-    fi
+    run rm -f -- "$APPS_MANIFEST"
+    run rmdir "$STATE_DIR" 2>/dev/null || true
 fi
 if ((${#kept[@]} && DRY_RUN == 0)); then
     printf '\n  Still needs you:\n'
@@ -111,5 +94,5 @@ if ((${#kept[@]} && DRY_RUN == 0)); then
     done
 fi
 
-((DRY_RUN && !RETIRED_ONLY)) && echo "Dry run: nothing was changed."
+((DRY_RUN)) && echo "Dry run: nothing was changed."
 exit "$failed"

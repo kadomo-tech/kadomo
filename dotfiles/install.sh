@@ -4,8 +4,8 @@
 # as <name>.bak.<timestamp> before being replaced. Every file placed and the
 # backup of whatever was there before Kadomo first replaced it are recorded so
 # uninstall.sh can undo exactly that. First, what older installs placed that
-# this checkout no longer ships (kitty's config, AeroSpace's config,
-# JankyBorders and its bordersrc) is removed: uninstall.sh --retired.
+# this checkout no longer ships (AeroSpace's config, JankyBorders and its
+# bordersrc) is removed: uninstall.sh --retired.
 # Colors are not here: Ghostty reads them from the current Kadomo theme,
 # which kadomo-theme-manager installs and switches.
 #
