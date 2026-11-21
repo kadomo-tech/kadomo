@@ -40,3 +40,6 @@ comment = "#6f6283"
 # Window borders: CDE lavender at the top left to Sun's indigo at the bottom right.
 hyprland_active_border = "rgba(b48ee6ff) rgba(6a5acdff) 45deg"
 inactive_border = "#2a1f38"
+
+# OmniWM's workspace bar text: the CDE lavender, not the teal cyan.
+bar_text = "#b48ee6"

@@ -47,7 +47,8 @@ done
 check "omniwm: the border runs violet to cyan" has "$THEME/omniwm.toml" 'direction = "topLeftToBottomRight"'
 check "omniwm: violet first" bash -c "grep -A4 '^\[borders.gradient.start\]' '$THEME/omniwm.toml' | grep -qx 'red = 0.7294'"
 check "omniwm: the solid color is the first stop" bash -c "grep -A4 '^\[borders.color\]' '$THEME/omniwm.toml' | grep -qx 'green = 0.3529'"
-check "omniwm: the bar text is the cyan" bash -c "grep -A4 '^\[workspaceBar.textColor\]' '$THEME/omniwm.toml' | grep -qx 'red = 0.3529'"
+check "omniwm: the bar text is cyan by default" bash -c "grep -A4 '^\[workspaceBar.textColor\]' '$THEME/omniwm.toml' | grep -qx 'red = 0.3529'"
+check "omniwm: a theme can name its own bar text" bash -c "awk -f '$ROOT/lib/palette.awk' '$ROOT/themes/solaris/colors.toml' | grep -qx 'bar_text	#b48ee6'"
 check "the launcher gets tmac2k too" has "$THEME/kadomo-menu.toml" 'border = ["#ba5aff", "#5ac8ff"]'
 
 echo "1. theme-set catppuccin"

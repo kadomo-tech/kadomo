@@ -144,6 +144,8 @@ END {
     fill("selection", mix(bg, fg, 0.2))
     fill("muted", mix(bg, fg, 0.35))
     fill("inactive_border", P["lighter_background"])
+    # The text on OmniWM's workspace bar.
+    fill("bar_text", P["cyan"])
     # Editor shades (Vim and Neovim): comments, the cursor line, inactive
     # windows, and diff backgrounds.
     fill("comment", mix(bg, fg, 0.4))

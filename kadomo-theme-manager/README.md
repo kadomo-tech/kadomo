@@ -109,6 +109,7 @@ foreground = "#a9b1d6"        # also dark_foreground, light_foreground, bright_f
 red = "#f7768e"               # yellow orange green cyan blue magenta brown, and bright_ versions
 hyprland_active_border = "rgba(bb9af7ff) rgba(7aa2f7ff) 45deg"   # optional window border gradient
 inactive_border = "#24283b"   # optional
+bar_text = "#bb9af7"          # optional: the text on OmniWM's workspace bar (cyan by default)
 success = "#9ece6a"           # optional: the prompt after a command that worked (green by default)
 error = "#f7768e"             # optional: after one that failed (red)
 warning = "#e0af68"           # optional: Git changes (yellow)
@@ -146,7 +147,7 @@ then the built-in one.
 | `{{ mix background foreground 30% }}` | a blend (also `mix_strip`, `mix_rgb`, `mix_argb`; `0.3` works too) |
 | `{{ toml_gradient hyprland_active_border accent }}` | `["#bb9af7", "#7aa2f7"]` |
 | `{{ omniwm_borders hyprland_active_border accent }}` | OmniWM's `[borders.color]` table (the first color), plus `[borders.gradient]` when there are two |
-| `{{ omniwm_color workspaceBar.textColor cyan }}` | `cyan` as an OmniWM color table named `[workspaceBar.textColor]` |
+| `{{ omniwm_color workspaceBar.textColor bar_text }}` | `bar_text` as an OmniWM color table named `[workspaceBar.textColor]` |
 | `{{ readable accent background 3 }}` | `accent`, or `accent` moved toward black or white just far enough for a WCAG contrast of 3 against `background` |
 | `{{ gradient_start key fallback }}`, `{{ shell_gradient ... }}`, `{{ hypr_gradient ... }}` | the first color; colors and angle; Hyprland's form |
 | `{{ theme }}`, `{{ theme_name }}`, `{{ mode }}` | `rose-pine`, `Rose Pine`, `light` |
