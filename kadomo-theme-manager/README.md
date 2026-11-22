@@ -20,8 +20,9 @@ Catppuccin, Catppuccin Latte (light), Gruvbox, Rosé Pine (Dawn, light),
 CDE desktop of Sun's Solaris workstations), Mr. Robot (the dark cyan of Elliot's
 desktop and the show's slate posters, with a hex dump wallpaper that says hello),
 Everforest (Omarchy's forest-green palette, with a plain backdrop instead of
-a photo), and White (light: Braun-style off-white and black ink with one
-signal orange, after Dieter Rams).
+a photo), White (light: Braun-style off-white and black ink with one
+signal orange, after Dieter Rams), and Dark (monochrome: the #1e1e1e gray of
+macOS Recovery, grays up to white, and system blue only as the accent).
 
 ## Install
 
