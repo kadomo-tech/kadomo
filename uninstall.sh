@@ -16,8 +16,9 @@
 #                    put back, and JankyBorders goes if an older Kadomo
 #                    installed it
 #   OmniWM           kadomo-omniwm and its menu entries; the border colors
-#                    from before Kadomo come back, and OmniWM goes if Kadomo
-#                    installed it (its settings stay)
+#                    from before Kadomo and the Apple logo in its menu bar
+#                    come back, and OmniWM goes if Kadomo installed it (its
+#                    settings stay)
 #   SketchyBar from an older Kadomo
 #                    its config and menu entries; the menu bar and OmniWM's
 #                    settings go back, and its packages go if Kadomo installed
@@ -130,7 +131,7 @@ source "$ROOT/homebrew/homebrew.sh"
 case "${1:-}" in
     "") ;;
     --yes|-y) ASSUME_YES=1 ;;
-    -h|--help) sed -n '2,52p' "$ROOT/uninstall.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,53p' "$ROOT/uninstall.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 

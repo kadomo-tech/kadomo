@@ -1,6 +1,7 @@
 #!/bin/bash
 # Removes what install.sh put in place: kadomo-omniwm and the Kadomo Menu
-# entries, and the OmniWM login agent older installs left. (What they
+# entries, the Omarchy logo in OmniWM's menu bar (the Apple logo comes back), and
+# the OmniWM login agent older installs left. (What they
 # installed for AeroSpace is remove-aerospace.sh's.) OmniWM's border goes back to
 # the colors it had before Kadomo's theme, and the workspace keys Kadomo set come
 # off unless you have changed them. OmniWM itself is quit and
@@ -25,14 +26,15 @@ case "${1:-}" in
     "") ;;
     --dry-run) DRY_RUN=1 ;;
     --stop) STOP_ONLY=1 ;;
-    -h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
 esac
 
 run() { if ((DRY_RUN)); then echo "    would run: $*"; else "$@"; fi; }
 
 if [[ ! -s "$OMNIWM_MANIFEST" && ! -e "$OMNIWM_BIN" && ! -e "$OMNIWM_AGENT_PLIST" && ! -e "$OMNIWM_MENU_FILE" \
-      && ! -s "$OMNIWM_BORDERS_BEFORE" && ! -e "$OMNIWM_TEXT_BEFORE" && ! -e "$OMNIWM_WORKSPACE_KEYS" ]]; then
+      && ! -s "$OMNIWM_BORDERS_BEFORE" && ! -e "$OMNIWM_TEXT_BEFORE" && ! -e "$OMNIWM_WORKSPACE_KEYS" ]] \
+      && ! omniwm_logo_ours; then
     echo "  =  no omniwm installed"
     exit 0
 fi
@@ -75,6 +77,13 @@ if [[ -e "$OMNIWM_WORKSPACE_KEYS" ]]; then
     echo "  ↩  OmniWM's next and previous workspace keys"
     if [[ -x "$OMNIWM_BIN" ]]; then run "$OMNIWM_BIN" restore-workspace-keys || echo "  !  could not take OmniWM's workspace keys off" >&2
     else run "$HERE/bin/kadomo-omniwm" restore-workspace-keys || echo "  !  could not take OmniWM's workspace keys off" >&2; fi
+fi
+
+# The Omarchy logo; OmniWM shows its Apple logo again. An apple-menu widget of yours stays.
+if omniwm_logo_ours; then
+    logo_dir="$(dirname "$OMNIWM_LOGO_WIDGET")"
+    echo "  -  ${logo_dir/#$HOME/~} (the Omarchy logo; the Apple logo comes back)"
+    run omniwm_logo_remove
 fi
 
 # The login agent older installs put in place.

@@ -16,6 +16,13 @@ OMNIWM_AGENT_PLIST="$HOME/Library/LaunchAgents/$OMNIWM_AGENT_LABEL.plist"
 OMNIWM_MENU_FILE="${KADOMO_CONFIG:-$HOME/.config/kadomo}/menu/commands/omniwm.toml"
 OMNIWM_SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/settings.toml"
 
+# The Omarchy logo Kadomo puts in OmniWM's menu bar in place of the Apple
+# logo: a widget in the shell's top-level widgets folder, which OmniWM uses over
+# its own apple-menu widget. Its first line marks it as Kadomo's, so an
+# apple-menu widget of yours is never replaced or removed.
+OMNIWM_LOGO_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/shell/apple-menu/init.luau"
+OMNIWM_LOGO_WIDGET="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/shell/widgets/apple-menu/init.luau"
+
 # One <key>|<value> line per fact: cask (Kadomo installed OmniWM with Homebrew).
 # borders-before.toml is the border colors settings.toml had before Kadomo's
 # theme first changed them, and text-before.toml the workspace bar's text color
@@ -75,6 +82,25 @@ omniwm_up_to_date() {
     [[ -n "${OMNIWM_SOURCE_BIN:-}" ]] || return 1
     omniwm_app >/dev/null && omniwm_version_ok && cmp -s "$OMNIWM_SOURCE_BIN/kadomo-omniwm" "$OMNIWM_BIN" \
         && [[ -f "$OMNIWM_MENU_FILE" && ! -e "$OMNIWM_AGENT_PLIST" ]]
+}
+
+# Whether the apple-menu widget there is Kadomo's logo, and whether it is the current one.
+omniwm_logo_ours() { [[ -f "$OMNIWM_LOGO_WIDGET" ]] && head -n 1 "$OMNIWM_LOGO_WIDGET" | grep -q '^-- Kadomo:'; }
+omniwm_logo_up_to_date() { cmp -s "$OMNIWM_LOGO_SOURCE" "$OMNIWM_LOGO_WIDGET"; }
+
+# Puts Kadomo's logo in place; OmniWM picks it up by itself. Returns 1, and
+# changes nothing, when an apple-menu widget of yours is there.
+omniwm_logo_install() {
+    if [[ -e "$OMNIWM_LOGO_WIDGET" ]] && ! omniwm_logo_ours; then return 1; fi
+    mkdir -p "$(dirname "$OMNIWM_LOGO_WIDGET")"
+    cp "$OMNIWM_LOGO_SOURCE" "$OMNIWM_LOGO_WIDGET.tmp"
+    mv "$OMNIWM_LOGO_WIDGET.tmp" "$OMNIWM_LOGO_WIDGET"
+}
+# Takes Kadomo's logo away, so OmniWM's Apple logo is back; one of yours stays.
+omniwm_logo_remove() {
+    omniwm_logo_ours || return 0
+    rm -f -- "$OMNIWM_LOGO_WIDGET"
+    rmdir "$(dirname "$OMNIWM_LOGO_WIDGET")" 2>/dev/null || true
 }
 
 omniwm_record() {

@@ -10,6 +10,7 @@ installed yourself is left for you to upgrade (its own updater, or
 
 ```sh
 ./install.sh     # or: ./install.sh --dry-run
+./install.sh --only omniwm   # everything but the Omarchy logo: keeps the Apple logo
 ./uninstall.sh
 ```
 
@@ -19,6 +20,7 @@ installed yourself is left for you to upgrade (its own updater, or
 | `kadomo-omniwm` | `~/.local/bin`: start, stop, status, theme, restore-borders, menu. A command that runs and exits; nothing of Kadomo's runs in the background |
 | Workspace keys | Ctrl+Option+Left / Right for previous / next workspace, in `~/.config/omniwm/settings.toml` |
 | Kadomo Menu | Services › OmniWM: Start, Stop, Match Theme Colors, Edit Settings, and OmniWM's keys in Keybinds (`~/.config/kadomo/menu/commands/omniwm.toml`) |
+| Omarchy logo | In OmniWM's menu bar, in place of the Apple logo (`~/.config/omniwm/shell/widgets/apple-menu`) |
 
 macOS asks once to allow OmniWM under Privacy & Security › Accessibility and
 Input Monitoring. OmniWM also needs "Displays have separate Spaces" on
@@ -32,6 +34,25 @@ Settings › General › Login Items. The installer reminds you. Older Kadomo
 installs started it with a login agent
 (`~/Library/LaunchAgents/tech.kadomo.omniwm-login.plist`); the installer and
 uninstaller remove it.
+
+## The Omarchy logo
+
+OmniWM's menu bar starts with the Apple logo, its built-in `apple-menu`
+widget. Kadomo puts the Omarchy logo there instead, the glyph Omarchy's own bar
+shows, in the bar's text color; clicking it still opens the Apple menu.
+`shell/apple-menu/init.luau` is the widget, and the installer copies it to
+`~/.config/omniwm/shell/widgets/apple-menu/`, where a widget takes the place
+of OmniWM's own of the same name. OmniWM picks it up without a restart, and
+OmniWM itself is not changed.
+
+It is on by default. To keep the Apple logo, turn off Kadomo Core › Omarchy
+logo under Advanced in the top-level installer, or run `./install.sh --only
+omniwm` here. The uninstaller takes it away again, and the Apple logo comes
+back. An `apple-menu` widget of your own there is never replaced or removed:
+the widget's first line, `-- Kadomo:`, is how Kadomo knows its own.
+
+Because it takes the place of OmniWM's widget, a change OmniWM makes to its own
+`apple-menu` in a later release does not show while Kadomo's is there.
 
 ## Keybinds
 

@@ -1,5 +1,6 @@
 #!/bin/bash
-# Checks kadomo-omniwm's workspace keys and theme colors in a throwaway HOME. OmniWM is not
+# Checks kadomo-omniwm's workspace keys and theme colors, and the Omarchy
+# logo's widget, in a throwaway HOME. OmniWM is not
 # started, and no real setting is read or changed.
 #
 # Usage: omniwm/tests/test.sh
@@ -171,6 +172,37 @@ colors_setup noshell ""
 rm -f "$SH"
 check "no shell.toml yet: the border still changes" kc theme
 check "  and none is made" test ! -e "$SH"
+
+echo "The Omarchy logo"
+# omniwm.sh's helpers in a throwaway HOME; OmniWM is not asked to reload.
+logo() { HOME="$H" XDG_CONFIG_HOME="$H/.config" bash -c 'source "$1/omniwm.sh"; shift; "$@"' _ "$OW" "$@"; }
+not() { ! "$@"; }
+logo_setup() { W="$WORK/$1"; H="$W/home"; L="$H/.config/omniwm/shell/widgets/apple-menu/init.luau"; rm -rf -- "$W"; mkdir -p "$H/.config/omniwm/shell/widgets"; }
+
+logo_setup fresh
+check "it goes in the shell's widgets folder" logo omniwm_logo_install
+check "  as Kadomo's apple-menu widget" same "$L" "$OW/shell/apple-menu/init.luau"
+check "  and counts as up to date" logo omniwm_logo_up_to_date
+check "it draws the logo, not Apple's symbol" bash -c "grep -q 'ui.path' '$L' && ! grep -q applelogo '$L'"
+check "  and still opens the Apple menu" grep -q '"menu apple"' "$L"
+check "installing again is fine" logo omniwm_logo_install
+logo omniwm_logo_remove
+check "uninstalling takes it away" test ! -e "$L"
+check "  and its folder, so OmniWM's own is used" test ! -e "$(dirname "$L")"
+check "  but the widgets folder stays" test -d "$H/.config/omniwm/shell/widgets"
+
+logo_setup stale
+mkdir -p "$(dirname "$L")"; printf -- '-- Kadomo: an older logo\n' >"$L"
+check "an older Kadomo logo is not up to date" not logo omniwm_logo_up_to_date
+logo omniwm_logo_install
+check "  and installing replaces it" same "$L" "$OW/shell/apple-menu/init.luau"
+
+logo_setup yours
+mkdir -p "$(dirname "$L")"; printf -- '-- my own apple menu\n' >"$L"; cp "$L" "$W/yours.luau"
+check "an apple-menu widget of yours is not replaced" not logo omniwm_logo_install
+check "  and stays as it was" same "$L" "$W/yours.luau"
+logo omniwm_logo_remove
+check "  and uninstalling leaves it" same "$L" "$W/yours.luau"
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 ((FAIL == 0))

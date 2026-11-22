@@ -2,7 +2,8 @@
 # Installs Kadomo. Pick what to set up by category, or go through every item
 # under Advanced; nothing is installed until you confirm the review.
 #   Kadomo Core   Homebrew (when it is not here yet), Kadomo Menu and its
-#                 font, the OmniWM window manager, Ghostty, btop, htop,
+#                 font, the OmniWM window manager (with the Omarchy logo in
+#                 its menu bar, or Apple's under Advanced), Ghostty, btop, htop,
 #                 the Starship prompt, and the theme manager with its themes
 #                                                             (on by default)
 #   Developer     Neovim, Kadomo's Vim and Neovim settings, and Neovim set
@@ -119,7 +120,7 @@ case "${1:-}" in
         done
         ;;
     --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
-    -h|--help) sed -n '2,34p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help) sed -n '2,35p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) die "unknown option: $1 (try --help)" ;;
 esac
 
@@ -136,6 +137,7 @@ ITEMS=(
     "Kadomo Core|kadomo-menu|font|JetBrainsMono Nerd Font|for the launcher and VS Code's terminal; 7 MB from GitHub"
     "Kadomo Core|kadomo-menu|start|Start Kadomo Menu|opens it now; it starts at login by default"
     "Kadomo Core|omniwm|omniwm|OmniWM|window manager: scrolling and tiling, its border in the theme's colors, its own menu bar"
+    "Kadomo Core|omniwm|logo|Omarchy logo|in OmniWM's menu bar, in place of the Apple logo; leave it off to keep Apple's"
     "Kadomo Core|apps|ghostty|Ghostty|terminal app, from Homebrew"
     "Kadomo Core|dotfiles|ghostty|Ghostty config|~/.config/ghostty; a different file there is backed up"
     "Kadomo Core|apps|btop|btop|system monitor, from Homebrew"
@@ -193,6 +195,13 @@ for ((i=0; i<N; i++)); do
                 else ITEM_DETAIL[i]="OmniWM is older than $OMNIWM_MIN_VERSION; upgrades it if Kadomo installed it"; fi
             fi
             ;;
+        omniwm:logo)
+            if ! omniwm_supported; then present=1; ITEM_DETAIL[i]="not on this Mac: OmniWM $(omniwm_requirement)"
+            elif omniwm_logo_up_to_date; then present=1
+            elif [[ -e "$OMNIWM_LOGO_WIDGET" ]] && ! omniwm_logo_ours; then
+                ITEM_DETAIL[i]="your own apple-menu widget is in OmniWM's shell folder; it stays, so this does nothing"
+            fi
+            ;;
         apps:*) app_present "$(app_entry "${ITEM_KEY[i]}")" && present=1 ;;
         developer:starship) dev_present starship && ITEM_DETAIL[i]="already installed; turns it on for zsh, in the theme's colors" ;;
         developer:*) dev_present "${ITEM_KEY[i]}" && present=1 ;;
@@ -212,7 +221,7 @@ needs_brew() {
     case "${ITEM_COMPONENT[$1]}:${ITEM_KEY[$1]}" in
         apps:*|developer:node|developer:java|developer:rancher|developer:vscode) return 0 ;;
         developer:starship) ! dev_present starship ;;
-        omniwm:*) ! omniwm_app >/dev/null ;;
+        omniwm:omniwm) ! omniwm_app >/dev/null ;;
         moonlight-mouse:*) ! app_path LinearMouse.app >/dev/null ;;
         neovim:*) nvim_needs_brew "${ITEM_KEY[$1]}" ;;
         *) return 1 ;;
@@ -513,7 +522,8 @@ install_selected() {
         run_component "$(labels_for neovim)" step neovim --only "$keys" ${later:+--later "$later"}
     fi
     ! component_on moonlight-mouse || run_component "Moonlight Mouse Optimization" step moonlight-mouse
-    ! component_on omniwm || run_component "OmniWM" step omniwm
+    keys="$(keys_for omniwm)"
+    [[ -z "$keys" ]] || run_component "$(labels_for omniwm)" step omniwm --only "$keys"
     # After the configs and apps it wires.
     keys="$(keys_for kadomo-theme-manager)"
     [[ -z "$keys" ]] || run_component "Theme manager and themes" step kadomo-theme-manager --only "$keys"
