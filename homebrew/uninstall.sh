@@ -91,27 +91,29 @@ if [[ -n "$brew" ]]; then
 fi
 
 clt="$(hb_recorded clt || true)"
-if [[ -n "$brew" || ( "$clt" == added && -d "$CLT_DIR" ) ]]; then need_sudo || exit 1; fi
 keep_alive=""
-if ((DRY_RUN == 0)); then
-    ( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null; sleep 30; done ) &
-    keep_alive=$!
-fi
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/kadomo-homebrew.XXXXXX")"
+WORK=""
 cleanup() {
     if [[ -n "$keep_alive" ]]; then { kill "$keep_alive"; wait "$keep_alive"; } 2>/dev/null || true; fi
-    rm -rf -- "$WORK"
+    [[ -z "$WORK" ]] || rm -rf -- "$WORK"
 }
 trap cleanup EXIT
+if ((DRY_RUN == 0)) && [[ -n "$brew" ]]; then
+    WORK="$(mktemp -d "${TMPDIR:-/tmp}/kadomo-homebrew.XXXXXX")"
+    hb_download_script "$HOMEBREW_UNINSTALL_URL" "$HOMEBREW_UNINSTALL_SHA256" "$WORK/uninstall.sh" || exit 1
+fi
+if [[ -n "$brew" || ( "$clt" == added && -d "$CLT_DIR" ) ]]; then
+    need_sudo || exit 1
+    if ((DRY_RUN == 0)); then
+        ( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null; sleep 30; done ) &
+        keep_alive=$!
+    fi
+fi
 
 failed=0
 if [[ -n "$brew" ]]; then
     echo "  -  Homebrew in $prefix (Homebrew's own uninstaller)"
     if ((DRY_RUN == 0)); then
-        if ! curl -fsSL --retry 2 -o "$WORK/uninstall.sh" "$HOMEBREW_UNINSTALL_URL" || [[ ! -s "$WORK/uninstall.sh" ]]; then
-            echo "  !  could not download Homebrew's uninstaller; check the network and run this again" >&2
-            exit 1
-        fi
         NONINTERACTIVE=1 /bin/bash "$WORK/uninstall.sh" --force --path="$prefix" || failed=1
     fi
     # Its uninstaller leaves folders it did not make itself; /opt/homebrew is

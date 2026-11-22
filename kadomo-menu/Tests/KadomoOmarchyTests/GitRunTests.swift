@@ -53,3 +53,27 @@ private func sh(_ script: String, timeout: TimeInterval = 20, watching folder: S
     #expect(OmarchyGit.environment["GIT_CONFIG_PARAMETERS"] == nil)
     #expect(OmarchyGit.environment["GIT_ALLOW_PROTOCOL"] == "https")
 }
+
+@Test func gitExportsOnlyThemeFilesFromTheSelectedFolder() throws {
+    let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    let repo = root.appendingPathComponent("repo")
+    let folder = repo.appendingPathComponent("themes/example")
+    let output = root.appendingPathComponent("export")
+    defer { try? FileManager.default.removeItem(at: root) }
+    try FileManager.default.createDirectory(at: folder.appendingPathComponent("backgrounds"), withIntermediateDirectories: true)
+    let git = ["-C", repo.path]
+    try OmarchyGit.run(git + ["init", "--quiet"])
+    let palette = Data("background = \"#123456\"\n".utf8)
+    let picture = Data([0xff, 0xd8, 0xff, 0x80, 0x00])
+    try palette.write(to: folder.appendingPathComponent("colors.toml"))
+    try picture.write(to: folder.appendingPathComponent("backgrounds/example.jpg"))
+    try Data("ignored\n".utf8).write(to: folder.appendingPathComponent("README.md"))
+    try OmarchyGit.run(git + ["add", "."])
+    try OmarchyGit.run(git + ["-c", "user.name=Kadomo Test", "-c", "user.email=test@example.invalid",
+                              "commit", "--quiet", "-m", "Theme files"])
+    let notes = try OmarchyGit.exportTheme(from: repo.path, subpath: "themes/example", into: output.path)
+    #expect(notes.isEmpty)
+    #expect(try Data(contentsOf: output.appendingPathComponent("colors.toml")) == palette)
+    #expect(try Data(contentsOf: output.appendingPathComponent("backgrounds/example.jpg")) == picture)
+    #expect(!FileManager.default.fileExists(atPath: output.appendingPathComponent("README.md").path))
+}

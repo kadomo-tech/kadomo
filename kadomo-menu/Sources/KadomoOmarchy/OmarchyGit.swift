@@ -96,14 +96,95 @@ public enum OmarchyGit {
         return env
     }
 
-    /// Shallow-clones `location` into `destination` and returns the commit.
+    /// Fetches Git objects without checking out the remote work tree.
     public static func clone(_ location: OmarchyGitLocation, into destination: String) throws(OmarchyInstallError) -> String {
-        var args = safety + ["clone", "--quiet", "--depth", "1", "--no-recurse-submodules", "--no-tags", "--single-branch"]
+        var args = safety + ["-c", "fetch.unpackLimit=1", "clone", "--quiet", "--depth", "1",
+                             "--no-checkout", "--no-recurse-submodules", "--no-tags", "--single-branch"]
         if let ref = location.ref { args += ["--branch", ref] }
         args += ["--", location.repository, destination]
         _ = try run(args, watching: destination)
         let sha = try run(safety + ["-C", destination, "rev-parse", "HEAD"]).trimmingCharacters(in: .whitespacesAndNewlines)
         return sha
+    }
+
+    /// Reads raw Git blobs so repository attributes, symlinks and executable
+    /// modes never affect the files staged for the theme importer.
+    static func exportTheme(from repository: String, subpath: String?, into destination: String) throws(OmarchyInstallError) -> [String] {
+        let git = safety + ["-C", repository]
+        let tree = subpath.map { "HEAD:\($0)" } ?? "HEAD"
+        let limits = SafeThemeCopy.limits.merging(["alacritty.toml": OmarchyAlacritty.maxBytes]) { first, _ in first }
+        let files = try treeEntries(git: git, tree: tree)
+        var notes: [String] = []
+        for entry in files {
+            let preview = SafeThemeCopy.previewNames.contains(entry.name)
+            guard let limit = preview ? SafeThemeCopy.maxImageBytes : limits[entry.name] else { continue }
+            guard let size = entry.size, size <= limit else {
+                if entry.name == "colors.toml" { throw OmarchyInstallError("colors.toml must be a regular file under 64 KB") }
+                notes.append("\(entry.name) is not a regular file or is over the size limit; skipped")
+                continue
+            }
+            let content = try runBytes(git + ["cat-file", "blob", entry.object], maxOutput: size)
+            try stage(content, at: destination + "/" + entry.name)
+        }
+        if files.contains(where: { $0.name == "backgrounds" && $0.mode == "040000" }) {
+            let wallpapers = try treeEntries(git: git, tree: (subpath.map { "HEAD:\($0)/" } ?? "HEAD:") + "backgrounds")
+            var count = 0, bytes = 0, inspectedBytes = 0, inspected = 0, lfs = 0, skipped = 0
+            let inspectionBudget = SafeThemeCopy.maxBackgroundBytes + SafeThemeCopy.maxImageBytes
+            for entry in wallpapers.sorted(by: { $0.name < $1.name }) {
+                guard !entry.name.hasPrefix("."), SafeThemeCopy.isPlainName(entry.name),
+                      SafeThemeCopy.imageKind(of: entry.name) != nil else { continue }
+                guard count < SafeThemeCopy.maxBackgrounds, inspected < 2 * SafeThemeCopy.maxBackgrounds,
+                      let size = entry.size, size <= SafeThemeCopy.maxImageBytes,
+                      size <= SafeThemeCopy.maxBackgroundBytes - bytes, size <= inspectionBudget - inspectedBytes else {
+                    skipped += 1
+                    continue
+                }
+                inspected += 1
+                inspectedBytes += size
+                let content = try runBytes(git + ["cat-file", "blob", entry.object], maxOutput: size)
+                if SafeThemeCopy.isImage(content) {
+                    try stage(content, at: destination + "/backgrounds/" + entry.name)
+                    count += 1
+                    bytes += content.count
+                } else if content.starts(with: "version https://git-lfs".utf8) {
+                    lfs += 1
+                } else {
+                    skipped += 1
+                }
+            }
+            if lfs > 0 { notes.append("backgrounds: skipped \(lfs) Git LFS image(s)") }
+            if skipped > 0 { notes.append("backgrounds: skipped \(skipped) image(s) that did not validate or exceeded import limits") }
+        }
+        return notes
+    }
+
+    private struct TreeEntry {
+        let name: String
+        let mode: Substring
+        let object: String
+        let size: Int?
+    }
+
+    private static func treeEntries(git: [String], tree: String) throws(OmarchyInstallError) -> [TreeEntry] {
+        try run(git + ["ls-tree", "-z", "-l", tree]).split(separator: "\0").compactMap { line in
+            let parts = line.split(separator: "\t", maxSplits: 1)
+            guard parts.count == 2 else { return nil }
+            let fields = parts[0].split(separator: " ")
+            guard fields.count == 4 else { return nil }
+            let mode = fields[0]
+            let size = (mode == "100644" || mode == "100755") ? Int(fields[3]).flatMap { $0 >= 0 ? $0 : nil } : nil
+            return TreeEntry(name: String(parts[1]), mode: mode, object: String(fields[2]), size: size)
+        }
+    }
+
+    private static func stage(_ data: Data, at path: String) throws(OmarchyInstallError) {
+        let file = URL(fileURLWithPath: path)
+        do {
+            try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try data.write(to: file, options: .withoutOverwriting)
+        } catch {
+            throw OmarchyInstallError("could not stage \(file.lastPathComponent): \(error.localizedDescription)")
+        }
     }
 
     /// The commit the remote's branch (or HEAD) points at now.
@@ -123,12 +204,26 @@ public enum OmarchyGit {
     static func run(_ args: [String], executable: String = OmarchyGit.executable, timeout: TimeInterval = OmarchyGit.timeout,
                     watching folder: String? = nil, maxBytes: Int64 = OmarchyGit.maxCloneBytes, maxFiles: Int = OmarchyGit.maxCloneFiles,
                     maxOutput: Int = OmarchyGit.maxOutputBytes) throws(OmarchyInstallError) -> String {
+        try String(decoding: runBytes(args, executable: executable, timeout: timeout, watching: folder,
+                                      maxBytes: maxBytes, maxFiles: maxFiles, maxOutput: maxOutput), as: UTF8.self)
+    }
+
+    private static func runBytes(_ args: [String], executable: String = OmarchyGit.executable, timeout: TimeInterval = OmarchyGit.timeout,
+                                 watching folder: String? = nil, maxBytes: Int64 = OmarchyGit.maxCloneBytes, maxFiles: Int = OmarchyGit.maxCloneFiles,
+                                 maxOutput: Int = OmarchyGit.maxOutputBytes) throws(OmarchyInstallError) -> Data {
         guard FileManager.default.isExecutableFile(atPath: executable) else {
             throw OmarchyInstallError("needs git (xcode-select --install)")
         }
         let process = Process()
-        process.executableURL = URL(fileURLWithPath: executable)
-        process.arguments = args
+        if folder != nil {
+            // macOS Bash uses 1024-byte blocks for its file-size limit.
+            // Git and its children inherit the cap, including index-pack.
+            process.executableURL = URL(fileURLWithPath: "/bin/bash")
+            process.arguments = ["-p", "-c", "ulimit -f \"$1\" || exit 1; shift; exec \"$@\"", "kadomo-git", String(maxBytes / 1024), executable] + args
+        } else {
+            process.executableURL = URL(fileURLWithPath: executable)
+            process.arguments = args
+        }
         process.environment = environment
         process.currentDirectoryURL = URL(fileURLWithPath: NSTemporaryDirectory())
         let out = Pipe(), err = Pipe()
@@ -140,12 +235,12 @@ public enum OmarchyGit {
         errText.read(err)
         do { try process.run() } catch { throw OmarchyInstallError("could not run git: \(error.localizedDescription)") }
 
-        let deadline = Date() + timeout
-        var nextCheck = Date()
+        let deadline = ProcessInfo.processInfo.systemUptime + timeout
+        var nextCheck: TimeInterval = 0
         var stopped: String?
-        var killAt: Date?
+        var killAt: TimeInterval?
         while process.isRunning {
-            let now = Date()
+            let now = ProcessInfo.processInfo.systemUptime
             if stopped == nil {
                 if now >= deadline {
                     stopped = "git timed out"
@@ -169,14 +264,19 @@ public enum OmarchyGit {
         }
         process.waitUntilExit()
         // The rest of the output; a child that outlived git may hold a pipe open, so not forever.
-        outText.waitForEnd(seconds: 2)
-        errText.waitForEnd(seconds: 2)
+        let outputComplete = outText.waitForEnd(seconds: 2)
+        _ = errText.waitForEnd(seconds: 2)
         if let stopped { throw OmarchyInstallError(stopped) }
+        guard outputComplete else { throw OmarchyInstallError("git did not close its output") }
+        if outText.overflowed { throw OmarchyInstallError("git printed more than \(maxOutput) bytes") }
+        if let folder, isOver(folder, maxBytes: maxBytes, maxFiles: maxFiles) {
+            throw OmarchyInstallError("the repository is larger than a theme can be")
+        }
         guard process.terminationStatus == 0 else {
             let message = errText.string.split(separator: "\n").last.map(String.init) ?? "exit \(process.terminationStatus)"
             throw OmarchyInstallError("git: \(message.suffix(200))")
         }
-        return outText.string
+        return outText.bytes
     }
 
     private static func isOver(_ folder: String, maxBytes: Int64, maxFiles: Int) -> Bool {
@@ -225,15 +325,17 @@ private final class PipeText: @unchecked Sendable {
         if keepsEnd { data.removeFirst(data.count - limit) } else { over = true; data.removeLast(data.count - limit) }
     }
 
-    func waitForEnd(seconds: Double) { _ = ended.wait(timeout: .now() + seconds) }
+    func waitForEnd(seconds: Double) -> Bool { ended.wait(timeout: .now() + seconds) == .success }
 
     var overflowed: Bool {
         lock.lock(); defer { lock.unlock() }
         return over
     }
 
-    var string: String {
+    var bytes: Data {
         lock.lock(); defer { lock.unlock() }
-        return String(decoding: data, as: UTF8.self)
+        return data
     }
+
+    var string: String { String(decoding: bytes, as: UTF8.self) }
 }

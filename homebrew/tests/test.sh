@@ -9,6 +9,11 @@ set -uo pipefail
 
 HB="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/kadomo-homebrew-test.XXXXXX")"
+ORIGINAL_HB="$HB"
+mkdir -p "$WORK/repo/homebrew" "$WORK/repo/apps"
+cp "$HB/"*.sh "$WORK/repo/homebrew/"
+cp "$HB/../apps/apps.sh" "$WORK/repo/apps/"
+HB="$WORK/repo/homebrew"
 trap '[[ -n "${KEEP:-}" ]] || rm -rf "$WORK"' EXIT
 PASS=0
 FAIL=0
@@ -57,8 +62,16 @@ exit 0
 EOS
     chmod +x "$W/bin/sudo"
     export HOME="$W/home" ZDOTDIR="$W/home" KADOMO_STATE_DIR="$W/state" KADOMO_BREW="$PREFIX/bin/brew"
-    export KADOMO_TEST_HOOKS=1 KADOMO_HOMEBREW_INSTALL_URL="file://$W/scripts/install.sh" KADOMO_HOMEBREW_UNINSTALL_URL="file://$W/scripts/uninstall.sh"
-    export KADOMO_CLT_DIR="$W/clt" PATH="$W/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+    local install_digest uninstall_digest
+    install_digest="$(shasum -a 256 "$W/scripts/install.sh" | cut -d' ' -f1)"
+    uninstall_digest="$(shasum -a 256 "$W/scripts/uninstall.sh" | cut -d' ' -f1)"
+    sed -e "s|^HOMEBREW_INSTALL_URL=.*|HOMEBREW_INSTALL_URL=\"file://$W/scripts/install.sh\"|" \
+        -e "s|^HOMEBREW_UNINSTALL_URL=.*|HOMEBREW_UNINSTALL_URL=\"file://$W/scripts/uninstall.sh\"|" \
+        -e "s|^HOMEBREW_INSTALL_SHA256=.*|HOMEBREW_INSTALL_SHA256=\"$install_digest\"|" \
+        -e "s|^HOMEBREW_UNINSTALL_SHA256=.*|HOMEBREW_UNINSTALL_SHA256=\"$uninstall_digest\"|" \
+        -e "s|^CLT_DIR=.*|CLT_DIR=\"$W/clt\"|" \
+        -e "s|'=https'|'=file'|g" "$ORIGINAL_HB/homebrew.sh" >"$HB/homebrew.sh"
+    export PATH="$W/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     RECORD="$W/state/homebrew-installed.txt"
 }
 
@@ -137,9 +150,27 @@ check "gets no second block" test "$(grep -c 'brew shellenv' "$HOME/.zprofile")"
 check "keeps its own line" has "$HOME/.zprofile" "brew shellenv"
 
 echo "the test overrides"
-stray() { env -u KADOMO_TEST_HOOKS KADOMO_HOMEBREW_INSTALL_URL=https://example.invalid/x KADOMO_HOMEBREW_UNINSTALL_URL=https://example.invalid/x KADOMO_CLT_DIR=/tmp/x \
-    /bin/bash -c 'source "$0/homebrew.sh"; printf "%s %s %s" "$HOMEBREW_INSTALL_URL" "$HOMEBREW_UNINSTALL_URL" "$CLT_DIR"' "$HB"; }
-check "count for nothing outside the tests" test "$(stray)" = "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh /Library/Developer/CommandLineTools"
+stray() { env KADOMO_TEST_HOOKS=1 KADOMO_HOMEBREW_INSTALL_URL=https://example.invalid/x KADOMO_HOMEBREW_UNINSTALL_URL=https://example.invalid/x KADOMO_CLT_DIR=/tmp/x \
+    /bin/bash -c 'source "$0/homebrew.sh"; printf "%s %s %s" "$HOMEBREW_INSTALL_URL" "$HOMEBREW_UNINSTALL_URL" "$CLT_DIR"' "$ORIGINAL_HB"; }
+check "cannot override the pinned scripts or the CLT path" bash -c '[[ "$1" =~ ^https://raw\.githubusercontent\.com/Homebrew/install/[0-9a-f]{40}/install\.sh\ https://raw\.githubusercontent\.com/Homebrew/install/[0-9a-f]{40}/uninstall\.sh\ /Library/Developer/CommandLineTools$ ]]' _ "$(stray)"
+
+echo "a changed upstream script"
+setup changed-script
+printf '\n# Different contents\n' >>"$W/scripts/install.sh"
+"$HB/install.sh" >"$W/out" 2>&1; status=$?
+check "fails verification" test "$status" -ne 0
+check "reports the checksum mismatch" has "$W/out" "checksum mismatch"
+check "never reaches sudo" test ! -e "$W/log"
+check "never installs Homebrew" test ! -e "$PREFIX/bin/brew"
+
+setup changed-uninstaller
+"$HB/install.sh" >"$W/install" 2>&1
+: >"$W/log"
+printf '\n# Different contents\n' >>"$W/scripts/uninstall.sh"
+"$HB/uninstall.sh" >"$W/out" 2>&1; status=$?
+check "rejects the changed uninstaller" test "$status" -ne 0
+check "never executes the uninstaller or sudo" test ! -s "$W/log"
+check "keeps Homebrew and the install record" test -x "$PREFIX/bin/brew" -a -f "$RECORD"
 
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 ((FAIL == 0))

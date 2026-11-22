@@ -126,9 +126,11 @@ public struct OmarchyThemeService: Sendable {
         defer { try? FileManager.default.removeItem(atPath: clone) }
         try? FileManager.default.createDirectory(atPath: library.stagingDirectory, withIntermediateDirectories: true)
         let sha = try OmarchyGit.clone(location, into: clone)
-        let folder = location.subpath.map { clone + "/" + $0 } ?? clone
+        let folder = clone + "/theme-files"
+        let notes = try OmarchyGit.exportTheme(from: clone, subpath: location.subpath, into: folder)
         let source = OmarchySource(kind: .git, location: location.repository, ref: location.ref, subpath: location.subpath)
-        return try library.install(from: folder, source: source, name: name ?? location.themeName, revision: sha, author: author, summary: summary)
+        return try library.install(from: folder, source: source, name: name ?? location.themeName, revision: sha,
+                                   author: author, summary: summary, notes: notes)
     }
 
     /// Installs a community catalog entry: official ones from the official

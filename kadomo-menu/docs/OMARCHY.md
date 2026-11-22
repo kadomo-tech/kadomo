@@ -173,12 +173,14 @@ Themes from Git, catalogs, and folders are untrusted data.
 - Symlinks are refused (a symlinked `colors.toml` or theme folder fails the
   import), names come from Kadomo, not from the theme, and nothing is read
   outside the theme folder.
-- Git runs with hooks off (`core.hooksPath=/dev/null`), no submodules,
-  HTTPS only (`protocol.allow=never`, `protocol.https.allow=always`), no
-  symlinks in checkouts, your global and system Git config ignored, no
-  credential prompts, a shallow clone, and limits: two minutes, 1 GB or 100,000
-  files in the clone, and 4 MB of output. URLs with credentials, queries, or
-  other transports (`ext::`, `file://`, `ssh`) are refused.
+- Git fetches a shallow clone over HTTPS with hooks and submodules disabled.
+  Git ignores global and system configuration and skips credential prompts.
+  Kadomo reads allowlisted files as raw blobs, so Git never checks out the
+  repository's work tree. During the fetch, each file is capped at 1 GiB and
+  Kadomo checks the clone's total size and file count during and after the
+  fetch. Git commands have a two-minute timeout and bounded output. The
+  importer also caps the count and total bytes of wallpaper blobs it reads.
+  URLs with credentials, queries, or other transports are refused.
 - A download has a size limit and five minutes in all, however steadily the
   server keeps sending.
 - Every install is staged in `staging/`, validated, and only then swapped in

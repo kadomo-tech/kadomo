@@ -187,6 +187,11 @@ btop_set() {
 btop_theme() { btop_get color_theme; }
 btop_set_theme() { btop_set color_theme "$1"; }
 
+btop_remove() {
+    if ((DRY_RUN)); then echo "    would remove $1 from $BTOP_CONF"; return 0; fi
+    sed -i '' "/^$1 *=/d" "$BTOP_CONF"
+}
+
 btop_install() {
     local label current
     label="$(short_path "$BTOP_CONF")"
@@ -229,14 +234,15 @@ btop_install() {
 # older tmac2k selection.
 btop_uninstall() {
     [[ -s "$BTOP_MANIFEST" ]] || return 0
-    local label record background previous now
+    local label record background previous now restore_background=0
     label="$(short_path "$BTOP_CONF")"
     record="$(grep -v '^background|' "$BTOP_MANIFEST" | head -n 1)"
     background=""
-    # Unset before, or a btop.conf Kadomo wrote: btop's own default is on.
-    if grep -q '^background|' "$BTOP_MANIFEST" || [[ "$record" == created ]]; then
+    if grep -q '^background|' "$BTOP_MANIFEST"; then
         background="$(sed -n 's/^background|//p' "$BTOP_MANIFEST" | head -n 1)"
-        background="${background:-true}"
+        restore_background=1
+    elif [[ "$record" == created ]]; then
+        restore_background=1
     fi
     now="$(btop_theme)"
     if [[ -z "$record" ]]; then
@@ -249,7 +255,7 @@ btop_uninstall() {
             # Still only the lines Kadomo wrote: btop never ran, so remove the file.
             echo "  -  $label"
             run rm -f -- "$BTOP_CONF"
-            background=""
+            restore_background=0
         else
             echo "  ~  $label (color_theme → Default; btop's other settings kept)"
             btop_set_theme '"Default"'
@@ -257,11 +263,11 @@ btop_uninstall() {
     else
         previous="${record#previous|}"
         echo "  ↩  $label (color_theme → ${previous:-Default})"
-        btop_set_theme "${previous:-\"Default\"}"
+        if [[ -n "$previous" ]]; then btop_set_theme "$previous"; else btop_remove color_theme; fi
     fi
-    if [[ -n "$background" && -f "$BTOP_CONF" && "$(btop_get theme_background)" == false ]]; then
-        echo "  ↩  $label (theme_background → $background)"
-        btop_set theme_background "$background"
+    if ((restore_background)) && [[ -f "$BTOP_CONF" && "$(btop_get theme_background)" == false ]]; then
+        echo "  ↩  $label (theme_background → ${background:-unset})"
+        if [[ -n "$background" ]]; then btop_set theme_background "$background"; else btop_remove theme_background; fi
     fi
     run rm -f -- "$BTOP_MANIFEST"
 }

@@ -291,7 +291,8 @@ echo "Kadomo Menu lists the themes and wallpapers"
 menu="$HOME/.config/kadomo/menu/commands/themes.toml"
 check "a command per theme under Appearance > Themes" same "$(grep -c '^category = "appearance/themes"' "$menu")" "$(($("$BIN/theme-list" | wc -l) + 1))"
 check "the current one is marked" bash -c "grep -A5 'title = \"tmac2k\"' '$menu' | grep -q 'hint = \"current\"'"
-check "a command per wallpaper" same "$(grep -c 'theme-bg-set' "$menu")" 3
+wallpaper_count="$(find "$ROOT/themes/tmac2k/backgrounds" -maxdepth 1 -type f \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' \) | wc -l | tr -d ' ')"
+check "a command per wallpaper" same "$(grep -c 'theme-bg-set' "$menu")" "$wallpaper_count"
 
 echo "theme-set --external: a theme folder kept elsewhere (Kadomo Menu's Omarchy themes)"
 "$BIN/theme-set" gruvbox >/dev/null

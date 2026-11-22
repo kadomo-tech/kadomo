@@ -54,7 +54,10 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$bin" "$app/Contents/MacOS/$name"
 sed -e "s/__BUILD__/$(date +%Y%m%d%H%M)/" -e "s/__VERSION__/$version/" "$here/Info.plist.in" > "$app/Contents/Info.plist"
 xattr -cr "$app"
-codesign --force --sign "$identity" "$app" 2>&1 | grep -v "replacing existing signature" || true
+sign_options=()
+[[ "$identity" != "Developer ID Application:"* ]] || sign_options=(--options runtime --timestamp)
+codesign --force --sign "$identity" "${sign_options[@]}" "$app"
+codesign --verify --strict "$app"
 echo "installed $app (signed: $identity)"
 
 mkdir -p "$HOME/.local/bin"

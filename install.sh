@@ -39,17 +39,56 @@ set -euo pipefail
 KADOMO_REPO="kadomo-tech/kadomo"
 KADOMO_SOURCE_DIR="${KADOMO_SOURCE_DIR:-$HOME/.local/share/kadomo/source}"
 
+kadomo_managed_source() {
+    local dir="$1" marker="$1/.kadomo-source"
+    [[ -d "$dir" && ! -L "$dir" && -O "$dir" && ! -e "$dir/.git" && ! -L "$dir/.git" &&
+       -f "$marker" && ! -L "$marker" && -O "$marker" ]] &&
+        grep -qxF 'kadomo-tech/kadomo source v1' "$marker"
+}
+
 # Run from curl rather than a checkout: there is nothing next to this script,
 # so download Kadomo into KADOMO_SOURCE_DIR and run the install.sh in it.
 # Everything happens in this function, called on its last line, so a
 # download of this script cut off partway runs nothing.
 kadomo_fetch_and_run() {
-    local ref="${KADOMO_REF:-}" latest url dir="$KADOMO_SOURCE_DIR" short tty=/dev/stdin
+    local ref="${KADOMO_REF:-}" latest url dir="$KADOMO_SOURCE_DIR" parent work="" legacy=0 short tty=/dev/stdin
     fail() { printf '\n  ✗ %s\n\n' "$*" >&2; exit 1; }
     [[ "$(uname -s)" == Darwin ]] || fail "Kadomo is for macOS."
     ((EUID != 0)) || fail "run this as your own user, not with sudo."
-    case "$dir" in /|"$HOME"|"$HOME"/|"") fail "KADOMO_SOURCE_DIR cannot be $dir." ;; esac
-    [[ ! -e "$dir/.git" ]] || fail "$dir is a git checkout; run its ./install.sh instead."
+    while [[ "$dir" == */ ]]; do dir="${dir%/}"; done
+    case "$dir/" in /|*/./*|*/../*|"$HOME"/) fail "KADOMO_SOURCE_DIR cannot be $dir." ;; esac
+    [[ "$dir" == /* ]] || fail "KADOMO_SOURCE_DIR must be an absolute path."
+    parent="$(dirname "$dir")"
+    mkdir -p "$parent" || fail "could not create $parent."
+    parent="$(cd -P "$parent" && pwd -P)" || fail "could not resolve $parent."
+    dir="${parent%/}/${dir##*/}"
+    [[ "$dir" != "$(cd -P "$HOME" && pwd -P)" ]] || fail "KADOMO_SOURCE_DIR cannot be your home directory."
+    mkdir "$dir.kadomo-lock" || fail "could not lock $dir for the bootstrap."
+    cleanup_source() {
+        if [[ -n "$work" && -d "$work/previous" ]]; then
+            if [[ ! -e "$dir" && ! -L "$dir" ]] && mv "$work/previous" "$dir"; then
+                rm -rf -- "$work"
+            else
+                printf '  Kept the previous Kadomo source at %s\n' "$work/previous" >&2
+            fi
+        elif [[ -n "$work" ]]; then
+            rm -rf -- "$work"
+        fi
+        rmdir "$dir.kadomo-lock"
+    }
+    trap cleanup_source EXIT
+    if [[ -e "$dir" || -L "$dir" ]] && ! kadomo_managed_source "$dir"; then
+        # Older bootstraps had no marker. Preserve a recognizable copy from
+        # the original default location when upgrading it.
+        if [[ "$KADOMO_SOURCE_DIR" == "$HOME/.local/share/kadomo/source" &&
+              -d "$dir" && ! -L "$dir" && -O "$dir" && ! -e "$dir/.git" && ! -L "$dir/.git" &&
+              -f "$dir/VERSION" && -f "$dir/lib/tui.sh" && -f "$dir/install.sh" && -f "$dir/uninstall.sh" ]] &&
+              grep -qF 'KADOMO_REPO="kadomo-tech/kadomo"' "$dir/install.sh"; then
+            legacy=1
+        else
+            fail "$dir is not a Kadomo-managed source directory. Choose an unused KADOMO_SOURCE_DIR."
+        fi
+    fi
     if [[ -z "$ref" ]]; then
         # The latest release redirects to its tag; without one, to the releases page.
         latest="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$KADOMO_REPO/releases/latest" 2>/dev/null || true)"
@@ -62,23 +101,31 @@ kadomo_fetch_and_run() {
     [[ "$ref" =~ ^v?[0-9]+(\.[0-9]+)*$ ]] || fail "KADOMO_REF must be a released version, such as 0.1.1 (got $ref)."
     url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz"
     printf '\n  Downloading Kadomo (%s)...\n' "$ref"
-    mkdir -p "$(dirname "$dir")"
-    rm -rf -- "$dir.download"
-    mkdir "$dir.download"
-    if ! curl -fsSL "$url" | tar -xzf - -C "$dir.download" --strip-components 1; then
-        rm -rf -- "$dir.download"
+    work="$(mktemp -d "$parent/.kadomo-source.XXXXXX")" || fail "could not create a staging directory."
+    mkdir "$work/source"
+    if ! curl -fsSL "$url" | tar -xzf - -C "$work/source" --strip-components 1; then
         fail "could not download Kadomo $ref from $url"
     fi
-    [[ -f "$dir.download/install.sh" && -f "$dir.download/VERSION" ]] || { rm -rf -- "$dir.download"; fail "the download of Kadomo $ref is not complete."; }
-    # Replaces the copy an earlier install left, so its uninstall.sh matches what is installed.
-    rm -rf -- "$dir.old"
-    [[ ! -e "$dir" ]] || mv "$dir" "$dir.old"
-    mv "$dir.download" "$dir"
-    rm -rf -- "$dir.old"
+    [[ -f "$work/source/install.sh" && ! -L "$work/source/install.sh" &&
+       -f "$work/source/uninstall.sh" && ! -L "$work/source/uninstall.sh" &&
+       -f "$work/source/lib/tui.sh" && -f "$work/source/VERSION" ]] ||
+        fail "the download of Kadomo $ref is not complete."
+    [[ ! -e "$work/source/.kadomo-source" && ! -L "$work/source/.kadomo-source" ]] ||
+        fail "the release contains a reserved bootstrap file."
+    printf '%s\n' 'kadomo-tech/kadomo source v1' >"$work/source/.kadomo-source"
+    if [[ -e "$dir" ]]; then mv "$dir" "$work/previous" || fail "could not move the previous source aside."; fi
+    mv "$work/source" "$dir" || fail "could not install the new source."
+    if ((legacy)); then
+        printf '  Kept the previous Kadomo source at %s\n' "$work/previous"
+    else
+        rm -rf -- "$work"
+    fi
+    rmdir "$dir.kadomo-lock"
+    trap - EXIT
     short="$dir"; [[ "$dir" != "$HOME"/* ]] || short="~${dir#"$HOME"}"
     printf '  Kadomo %s is in %s\n' "$(cat "$dir/VERSION")" "$short"
     export KADOMO_INSTALL_CMD="/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/$KADOMO_REPO/main/install.sh)\""
-    export KADOMO_UNINSTALL_CMD="$short/uninstall.sh"
+    export KADOMO_UNINSTALL_CMD="$short/uninstall.sh" KADOMO_SOURCE_DIR="$dir"
     # Piped to bash, stdin is this script: the menus read the terminal instead.
     if [[ ! -t 0 ]] && { : </dev/tty; } 2>/dev/null; then tty=/dev/tty; fi
     exec /bin/bash "$dir/install.sh" ${1+"$@"} <"$tty"

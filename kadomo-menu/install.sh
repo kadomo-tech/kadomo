@@ -30,7 +30,7 @@ WORK=""
 # The bundled build. Update these together when a new version is built into release/.
 RELEASE_VERSION="0.1.0"
 RELEASE_ZIP="$ROOT/release/KadomoMenu-$RELEASE_VERSION-x86_64-arm64.zip"
-RELEASE_SHA256="80f0bc032a4cfc17cb688d97e8f36f1100e0fd1816a61a3f6bdbc3b9b7787b88"
+RELEASE_SHA256="6c56285d50207f103699a0e3fadb790a57d1a6c9274de36c72cea3ca4a74b370"
 ZIP_PATH="$RELEASE_ZIP"
 
 # The default theme's font, pinned to a Nerd Fonts release and checked against its SHA-256.
@@ -135,7 +135,10 @@ review() {
 
 check_zip() {
     local actual
-    actual="$(shasum -a 256 "$ZIP_PATH" | cut -d' ' -f1)"
+    # Verify and extract the same private copy.
+    cp "$ZIP_PATH" "$WORK/app.zip" || return 1
+    actual="$(shasum -a 256 "$WORK/app.zip")" || return 1
+    actual="${actual%% *}"
     if [[ "$actual" != "$RELEASE_SHA256" ]]; then
         echo "checksum mismatch: expected $RELEASE_SHA256, got $actual"
         return 1
@@ -145,12 +148,12 @@ check_zip() {
 # Unpacks the app into a scratch folder, checks its signature, then swaps it in.
 install_app() {
     local unpacked="$WORK/unpacked"
-    mkdir -p "$unpacked" "$PREFIX"
-    ditto -x -k "$ZIP_PATH" "$unpacked"
-    codesign --verify --strict "$unpacked/$APP_NAME.app"
+    mkdir -p "$unpacked" "$PREFIX" || return 1
+    ditto -x -k "$WORK/app.zip" "$unpacked" || return 1
+    codesign --verify --strict "$unpacked/$APP_NAME.app" || return 1
     # A zip that was downloaded in a browser carries a quarantine flag; a fresh install should not.
     xattr -dr com.apple.quarantine "$unpacked/$APP_NAME.app" 2>/dev/null || true
-    rm -rf -- "$APP"
+    rm -rf -- "$APP" || return 1
     mv "$unpacked/$APP_NAME.app" "$APP"
 }
 

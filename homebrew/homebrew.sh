@@ -5,18 +5,26 @@
 # find_brew, STATE_DIR.
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/apps/apps.sh"
 
-# Homebrew's own scripts, the way https://brew.sh installs it. These run with
-# sudo ready, and the folder below goes through sudo rm -rf, so the KADOMO_
-# variables that replace them count only in the tests (KADOMO_TEST_HOOKS=1): a
-# value left in a shell profile changes nothing.
-HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-HOMEBREW_UNINSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh"
+# Update the commit and both SHA-256 digests together after reviewing the scripts.
+HOMEBREW_INSTALL_COMMIT="c9c975046f78e6e6d662deb801bd461ebd6a54ed"
+HOMEBREW_INSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/$HOMEBREW_INSTALL_COMMIT/install.sh"
+HOMEBREW_UNINSTALL_URL="https://raw.githubusercontent.com/Homebrew/install/$HOMEBREW_INSTALL_COMMIT/uninstall.sh"
+HOMEBREW_INSTALL_SHA256="8fd2f1a5287a7c2e3d7362924c677edcc04c5a0e16448c77132d056bc88cf1ed"
+HOMEBREW_UNINSTALL_SHA256="7e5576d1200bdf4fbd1fe38513f129139473ec39f04890ff5c7f1d05480af78a"
 CLT_DIR="/Library/Developer/CommandLineTools"
-if [[ "${KADOMO_TEST_HOOKS:-}" == 1 ]]; then
-    HOMEBREW_INSTALL_URL="${KADOMO_HOMEBREW_INSTALL_URL:-$HOMEBREW_INSTALL_URL}"
-    HOMEBREW_UNINSTALL_URL="${KADOMO_HOMEBREW_UNINSTALL_URL:-$HOMEBREW_UNINSTALL_URL}"
-    CLT_DIR="${KADOMO_CLT_DIR:-$CLT_DIR}"
-fi
+
+hb_download_script() {
+    local url="$1" digest="$2" target="$3" actual
+    if ! /usr/bin/curl -q -fsSL --proto '=https' --proto-redir '=https' --retry 2 -o "$target" "$url"; then
+        echo "  !  could not download $url" >&2
+        return 1
+    fi
+    actual="$(/usr/bin/shasum -a 256 "$target")" || return 1
+    if [[ "${actual%% *}" != "$digest" ]]; then
+        echo "  !  Homebrew script checksum mismatch: $url" >&2
+        return 1
+    fi
+}
 
 # One <key>|<value> line per fact: prefix (where Kadomo installed Homebrew),
 # clt|added (its installer added the Xcode Command Line Tools), zprofile (the

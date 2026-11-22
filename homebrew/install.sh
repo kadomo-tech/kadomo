@@ -30,8 +30,18 @@ if ! is_admin; then
     exit 1
 fi
 
-# The password now, before the long part; Homebrew's installer runs without
-# asking anything (NONINTERACTIVE), so sudo must already be ready for it.
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/kadomo-homebrew.XXXXXX")"
+keep_alive=""
+cleanup() {
+    if [[ -n "$keep_alive" ]]; then { kill "$keep_alive"; wait "$keep_alive"; } 2>/dev/null || true; fi
+    rm -rf -- "$WORK"
+}
+trap cleanup EXIT
+
+echo "  ↓  Homebrew's installer ($HOMEBREW_INSTALL_URL)"
+hb_download_script "$HOMEBREW_INSTALL_URL" "$HOMEBREW_INSTALL_SHA256" "$WORK/install.sh" || exit 1
+
+# Homebrew's verified installer runs noninteractively and needs sudo ready.
 if ! sudo -n true 2>/dev/null; then
     if [[ ! -t 0 ]] && ! { : </dev/tty; } 2>/dev/null; then
         echo "  !  Homebrew asks for your password: run this in a terminal." >&2
@@ -44,20 +54,8 @@ fi
 ( while kill -0 "$$" 2>/dev/null; do sudo -n true 2>/dev/null; sleep 30; done ) &
 keep_alive=$!
 
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/kadomo-homebrew.XXXXXX")"
-cleanup() {
-    if [[ -n "$keep_alive" ]]; then { kill "$keep_alive"; wait "$keep_alive"; } 2>/dev/null || true; fi
-    rm -rf -- "$WORK"
-}
-trap cleanup EXIT
-
 had_clt=0; [[ -d "$CLT_DIR" ]] && had_clt=1
 
-echo "  ↓  Homebrew's installer ($HOMEBREW_INSTALL_URL)"
-if ! curl -fsSL --retry 2 -o "$WORK/install.sh" "$HOMEBREW_INSTALL_URL" || [[ ! -s "$WORK/install.sh" ]]; then
-    echo "  !  could not download Homebrew's installer; check the network and run this again" >&2
-    exit 1
-fi
 echo "  +  Homebrew (its installer prints what it does below)"
 if ! NONINTERACTIVE=1 /bin/bash "$WORK/install.sh"; then
     echo "  !  Homebrew's installer failed; see above" >&2

@@ -42,3 +42,13 @@ private func pair() throws -> [Int32] {
     #expect(Socket.readLine(fds[0], timeout: 1).isEmpty)
     #expect(ProcessInfo.processInfo.systemUptime - start < 3)
 }
+
+@Test func socketWriteReturnsAtItsDeadline() throws {
+    let fds = try pair()
+    defer { close(fds[0]); close(fds[1]) }
+    var sendBuffer: Int32 = 4096
+    #expect(setsockopt(fds[1], SOL_SOCKET, SO_SNDBUF, &sendBuffer, socklen_t(MemoryLayout<Int32>.size)) == 0)
+    let start = ProcessInfo.processInfo.systemUptime
+    #expect(!Socket.write(fds[1], Data(repeating: 65, count: 256 * 1024), timeout: 1))
+    #expect(ProcessInfo.processInfo.systemUptime - start < 3)
+}

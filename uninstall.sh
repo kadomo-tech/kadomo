@@ -56,19 +56,46 @@ set -euo pipefail
 KADOMO_REPO="kadomo-tech/kadomo"
 KADOMO_SOURCE_DIR="${KADOMO_SOURCE_DIR:-$HOME/.local/share/kadomo/source}"
 
+kadomo_managed_source() {
+    local dir="$1" marker="$1/.kadomo-source"
+    [[ -d "$dir" && ! -L "$dir" && -O "$dir" && ! -e "$dir/.git" && ! -L "$dir/.git" &&
+       -f "$marker" && ! -L "$marker" && -O "$marker" ]] &&
+        grep -qxF 'kadomo-tech/kadomo source v1' "$marker"
+}
+
 # Run from curl rather than a checkout: there is nothing next to this script,
 # so run the uninstall.sh in KADOMO_SOURCE_DIR, the version that installed
 # Kadomo, and download one first when it is not there. Everything happens in
 # this function, called on its last line, so a download of this script cut
 # off partway runs nothing.
 kadomo_fetch_and_run() {
-    local ref="${KADOMO_REF:-}" latest url dir="$KADOMO_SOURCE_DIR" short tty=/dev/stdin
+    local ref="${KADOMO_REF:-}" latest url dir="$KADOMO_SOURCE_DIR" parent work="" legacy=0 short tty=/dev/stdin
     fail() { printf '\n  ✗ %s\n\n' "$*" >&2; exit 1; }
     [[ "$(uname -s)" == Darwin ]] || fail "Kadomo is for macOS."
     ((EUID != 0)) || fail "run this as your own user, not with sudo."
-    case "$dir" in /|"$HOME"|"$HOME"/|"") fail "KADOMO_SOURCE_DIR cannot be $dir." ;; esac
-    [[ ! -e "$dir/.git" ]] || fail "$dir is a git checkout; run its ./uninstall.sh instead."
-    if [[ ! -f "$dir/uninstall.sh" || ! -f "$dir/lib/tui.sh" ]]; then
+    while [[ "$dir" == */ ]]; do dir="${dir%/}"; done
+    case "$dir/" in /|*/./*|*/../*|"$HOME"/) fail "KADOMO_SOURCE_DIR cannot be $dir." ;; esac
+    [[ "$dir" == /* ]] || fail "KADOMO_SOURCE_DIR must be an absolute path."
+    parent="$(dirname "$dir")"
+    mkdir -p "$parent" || fail "could not create $parent."
+    parent="$(cd -P "$parent" && pwd -P)" || fail "could not resolve $parent."
+    dir="${parent%/}/${dir##*/}"
+    [[ "$dir" != "$(cd -P "$HOME" && pwd -P)" ]] || fail "KADOMO_SOURCE_DIR cannot be your home directory."
+    mkdir "$dir.kadomo-lock" || fail "could not lock $dir for the bootstrap."
+    trap '[[ -z "$work" ]] || rm -rf -- "$work"; rmdir "$dir.kadomo-lock"' EXIT
+    if [[ -e "$dir" || -L "$dir" ]] && ! kadomo_managed_source "$dir"; then
+        # Use a fresh uninstaller for a legacy copy at the original location.
+        # Keep the unmarked directory out of the uninstaller's reach.
+        if [[ "$KADOMO_SOURCE_DIR" == "$HOME/.local/share/kadomo/source" &&
+              -d "$dir" && ! -L "$dir" && -O "$dir" && ! -e "$dir/.git" && ! -L "$dir/.git" &&
+              -f "$dir/VERSION" && -f "$dir/lib/tui.sh" && -f "$dir/install.sh" && -f "$dir/uninstall.sh" ]] &&
+              grep -qF 'KADOMO_REPO="kadomo-tech/kadomo"' "$dir/install.sh"; then
+            legacy=1
+        else
+            fail "$dir is not a Kadomo-managed source directory. Run ./uninstall.sh from a trusted checkout, or choose an unused KADOMO_SOURCE_DIR."
+        fi
+    fi
+    if ((legacy)) || [[ ! -e "$dir" ]]; then
         if [[ -z "$ref" ]]; then
             latest="$(curl -fsSLI -o /dev/null -w '%{url_effective}' "https://github.com/$KADOMO_REPO/releases/latest" 2>/dev/null || true)"
             case "$latest" in
@@ -80,31 +107,50 @@ kadomo_fetch_and_run() {
         [[ "$ref" =~ ^v?[0-9]+(\.[0-9]+)*$ ]] || fail "KADOMO_REF must be a released version, such as 0.1.1 (got $ref)."
         url="https://github.com/$KADOMO_REPO/archive/refs/tags/v${ref#v}.tar.gz"
         printf '\n  Downloading Kadomo (%s) to remove it...\n' "$ref"
-        mkdir -p "$(dirname "$dir")"
-        rm -rf -- "$dir.download"
-        mkdir "$dir.download"
-        if ! curl -fsSL "$url" | tar -xzf - -C "$dir.download" --strip-components 1; then
-            rm -rf -- "$dir.download"
+        work="$(mktemp -d "$parent/.kadomo-source.XXXXXX")" || fail "could not create a staging directory."
+        mkdir "$work/source"
+        if ! curl -fsSL "$url" | tar -xzf - -C "$work/source" --strip-components 1; then
             fail "could not download Kadomo $ref from $url"
         fi
-        [[ -f "$dir.download/uninstall.sh" && -f "$dir.download/lib/tui.sh" ]] || { rm -rf -- "$dir.download"; fail "the download of Kadomo $ref is not complete."; }
-        rm -rf -- "$dir"
-        mv "$dir.download" "$dir"
+        [[ ! -e "$work/source/.kadomo-source" && ! -L "$work/source/.kadomo-source" ]] ||
+            fail "the release contains a reserved bootstrap file."
+        printf '%s\n' 'kadomo-tech/kadomo source v1' >"$work/source/.kadomo-source"
     fi
+    local source_dir="${work:+$work/source}"
+    source_dir="${source_dir:-$dir}"
+    [[ -f "$source_dir/uninstall.sh" && ! -L "$source_dir/uninstall.sh" &&
+       -f "$source_dir/lib/tui.sh" && -f "$source_dir/VERSION" ]] ||
+        fail "the Kadomo source is incomplete."
+    if [[ -n "$work" ]] && ((legacy == 0)); then
+        mv "$source_dir" "$dir"
+        rmdir "$work"
+    fi
+    if ((legacy)); then
+        printf '  Keeping the unmarked Kadomo source at %s\n' "$dir"
+        if [[ ! -t 0 ]] && { : </dev/tty; } 2>/dev/null; then tty=/dev/tty; fi
+        local status=0
+        KADOMO_SOURCE_DIR="$source_dir" /bin/bash "$source_dir/uninstall.sh" ${1+"$@"} <"$tty" || status=$?
+        exit "$status"
+    fi
+    rmdir "$dir.kadomo-lock"
+    trap - EXIT
     short="$dir"; [[ "$dir" != "$HOME"/* ]] || short="~${dir#"$HOME"}"
     export KADOMO_INSTALL_CMD="/bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/$KADOMO_REPO/main/install.sh)\""
-    export KADOMO_UNINSTALL_CMD="$short/uninstall.sh"
+    export KADOMO_UNINSTALL_CMD="$short/uninstall.sh" KADOMO_SOURCE_DIR="$dir"
     # Piped to bash, stdin is this script: the menus read the terminal instead.
     if [[ ! -t 0 ]] && { : </dev/tty; } 2>/dev/null; then tty=/dev/tty; fi
     exec /bin/bash "$dir/uninstall.sh" ${1+"$@"} <"$tty"
 }
 if [[ -z "${BASH_SOURCE[0]:-}" || ! -f "$(dirname "${BASH_SOURCE[0]}")/lib/tui.sh" ]]; then kadomo_fetch_and_run ${1+"$@"}; fi
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 export KADOMO_INSTALL_CMD="${KADOMO_INSTALL_CMD:-./install.sh}" KADOMO_UNINSTALL_CMD="${KADOMO_UNINSTALL_CMD:-./uninstall.sh}"
 # Whether this runs from the copy the curl installer downloaded, rather than a checkout.
 FROM_SOURCE_COPY=0
-[[ "$ROOT" != "$(cd "$KADOMO_SOURCE_DIR" 2>/dev/null && pwd || true)" ]] || FROM_SOURCE_COPY=1
+if kadomo_managed_source "${KADOMO_SOURCE_DIR%/}" &&
+   [[ "$ROOT" == "$(cd -P "$KADOMO_SOURCE_DIR" && pwd -P)" ]]; then
+    FROM_SOURCE_COPY=1
+fi
 if ((FROM_SOURCE_COPY)) && [[ "$KADOMO_UNINSTALL_CMD" == ./uninstall.sh ]]; then
     KADOMO_UNINSTALL_CMD="$(cd "$ROOT" && pwd)/uninstall.sh"
     [[ "$KADOMO_UNINSTALL_CMD" != "$HOME"/* ]] || KADOMO_UNINSTALL_CMD="~${KADOMO_UNINSTALL_CMD#"$HOME"}"
@@ -113,12 +159,19 @@ fi
 # Removes the copy the curl installer downloaded, once nothing of Kadomo is
 # left for its uninstall.sh to remove. Prints what it did, or nothing.
 remove_source_copy() {
-    local dir="$KADOMO_SOURCE_DIR"
-    [[ -d "$dir" && -f "$dir/uninstall.sh" && ! -e "$dir/.git" ]] || return 0
-    case "$dir" in /|"$HOME"|"$HOME"/) return 0 ;; esac
-    rm -rf -- "$dir" "$dir.download" "$dir.old" || return 0
-    rmdir "$(dirname "$dir")" 2>/dev/null || true
-    printf '%s' "$(short_path "$dir")"
+    local dir="${KADOMO_SOURCE_DIR%/}" parent
+    [[ "$dir" == /* ]] || return 0
+    case "$dir/" in //|*/./*|*/../*) return 0 ;; esac
+    parent="$(cd -P "$(dirname "$dir")" 2>/dev/null && pwd -P)" || return 0
+    dir="${parent%/}/${dir##*/}"
+    [[ "$dir" != "$(cd -P "$HOME" && pwd -P)" ]] || return 0
+    kadomo_managed_source "$dir" || return 0
+    mkdir "$dir.kadomo-lock" 2>/dev/null || return 0
+    if kadomo_managed_source "$dir" && rm -rf -- "$dir"; then
+        printf '%s' "$(short_path "$dir")"
+    fi
+    rmdir "$dir.kadomo-lock"
+    rmdir "$parent" 2>/dev/null || true
 }
 ASSUME_YES=0
 
