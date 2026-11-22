@@ -84,7 +84,7 @@ if [[ "$prefix" != /usr/local ]]; then
         hb_record zprofile "$HOMEBREW_ZPROFILE"
     fi
     if [[ "${KADOMO_NEW_SHELL:-}" == 1 ]]; then
-        echo "  i  this window gets a new zsh when the install finishes, so brew works here too"
+        echo "  i  run exec zsh -l when the install finishes, so brew works in this window too"
     else
         todo+=("Open a new terminal window (or tab) before you type brew yourself. Kadomo put brew on your PATH in $(short_path "$HOMEBREW_ZPROFILE"), but zsh reads that file only when a window opens, so in this window brew says \"command not found\". Kadomo's own steps find brew without it; nothing else to do.")
     fi

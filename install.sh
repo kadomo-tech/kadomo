@@ -594,15 +594,17 @@ trap stop_tail EXIT
 # brew's PATH block in ~/.zprofile and the Starship block in .zshrc only take
 # effect in a shell that starts after them. Sourcing them from here would not
 # help: this script is a child process and cannot change the shell that
-# started it. So, run from zsh in a terminal, it ends by handing the window to
-# a new zsh that reads them, and nobody has to open a new window.
+# started it. Starting a new zsh from here would not either: it would run on
+# top of the old one, so each run would stack another shell and exit would no
+# longer close the window. So, run from zsh in a terminal, it ends by telling
+# you to replace your shell with exec zsh -l yourself.
 new_shell=0
 parent_shell="$(ps -o comm= -p "$PPID" 2>/dev/null | tr -d ' ' || true)"
-if [[ -t 0 && -t 1 && "${parent_shell##*/}" == *zsh ]] && zsh_bin="$(command -v zsh)" \
+if [[ -t 0 && -t 1 && "${parent_shell##*/}" == *zsh ]] \
     && { component_on homebrew || item_on developer starship; }; then
     new_shell=1
-    # Decided before anything installs, so the Homebrew step knows not to ask
-    # you to open a new window: the new shell does that.
+    # Decided before anything installs, so the Homebrew step points you at the
+    # same exec zsh -l instead of asking you to open a new window.
     export KADOMO_NEW_SHELL=1
 fi
 install_selected
@@ -610,10 +612,7 @@ install_selected
 status=0
 finish || status=$?
 if ((new_shell)); then
-    printf '  %sStarting a new zsh in this window, so brew and the new prompt work right away.%s\n' "$DIM" "$RESET"
-    printf '  %sWindows that were already open get them once you open a new one; exit here returns to the old shell.%s\n\n' "$DIM" "$RESET"
-    trap - EXIT
-    stop_tail
-    exec "$zsh_bin" -l
+    printf '  %sRun %sexec zsh -l%s%s so brew and the new prompt work in this window.%s\n' "$DIM" "$BOLD" "$RESET" "$DIM" "$RESET"
+    printf '  %sWindows that were already open get them once you do the same there, or open a new one.%s\n\n' "$DIM" "$RESET"
 fi
 exit "$status"

@@ -149,8 +149,8 @@ Uninstalling leaves the clone itself in place.
 - **Java 25 asks for your password**, so when it's selected the developer
   tools install in the foreground.
 - **Homebrew on Apple silicon.** A marked block in `~/.zprofile` puts `brew`
-  on your PATH. When you run the installer from zsh, it ends by starting a new
-  zsh, so `brew` and the prompt work right away.
+  on your PATH. When you run the installer from zsh, it ends by telling you to
+  run `exec zsh -l`, so `brew` and the prompt work in that window right away.
 - **OmniWM starts itself** once you turn on "start at login" in its own
   settings. Kadomo runs nothing in the background for it.
 - **Upgrading from an older Kadomo** removes the AeroSpace setup it installed
@@ -180,7 +180,7 @@ Uninstalling leaves the clone itself in place.
 - **Everything goes back to how it was.** btop, Kadomo Menu, VS Code's colors,
   the wallpaper, light/dark mode, and OmniWM's border colors all return to
   their settings from before Kadomo. Your `.zshrc` loses Kadomo's Starship
-  block, and a new zsh starts with your old prompt.
+  block, and `exec zsh -l` (or a new window) brings back your old prompt.
 - **OmniWM and LinearMouse** are removed only if Kadomo installed them. OmniWM
   keeps its settings, and your other LinearMouse profiles stay.
 - **Homebrew goes last**, and only if Kadomo installed it and you haven't

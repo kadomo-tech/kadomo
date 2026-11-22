@@ -4,8 +4,8 @@
 # anything is removed, the apps and services it is about to remove are quit
 # and their login agents stopped. Run it from macOS's own Terminal: it stops
 # before changing anything when run inside a terminal Kadomo installed. Run
-# from zsh, it ends by starting a new zsh, so the prompt from before Kadomo
-# is back once Starship is gone:
+# from zsh, it ends by telling you to run exec zsh -l, so the prompt from
+# before Kadomo is back once Starship is gone:
 #   Kadomo Menu      the app, its command, the font it added, its config,
 #                    history, and preferences
 #   Neovim IDE       Kadomo's Neovim config and its AI tools; the config
@@ -520,15 +520,12 @@ printf '\n'
 # The zsh this was run from still has Starship's prompt hooks loaded, and with
 # Starship gone each prompt breaks. Sourcing .zshrc from here would not help: a
 # script runs in a child process and cannot change the shell that started it.
-# So, run from zsh in a terminal, this hands the window to a new zsh that reads
+# Starting a new zsh from here would not either: it would run on top of the
+# old one, and exit would no longer close the window. So, run from zsh in a
+# terminal, this tells you to replace your shell with exec zsh -l, which reads
 # your startup files as they are now, with the prompt from before Kadomo.
 parent_shell="$(ps -o comm= -p "$PPID" 2>/dev/null | tr -d ' ' || true)"
-if ((shell_changes)) && [[ -t 0 && -t 1 && "${parent_shell##*/}" == *zsh ]] && zsh_bin="$(command -v zsh)"; then
-    printf '  %sStarting a new zsh so your prompt from before Kadomo is back (exit returns to the old shell; just close this window instead).%s\n\n' "$DIM" "$RESET"
-    trap - EXIT
-    stop_tail
-    # exec keeps this process id, so the keepalive would never see it end.
-    stop_keepalive
-    exec "$zsh_bin" -l
+if ((shell_changes)) && [[ -t 0 && -t 1 && "${parent_shell##*/}" == *zsh ]]; then
+    printf '  %sRun %sexec zsh -l%s%s (or close this window) so your prompt from before Kadomo is back.%s\n\n' "$DIM" "$BOLD" "$RESET" "$DIM" "$RESET"
 fi
 ((${#failed[@]} == 0))
