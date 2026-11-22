@@ -84,7 +84,7 @@ import Testing
 
     // Each of these overflowed the stack before the limit, at sizes a theme may be.
     @Test(arguments: [
-        ("x = " + String(repeating: "[", count: 65_000), "nested"),
+        ("x = " + String(repeating: "[", count: 65_000), "nested") as (String, String),
         ("x = " + String(repeating: "{a=", count: 30_000), "nested"),
         (Array(repeating: "a", count: 30_000).joined(separator: ".") + " = 1", "more than 64 parts"),
         ("[" + Array(repeating: "a", count: 30_000).joined(separator: ".") + "]", "more than 64 parts"),
