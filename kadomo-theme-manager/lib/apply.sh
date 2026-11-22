@@ -245,7 +245,7 @@ background_title() {
 # current theme's wallpapers under Appearance › Backgrounds. The launcher
 # reloads the file when it changes.
 write_menu_commands() {
-    local name current bin="$KADOMO_THEME_ROOT/bin" file bg tmp
+    local name current bin="$KADOMO_THEME_ROOT/bin" file bg tmp position
     current="$(current_name || true)"
     bg="$(readlink "$BG_LINK" 2>/dev/null || true)"
     mkdir -p "$(dirname "$MENU_COMMANDS")"
@@ -263,10 +263,13 @@ write_menu_commands() {
         printf '[[command]]\nid = "kadomo-theme-bg-next"\ntitle = "Next Background"\ncategory = "appearance/backgrounds"\nicon = "arrow.right.circle"\norder = -2\nkeep_open = true\nexec = "%s"\n\n' "$(toml_escape "$bin/theme-bg-next")"
         printf '[[command]]\nid = "kadomo-theme-refresh"\ntitle = "Refresh Theme"\nsubtitle = "Apply template edits"\ncategory = "appearance/themes"\nicon = "arrow.clockwise"\norder = 100\nexec = "%s"\n\n' "$(toml_escape "$bin/theme-refresh")"
         if [[ -n "$current" ]]; then
+            # In the order theme-bg-next goes through them, not by title.
+            position=0
             while IFS= read -r file; do
                 [[ -n "$file" && "$file" != *[[:cntrl:]]* ]] || continue
-                printf '[[command]]\ntitle = "%s"\nid = "kadomo-bg-%s"\ncategory = "appearance/backgrounds"\nicon = "photo"\n' \
-                    "$(toml_escape "$(background_title "$file")")" "$(toml_escape "$(printf '%s' "$file" | shasum | cut -c1-12)")"
+                printf '[[command]]\ntitle = "%s"\nid = "kadomo-bg-%s"\ncategory = "appearance/backgrounds"\nicon = "photo"\norder = %d\n' \
+                    "$(toml_escape "$(background_title "$file")")" "$(toml_escape "$(printf '%s' "$file" | shasum | cut -c1-12)")" "$position"
+                position=$((position + 1))
                 [[ "$file" != "$bg" ]] || printf 'hint = "current"\n'
                 printf 'exec = "%s"\nargs = ["%s"]\n\n' "$(toml_escape "$bin/theme-bg-set")" "$(toml_escape "$file")"
             done < <(theme_backgrounds "$current")

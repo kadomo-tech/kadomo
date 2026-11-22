@@ -50,6 +50,7 @@ check "omniwm: the solid color is the first stop" bash -c "grep -A4 '^\[borders.
 check "omniwm: the bar text is cyan by default" bash -c "grep -A4 '^\[workspaceBar.textColor\]' '$THEME/omniwm.toml' | grep -qx 'red = 0.3529'"
 check "omniwm: a theme can name its own bar text" bash -c "awk -f '$ROOT/lib/palette.awk' '$ROOT/themes/solaris/colors.toml' | grep -qx 'bar_text	#b48ee6'"
 check "the launcher gets tmac2k too" has "$THEME/kadomo-menu.toml" 'border = ["#ba5aff", "#5ac8ff"]'
+check "the launcher has square corners, like OmniWM" has "$THEME/kadomo-menu.toml" 'corner_radius = 0'
 
 echo "1. theme-set catppuccin"
 start=$(date +%s)
@@ -317,6 +318,8 @@ check "theme.external records it" same "$(cut -f1,2 "$CUR/theme.external")" "oma
 check "theme-current shows the label" same "$("$BIN/theme-current")" "Tokyo Test"
 "$BIN/theme-bg-next" >/dev/null
 check "theme-bg-next uses its wallpapers" same "$(readlink "$CUR/background")" "$ext/backgrounds/1-two.png"
+check "the menu lists wallpapers in the order theme-bg-next goes" same "$(grep -A4 '^title = "One"' "$HOME/.config/kadomo/menu/commands/themes.toml" | grep '^order'; grep -A4 '^title = "Two"' "$HOME/.config/kadomo/menu/commands/themes.toml" | grep '^order')" "order = 0
+order = 1"
 "$BIN/theme-refresh" >/dev/null 2>&1
 check "theme-refresh keeps it" same "$(cat "$CUR/theme.name")" omarchy-tokyo-test
 check "  and the wallpaper" same "$(readlink "$CUR/background")" "$ext/backgrounds/1-two.png"

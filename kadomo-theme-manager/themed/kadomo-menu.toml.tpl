@@ -17,3 +17,7 @@ breadcrumb = "{{ accent }}"
 hint = "{{ dark_foreground }}"
 error = "{{ red }}"
 warning = "{{ yellow }}"
+
+# Square corners, like OmniWM's window borders.
+[geometry]
+corner_radius = 0
