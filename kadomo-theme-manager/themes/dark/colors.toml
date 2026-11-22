@@ -1,12 +1,12 @@
 # Dark: the plain dark gray of macOS Recovery and of Dark Mode windows,
-# #1e1e1e, in shades of gray from black to white with Apple's system blue
-# as the one color, kept to the accent: the menu's highlights, VS Code,
-# the prompt. The hues, blue included, are grays of different weights, so
-# btop, the terminal, the editor, and the window borders stay monochrome;
-# only red keeps a little color, dimmed, so errors and deletions stand out.
+# #1e1e1e, with no blue anywhere. The terminal, Vim, and Neovim read the
+# 16 ANSI slots below, which stay grays from black to white with a dimmed
+# red, so errors and deletions are the one color there. VS Code, btop, and
+# the prompt read the named hues, which run warm around that red: coral,
+# rose, peach, amber, sand, and sage. The accent is the coral.
 mode = "dark"
 
-accent = "#0a84ff"
+accent = "#d4706a"
 selection = "#3a3a3a"
 muted = "#8e8e8e"
 
@@ -20,27 +20,47 @@ dark_foreground = "#989898"
 light_foreground = "#e8e8e8"
 bright_foreground = "#f5f5f5"
 
+# The six hues have no blue or cyan: "blue" is peach and "cyan" is sand.
 red = "#c25b55"
-green = "#a0a0a0"
-yellow = "#f5f5f5"
-orange = "#c8c8c8"
-blue = "#d0d0d0"
-magenta = "#8c8c8c"
-cyan = "#b8b8b8"
-brown = "#7a7a7a"
+green = "#a9b48a"
+yellow = "#dcb36f"
+orange = "#e08a5c"
+blue = "#e6a27f"
+magenta = "#c27d96"
+cyan = "#cdb9a5"
+brown = "#8a6a55"
 
 bright_red = "#d4706a"
-bright_green = "#b4b4b4"
-bright_yellow = "#ffffff"
-bright_orange = "#d8d8d8"
-bright_blue = "#e6e6e6"
-bright_magenta = "#a0a0a0"
-bright_cyan = "#cccccc"
+bright_green = "#bcc69f"
+bright_yellow = "#ecc98a"
+bright_orange = "#eba077"
+bright_blue = "#f0bc9e"
+bright_magenta = "#d991aa"
+bright_cyan = "#ddcdbd"
 
 cursor = "#dcdcdc"
 
+# The terminal's 16 colors: grays, and red for errors.
+color0 = "#1e1e1e"
+color1 = "#c25b55"
+color2 = "#a0a0a0"
+color3 = "#f5f5f5"
+color4 = "#d0d0d0"
+color5 = "#8c8c8c"
+color6 = "#b8b8b8"
+color7 = "#dcdcdc"
+color8 = "#8e8e8e"
+color9 = "#d4706a"
+color10 = "#b4b4b4"
+color11 = "#ffffff"
+color12 = "#e6e6e6"
+color13 = "#a0a0a0"
+color14 = "#cccccc"
+color15 = "#f5f5f5"
+
 # Editor shades for Vim and Neovim.
 comment = "#8e8e8e"
+diff_background = "#2a2524"
 
 # Window borders: a mid-gray at the top left to a darker gray at the bottom right.
 hyprland_active_border = "rgba(8c8c8cff) rgba(555555ff) 45deg"
