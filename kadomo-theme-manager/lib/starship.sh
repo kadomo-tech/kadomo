@@ -22,9 +22,8 @@ STARSHIP_RECORD="$STARSHIP_DIR/enabled.txt"
 STARSHIP_BEGIN="# >>> kadomo starship (added by theme-starship; theme-starship disable removes it)"
 STARSHIP_END="# <<< kadomo starship"
 # Prompt roles, in the order they are written. themed/starship-palette.toml.tpl
-# gives each theme's color for each: seg_X is a block's background, seg_X_fg
-# its matching, legible text; success/error are the plain ❯/✗ at the end.
-STARSHIP_ROLES="seg_user seg_user_fg seg_dir seg_dir_fg seg_git seg_git_fg seg_runtime seg_runtime_fg seg_duration seg_duration_fg success error"
+# gives each theme's color for each.
+STARSHIP_ROLES="text secondary directory branch success error changes runtime separator"
 
 # `ls` colors: bold (bright) directory/symlink/socket/executable, in the
 # basic 8 ANSI slots, left default otherwise. Index-based, not hex, so they
@@ -168,101 +167,89 @@ starship_block_body() {
 # --- the config ----------------------------------------------------------------
 
 # Symbols for icons $1, shared by the config and the preview so they match.
-# CAP_L/CAP_R are the M365Princess-style diamond cap at each end of the row;
-# ARROW is the powerline chevron merging one block into the next. All three
-# are fixed, top-level parts of the format (not any one module's), so the
-# chain stays joined whether or not the block next to a given arrow has
-# anything to show. Empty in plain mode, so the row is then plain color
-# blocks, flush against each other, and still works in any font.
 starship_symbols() {
     SYM_OK=$'\xe2\x9d\xaf'          # ❯
     SYM_ERR=$'\xe2\x9c\x97'         # ✗
     if [[ "$1" == nerd ]]; then
         SYM_BRANCH=$'\xee\x82\xa0 ' SYM_NODE=$'\xee\x9c\x98 ' SYM_JAVA=$'\xee\x89\x96 ' SYM_PYTHON=$'\xee\x88\xb5 '
         SYM_RUST=$'\xee\x9e\xa8 ' SYM_GO=$'\xee\x98\xa7 ' SYM_RO=$' \xef\x80\xa3'
-        CAP_L=$'\xee\x82\xb6' ARROW=$'\xee\x82\xb0' CAP_R=$'\xee\x82\xb0 '
     else
         SYM_BRANCH="" SYM_NODE="node " SYM_JAVA="java " SYM_PYTHON="py " SYM_RUST="rs " SYM_GO="go " SYM_RO=" (ro)"
-        CAP_L="" ARROW=" " CAP_R=""
     fi
 }
 
 # The prompt layout, the same for every theme; colors are palette role names.
-# Literal TOML strings ('...'), so nothing in them is an escape. Styled after
-# oh-my-posh's M365Princess: one chevron-joined row of solid color blocks
-# (user, folder, Git, runtime, a slow command's time); then ❯ or ✗. The
-# chevrons between blocks are fixed, so a block with nothing to show (no SSH,
-# no Git repo, a fast command) just leaves a thin sliver of its color rather
-# than breaking the chain, the same way oh-my-posh's own presets handle it.
+# Literal TOML strings ('...'), so nothing in them is an escape.
 starship_layout() {
     starship_symbols "$1"
     cat <<EOF
 "\$schema" = 'https://starship.rs/config-schema.json'
 palette = 'kadomo'
 add_newline = false
+# Folder, Git, the project's runtime, a slow command's time; then ❯ or ✗.
 # User and host show only over SSH (or as root).
-format = '[$CAP_L](fg:seg_user)\$username\$hostname[$ARROW](fg:seg_user bg:seg_dir)\$directory[$ARROW](fg:seg_dir bg:seg_git)\$git_branch\$git_state\$git_status[$ARROW](fg:seg_git bg:seg_runtime)\$nodejs\$java\$python\$rust\$golang[$ARROW](fg:seg_runtime bg:seg_duration)\$cmd_duration[$CAP_R](fg:seg_duration)\$line_break\$character'
+format = '\$username\$hostname\$directory\$git_branch\$git_state\$git_status\$nodejs\$java\$python\$rust\$golang\$cmd_duration\$line_break\$character'
 
 [username]
-style_user = 'bg:seg_user fg:seg_user_fg'
-style_root = 'bg:seg_user fg:seg_user_fg bold'
-format = '[ \$user ](\$style)'
+style_user = 'text'
+style_root = 'bold error'
+format = '[\$user](\$style) '
 
 [hostname]
 ssh_only = true
-style = 'bg:seg_user fg:seg_user_fg'
-format = '[@\$hostname ](\$style)'
+style = 'text'
+format = '[@\$hostname](\$style) '
 
 [directory]
-style = 'bg:seg_dir fg:seg_dir_fg'
+style = 'bold directory'
 read_only = '$SYM_RO'
-read_only_style = 'bg:seg_dir fg:seg_dir_fg bold'
+read_only_style = 'error'
 truncation_length = 3
 truncate_to_repo = true
-format = '[ \$path ](\$style)[\$read_only](\$read_only_style)'
+format = '[\$path](\$style)[\$read_only](\$read_only_style) '
 
 [git_branch]
 symbol = '$SYM_BRANCH'
-style = 'bg:seg_git fg:seg_git_fg'
-format = '[ \$symbol\$branch ](\$style)'
+style = 'branch'
+format = '[on](separator) [\$symbol\$branch](\$style) '
 
 [git_state]
-style = 'bg:seg_git fg:seg_git_fg'
-format = '([\$state( \$progress_current/\$progress_total) ](\$style))'
+style = 'changes'
+format = '[\(\$state( \$progress_current/\$progress_total)\)](\$style) '
 
 [git_status]
-style = 'bg:seg_git fg:seg_git_fg'
-format = '([\$all_status\$ahead_behind ](\$style))'
+style = 'changes'
+format = '([\[\$all_status\$ahead_behind\]](\$style) )'
 
 [nodejs]
 symbol = '$SYM_NODE'
-style = 'bg:seg_runtime fg:seg_runtime_fg'
-format = '[ \$symbol(\$version) ](\$style)'
+style = 'runtime'
+format = '[via](separator) [\$symbol(\$version)](\$style) '
 
 [java]
 symbol = '$SYM_JAVA'
-style = 'bg:seg_runtime fg:seg_runtime_fg'
-format = '[ \$symbol(\$version) ](\$style)'
+style = 'runtime'
+format = '[via](separator) [\$symbol(\$version)](\$style) '
 
 [python]
 symbol = '$SYM_PYTHON'
-style = 'bg:seg_runtime fg:seg_runtime_fg'
-format = '[ \$symbol\$version( \(\$virtualenv\)) ](\$style)'
+style = 'runtime'
+format = '[via](separator) [\$symbol\$version( \(\$virtualenv\))](\$style) '
 
 [rust]
 symbol = '$SYM_RUST'
-style = 'bg:seg_runtime fg:seg_runtime_fg'
-format = '[ \$symbol(\$version) ](\$style)'
+style = 'runtime'
+format = '[via](separator) [\$symbol(\$version)](\$style) '
 
 [golang]
 symbol = '$SYM_GO'
-style = 'bg:seg_runtime fg:seg_runtime_fg'
-format = '[ \$symbol(\$version) ](\$style)'
+style = 'runtime'
+format = '[via](separator) [\$symbol(\$version)](\$style) '
 
 [cmd_duration]
 min_time = 2000
-style = 'bg:seg_duration fg:seg_duration_fg'
-format = '[ \$duration ](\$style)'
+style = 'secondary'
+format = '[took](separator) [\$duration](\$style) '
 
 [character]
 success_symbol = '[$SYM_OK](bold success)'
@@ -319,7 +306,7 @@ starship_validate() {
     awk '
         /^[ \t]*(#.*)?$/ { next }
         /^\[[a-z_.]+\]$/ { next }
-        /^("\$schema"|[A-Za-z_]+) = (\047[^\047]*\047|"[^"\\]*"|true|false|[0-9]+)$/ { next }
+        /^("\$schema"|[a-z_]+) = (\047[^\047]*\047|"[^"\\]*"|true|false|[0-9]+)$/ { next }
         { printf "theme-starship: line %d is not valid: %s\n", NR, $0 > "/dev/stderr"; bad = 1 }
         END { exit bad }' "$file" || return 1
     for role in $STARSHIP_ROLES; do
@@ -647,17 +634,12 @@ starship_state() {
 # --- preview: simulated prompts, drawn here; nothing runs, nothing changes ----
 
 starship_fg() { printf '\033[38;2;%d;%d;%dm' $((16#${1:1:2})) $((16#${1:3:2})) $((16#${1:5:2})); }
-starship_bg() { printf '\033[48;2;%d;%d;%dm' $((16#${1:1:2})) $((16#${1:3:2})) $((16#${1:5:2})); }
 
 # Prints the sample prompts for theme $1 with icons $2, on the theme's own
-# background, as the generated config draws them: one chevron-joined row of
-# color blocks, each from the palette, with its own legible text. The
-# chevrons are fixed (as in the real config), so an empty block between two
-# of them shows as a thin sliver of its color, same as the real prompt.
+# background, in the colors and symbols the generated config uses.
 starship_preview() {
-    local name="$1" icons="$2" palette bg="" dir role value r=$'\033[0m' on
-    local seg_user seg_user_fg seg_dir seg_dir_fg seg_git seg_git_fg
-    local seg_runtime seg_runtime_fg seg_duration seg_duration_fg success error
+    local name="$1" icons="$2" palette bg="" dir role value r=$'\033[0m' b=$'\033[1m' on
+    local text secondary directory branch success error changes runtime separator
     palette="$(starship_palette "$name")" || return 1
     while IFS= read -r line; do
         role="${line%% =*}"; value="${line#*\"}"; value="${value%\"}"
@@ -669,32 +651,22 @@ starship_preview() {
         break
     done
     [[ -n "$bg" ]] || bg="#000000"
-    on="$(starship_bg "$bg")"
+    on="$(printf '\033[48;2;%d;%d;%dm' $((16#${bg:1:2})) $((16#${bg:3:2})) $((16#${bg:5:2})))"
     starship_symbols "$icons"
     # One prompt line on the background, padded so the background shows.
     show() { printf '  %s %s\033[K%s\n' "$on" "$1" "$r"; }
     label() { printf '  %s\n' "$1"; }
-    cap() { local color="$1" glyph="$2"; [[ -z "$glyph" ]] || printf '%s%s%s%s' "$(starship_fg "$color")" "$glyph" "$r" "$on"; }
-    arrow() { printf '%s%s%s%s%s' "$(starship_fg "$1")" "$(starship_bg "$2")" "$ARROW" "$r" "$on"; }
-    block() { local segbg="$1" segfg="$2" text="$3"; [[ -z "$text" ]] || printf '%s%s %s %s%s' "$(starship_bg "$segbg")" "$(starship_fg "$segfg")" "$text" "$r" "$on"; }
-    # A full row: user, folder, git, runtime, and duration text (empty for
-    # none), joined exactly as $CAP_L$username...$ARROW...$CAP_R is in the
-    # real format string.
-    row() {
-        printf '%s%s%s%s%s%s%s%s%s%s' \
-            "$(cap "$seg_user" "$CAP_L")" "$(block "$seg_user" "$seg_user_fg" "$1")" "$(arrow "$seg_user" "$seg_dir")" \
-            "$(block "$seg_dir" "$seg_dir_fg" "$2")" "$(arrow "$seg_dir" "$seg_git")" \
-            "$(block "$seg_git" "$seg_git_fg" "$3")" "$(arrow "$seg_git" "$seg_runtime")" \
-            "$(block "$seg_runtime" "$seg_runtime_fg" "$4")" "$(arrow "$seg_runtime" "$seg_duration")" \
-            "$(block "$seg_duration" "$seg_duration_fg" "$5")$(cap "$seg_duration" "$CAP_R")"
-    }
-    local ok no
-    ok="$(starship_fg "$success")$SYM_OK$r$on" no="$(starship_fg "$error")$SYM_ERR$r$on"
+    local sep_on="$(starship_fg "$separator")on$r$on" sep_via="$(starship_fg "$separator")via$r$on" sep_took="$(starship_fg "$separator")took$r$on"
+    local d1="$b$(starship_fg "$directory")~/Documents$r$on"
+    local d2="$b$(starship_fg "$directory")~/code/kadomo$r$on"
+    local d3="$b$(starship_fg "$directory")~/code/web-app$r$on"
+    local br="$(starship_fg "$branch")${SYM_BRANCH}main$r$on"
+    local ok="$b$(starship_fg "$success")$SYM_OK$r$on" no="$b$(starship_fg "$error")$SYM_ERR$r$on"
     printf '  Starship prompt: %s, %s icons (simulated preview; nothing runs, nothing changes)\n\n' "$(display_name "$name")" "$icons"
-    label "A folder";                 show "$(row '' '~/Documents' '' '' '') "; show "$ok "
-    label "A Git repository with changes"; show "$(row '' '~/code/kadomo' "${SYM_BRANCH}main [!?]" '' '') "; show "$ok "
-    label "A Node.js project";        show "$(row '' '~/code/web-app' "${SYM_BRANCH}main" "${SYM_NODE}v26.13.0" '') "; show "$ok "
-    label "After a failed command";   show "$(row '' '~/code/kadomo' "${SYM_BRANCH}main" '' '') "; show "$no "
-    label "After a slow command";     show "$(row '' '~/code/kadomo' '' '' '12s') "; show "$ok "
+    label "A folder";                 show "$d1 "; show "$ok "
+    label "A Git repository with changes"; show "$d2 $sep_on $br $(starship_fg "$changes")[!?]$r$on "; show "$ok "
+    label "A Node.js project";        show "$d3 $sep_on $br $sep_via $(starship_fg "$runtime")${SYM_NODE}v26.13.0$r$on "; show "$ok "
+    label "After a failed command";   show "$d2 $sep_on $br "; show "$no "
+    label "After a slow command";     show "$d2 $sep_took $(starship_fg "$secondary")12s$r$on "; show "$ok "
     printf '\n'
 }
