@@ -10,7 +10,7 @@ installed yourself is left for you to upgrade (its own updater, or
 
 ```sh
 ./install.sh     # or: ./install.sh --dry-run
-./install.sh --only omniwm   # everything but the Omarchy logo: keeps the Apple logo
+./install.sh --only omniwm   # everything but the Omarchy logo and the volume icon
 ./uninstall.sh
 ```
 
@@ -21,6 +21,7 @@ installed yourself is left for you to upgrade (its own updater, or
 | Workspace keys | Ctrl+Option+Left / Right for previous / next workspace, in `~/.config/omniwm/settings.toml` |
 | Kadomo Menu | Services › OmniWM: Start, Stop, Match Theme Colors, Edit Settings, and OmniWM's keys in Keybinds (`~/.config/kadomo/menu/commands/omniwm.toml`) |
 | Omarchy logo | In OmniWM's menu bar, in place of the Apple logo (`~/.config/omniwm/shell/widgets/apple-menu`) |
+| Volume icon | In OmniWM's menu bar, the speaker icon without the percentage (`~/.config/omniwm/shell/widgets/volume`) |
 
 macOS asks once to allow OmniWM under Privacy & Security › Accessibility and
 Input Monitoring. OmniWM also needs "Displays have separate Spaces" on
@@ -53,6 +54,23 @@ the widget's first line, `-- Kadomo:`, is how Kadomo knows its own.
 
 Because it takes the place of OmniWM's widget, a change OmniWM makes to its own
 `apple-menu` in a later release does not show while Kadomo's is there.
+
+## The volume icon
+
+OmniWM's `volume` widget shows a speaker icon and the volume as a percentage.
+Kadomo's, `shell/volume/init.luau`, shows the speaker icon alone: its waves
+still give a rough idea of how loud it is, and clicking it (the output panel)
+and scrolling over it (louder, quieter) work as before. The installer copies it
+to `~/.config/omniwm/shell/widgets/volume/`, the same way as the logo. OmniWM
+lets only its own widgets `require` its helpers, so the parts of its bar skin
+and audio code the widget needs are copied into it (GPL-2.0, like OmniWM), and
+it looks like the rest of the bar. A change OmniWM makes to its own `volume`
+widget in a later release does not show while Kadomo's is there.
+
+It is on by default. To keep the percentage, turn off Kadomo Core › Volume icon
+only under Advanced in the top-level installer, or leave `volume` out of
+`./install.sh --only` here. The uninstaller takes it away again, and a `volume`
+widget of your own is never replaced or removed.
 
 ## Keybinds
 

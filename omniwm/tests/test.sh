@@ -204,5 +204,22 @@ check "  and stays as it was" same "$L" "$W/yours.luau"
 logo omniwm_logo_remove
 check "  and uninstalling leaves it" same "$L" "$W/yours.luau"
 
+echo "The volume icon"
+logo_setup volume; V="$H/.config/omniwm/shell/widgets/volume/init.luau"
+check "it goes in the shell's widgets folder" logo omniwm_widget_install volume
+check "  as Kadomo's volume widget" same "$V" "$OW/shell/volume/init.luau"
+check "  and counts as up to date" logo omniwm_widget_up_to_date volume
+check "the bar shows the speaker icon, not the percentage" bash -c "sed -n '/^function render/,/^end/p' '$V' | grep -q 'm.symbol' && ! sed -n '/^function render/,/^end/p' '$V' | grep -q percent"
+check "  and needs no require, which OmniWM keeps to its own widgets" not grep -q 'require(' "$V"
+check "the logo is left alone" test ! -e "$L"
+logo omniwm_widget_remove volume
+check "uninstalling takes it away" test ! -e "$(dirname "$V")"
+
+logo_setup volume-yours; V="$H/.config/omniwm/shell/widgets/volume/init.luau"
+mkdir -p "$(dirname "$V")"; printf -- '-- my own volume\n' >"$V"; cp "$V" "$W/yours.luau"
+check "a volume widget of yours is not replaced" not logo omniwm_widget_install volume
+logo omniwm_widget_remove volume
+check "  and uninstalling leaves it" same "$V" "$W/yours.luau"
+
 printf '\n%s passed, %s failed\n' "$PASS" "$FAIL"
 ((FAIL == 0))

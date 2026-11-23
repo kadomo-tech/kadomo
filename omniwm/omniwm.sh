@@ -16,12 +16,16 @@ OMNIWM_AGENT_PLIST="$HOME/Library/LaunchAgents/$OMNIWM_AGENT_LABEL.plist"
 OMNIWM_MENU_FILE="${KADOMO_CONFIG:-$HOME/.config/kadomo}/menu/commands/omniwm.toml"
 OMNIWM_SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/settings.toml"
 
-# The Omarchy logo Kadomo puts in OmniWM's menu bar in place of the Apple
-# logo: a widget in the shell's top-level widgets folder, which OmniWM uses over
-# its own apple-menu widget. Its first line marks it as Kadomo's, so an
-# apple-menu widget of yours is never replaced or removed.
-OMNIWM_LOGO_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/shell/apple-menu/init.luau"
-OMNIWM_LOGO_WIDGET="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/shell/widgets/apple-menu/init.luau"
+# Kadomo's widgets for OmniWM's menu bar, each in the shell's top-level widgets
+# folder, where OmniWM uses it over its own widget of the same name: apple-menu
+# (the Omarchy logo in place of the Apple logo) and volume (the speaker icon
+# without the percentage). A widget's first line marks it as Kadomo's, so a
+# widget of yours by that name is never replaced or removed.
+OMNIWM_WIDGETS_SOURCE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/shell"
+OMNIWM_WIDGETS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/omniwm/shell/widgets"
+OMNIWM_LOGO_SOURCE="$OMNIWM_WIDGETS_SOURCE/apple-menu/init.luau"
+OMNIWM_LOGO_WIDGET="$OMNIWM_WIDGETS_DIR/apple-menu/init.luau"
+OMNIWM_VOLUME_WIDGET="$OMNIWM_WIDGETS_DIR/volume/init.luau"
 
 # One <key>|<value> line per fact: cask (Kadomo installed OmniWM with Homebrew).
 # borders-before.toml is the border colors settings.toml had before Kadomo's
@@ -84,24 +88,37 @@ omniwm_up_to_date() {
         && [[ -f "$OMNIWM_MENU_FILE" && ! -e "$OMNIWM_AGENT_PLIST" ]]
 }
 
-# Whether the apple-menu widget there is Kadomo's logo, and whether it is the current one.
-omniwm_logo_ours() { [[ -f "$OMNIWM_LOGO_WIDGET" ]] && head -n 1 "$OMNIWM_LOGO_WIDGET" | grep -q '^-- Kadomo:'; }
-omniwm_logo_up_to_date() { cmp -s "$OMNIWM_LOGO_SOURCE" "$OMNIWM_LOGO_WIDGET"; }
+# Whether widget $1 there is Kadomo's, and whether it is the current one.
+omniwm_widget_ours() {
+    local file="$OMNIWM_WIDGETS_DIR/$1/init.luau"
+    [[ -f "$file" ]] && head -n 1 "$file" | grep -q '^-- Kadomo:'
+}
+omniwm_widget_up_to_date() { cmp -s "$OMNIWM_WIDGETS_SOURCE/$1/init.luau" "$OMNIWM_WIDGETS_DIR/$1/init.luau"; }
+# Whether a widget of yours named $1 is there, which Kadomo leaves alone.
+omniwm_widget_yours() { [[ -e "$OMNIWM_WIDGETS_DIR/$1/init.luau" ]] && ! omniwm_widget_ours "$1"; }
 
-# Puts Kadomo's logo in place; OmniWM picks it up by itself. Returns 1, and
-# changes nothing, when an apple-menu widget of yours is there.
-omniwm_logo_install() {
-    if [[ -e "$OMNIWM_LOGO_WIDGET" ]] && ! omniwm_logo_ours; then return 1; fi
-    mkdir -p "$(dirname "$OMNIWM_LOGO_WIDGET")"
-    cp "$OMNIWM_LOGO_SOURCE" "$OMNIWM_LOGO_WIDGET.tmp"
-    mv "$OMNIWM_LOGO_WIDGET.tmp" "$OMNIWM_LOGO_WIDGET"
+# Puts Kadomo's widget $1 in place; OmniWM picks it up by itself. Returns 1,
+# and changes nothing, when a widget of yours by that name is there.
+omniwm_widget_install() {
+    local file="$OMNIWM_WIDGETS_DIR/$1/init.luau"
+    if omniwm_widget_yours "$1"; then return 1; fi
+    mkdir -p "$(dirname "$file")"
+    cp "$OMNIWM_WIDGETS_SOURCE/$1/init.luau" "$file.tmp"
+    mv "$file.tmp" "$file"
 }
-# Takes Kadomo's logo away, so OmniWM's Apple logo is back; one of yours stays.
-omniwm_logo_remove() {
-    omniwm_logo_ours || return 0
-    rm -f -- "$OMNIWM_LOGO_WIDGET"
-    rmdir "$(dirname "$OMNIWM_LOGO_WIDGET")" 2>/dev/null || true
+# Takes Kadomo's widget $1 away, so OmniWM's own is back; one of yours stays.
+omniwm_widget_remove() {
+    local file="$OMNIWM_WIDGETS_DIR/$1/init.luau"
+    omniwm_widget_ours "$1" || return 0
+    rm -f -- "$file"
+    rmdir "$(dirname "$file")" 2>/dev/null || true
 }
+
+# The Omarchy logo, Kadomo's apple-menu widget.
+omniwm_logo_ours() { omniwm_widget_ours apple-menu; }
+omniwm_logo_up_to_date() { omniwm_widget_up_to_date apple-menu; }
+omniwm_logo_install() { omniwm_widget_install apple-menu; }
+omniwm_logo_remove() { omniwm_widget_remove apple-menu; }
 
 omniwm_record() {
     mkdir -p "$OMNIWM_STATE_DIR"

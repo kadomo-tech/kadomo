@@ -15,6 +15,8 @@
 #   ~/.config/omniwm/shell/widgets/apple-menu the Omarchy logo in OmniWM's menu bar, in
 #                                             place of the Apple logo (still opens the
 #                                             Apple menu); an apple-menu widget of yours stays
+#   ~/.config/omniwm/shell/widgets/volume     the speaker icon alone for the volume, without
+#                                             the percentage; a volume widget of yours stays
 # Nothing of Kadomo's runs at login: OmniWM starts itself, once you turn that on
 # in its settings. What an older Kadomo installed for AeroSpace and SketchyBar,
 # and its OmniWM login agent, are removed (remove-aerospace.sh,
@@ -25,9 +27,10 @@
 # one Kadomo installed is upgraded to it.
 #
 # Usage: ./install.sh [--dry-run] [--only LIST]
-#   --only LIST   only these, comma-separated (the default is both):
+#   --only LIST   only these, comma-separated (the default is all three):
 #                 omniwm  OmniWM, kadomo-omniwm, the menu entries, the keys
 #                 logo    the Omarchy logo; leave it out to keep the Apple logo
+#                 volume  the volume as a speaker icon alone; leave it out to keep the percentage
 #
 # Runs on the Bash 3.2 that ships with macOS. Undo it with ./uninstall.sh.
 set -euo pipefail
@@ -36,19 +39,19 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OMNIWM_SOURCE_BIN="$HERE/bin"
 source "$HERE/omniwm.sh"
 DRY_RUN=0
-ONLY="omniwm,logo"
+ONLY="omniwm,logo,volume"
 
 while (($#)); do
     case "$1" in
         --dry-run) DRY_RUN=1 ;;
         --only)
-            [[ -n "${2:-}" ]] || { echo "--only needs a list: omniwm, logo" >&2; exit 2; }
+            [[ -n "${2:-}" ]] || { echo "--only needs a list: omniwm, logo, volume" >&2; exit 2; }
             ONLY="$2"; shift
             for key in ${ONLY//,/ }; do
-                case "$key" in omniwm|logo) ;; *) echo "Unknown key for --only: $key (known: omniwm, logo)" >&2; exit 2 ;; esac
+                case "$key" in omniwm|logo|volume) ;; *) echo "Unknown key for --only: $key (known: omniwm, logo, volume)" >&2; exit 2 ;; esac
             done
             ;;
-        -h|--help) sed -n '2,32p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
     esac
     shift
@@ -144,6 +147,19 @@ if wants logo; then
     else
         echo "  +  the Omarchy logo in OmniWM's menu bar ($logo_dir, in place of the Apple logo)"
         run omniwm_logo_install || echo "  !  could not put the Omarchy logo in OmniWM's menu bar" >&2
+    fi
+fi
+
+# The volume as the speaker icon alone, without the percentage.
+if wants volume; then
+    volume_dir="$(dirname "$OMNIWM_VOLUME_WIDGET")"; volume_dir="${volume_dir/#$HOME/~}"
+    if omniwm_widget_up_to_date volume; then
+        echo "  =  the volume as a speaker icon in OmniWM's menu bar (already there)"
+    elif omniwm_widget_yours volume; then
+        echo "  =  $volume_dir is your own widget; it stays, and the volume keeps its look"
+    else
+        echo "  +  the volume as a speaker icon in OmniWM's menu bar ($volume_dir, without the percentage)"
+        run omniwm_widget_install volume || echo "  !  could not change the volume in OmniWM's menu bar" >&2
     fi
 fi
 

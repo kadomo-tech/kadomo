@@ -16,8 +16,8 @@
 #                    put back, and JankyBorders goes if an older Kadomo
 #                    installed it
 #   OmniWM           kadomo-omniwm and its menu entries; the border colors
-#                    from before Kadomo and the Apple logo in its menu bar
-#                    come back, and OmniWM goes if Kadomo installed it (its
+#                    from before Kadomo, the Apple logo in its menu bar, and
+#                    the volume percentage come back, and OmniWM goes if Kadomo installed it (its
 #                    settings stay)
 #   SketchyBar from an older Kadomo
 #                    its config and menu entries; the menu bar and OmniWM's

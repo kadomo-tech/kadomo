@@ -1,6 +1,7 @@
 #!/bin/bash
 # Removes what install.sh put in place: kadomo-omniwm and the Kadomo Menu
-# entries, the Omarchy logo in OmniWM's menu bar (the Apple logo comes back), and
+# entries, the Omarchy logo in OmniWM's menu bar (the Apple logo comes back), its
+# volume widget (the percentage comes back), and
 # the OmniWM login agent older installs left. (What they
 # installed for AeroSpace is remove-aerospace.sh's.) OmniWM's border goes back to
 # the colors it had before Kadomo's theme, and the workspace keys Kadomo set come
@@ -34,7 +35,7 @@ run() { if ((DRY_RUN)); then echo "    would run: $*"; else "$@"; fi; }
 
 if [[ ! -s "$OMNIWM_MANIFEST" && ! -e "$OMNIWM_BIN" && ! -e "$OMNIWM_AGENT_PLIST" && ! -e "$OMNIWM_MENU_FILE" \
       && ! -s "$OMNIWM_BORDERS_BEFORE" && ! -e "$OMNIWM_TEXT_BEFORE" && ! -e "$OMNIWM_WORKSPACE_KEYS" ]] \
-      && ! omniwm_logo_ours; then
+      && ! omniwm_logo_ours && ! omniwm_widget_ours volume; then
     echo "  =  no omniwm installed"
     exit 0
 fi
@@ -84,6 +85,12 @@ if omniwm_logo_ours; then
     logo_dir="$(dirname "$OMNIWM_LOGO_WIDGET")"
     echo "  -  ${logo_dir/#$HOME/~} (the Omarchy logo; the Apple logo comes back)"
     run omniwm_logo_remove
+fi
+# The volume as a speaker icon alone; OmniWM's own, with the percentage, is back.
+if omniwm_widget_ours volume; then
+    volume_dir="$(dirname "$OMNIWM_VOLUME_WIDGET")"
+    echo "  -  ${volume_dir/#$HOME/~} (the speaker icon alone; the volume percentage comes back)"
+    run omniwm_widget_remove volume
 fi
 
 # The login agent older installs put in place.
