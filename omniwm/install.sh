@@ -30,6 +30,8 @@
 #   --only LIST   only these, comma-separated (the default is all three):
 #                 omniwm  OmniWM, kadomo-omniwm, the menu entries, the keys
 #                 logo    the Omarchy logo; leave it out to keep the Apple logo
+#                 apple-logo  the Apple logo: takes Kadomo's Omarchy logo away
+#                         again (not part of the default; not with logo)
 #                 volume  the volume as a speaker icon alone; leave it out to keep the percentage
 #
 # Runs on the Bash 3.2 that ships with macOS. Undo it with ./uninstall.sh.
@@ -45,13 +47,15 @@ while (($#)); do
     case "$1" in
         --dry-run) DRY_RUN=1 ;;
         --only)
-            [[ -n "${2:-}" ]] || { echo "--only needs a list: omniwm, logo, volume" >&2; exit 2; }
+            [[ -n "${2:-}" ]] || { echo "--only needs a list: omniwm, logo, apple-logo, volume" >&2; exit 2; }
             ONLY="$2"; shift
             for key in ${ONLY//,/ }; do
-                case "$key" in omniwm|logo|volume) ;; *) echo "Unknown key for --only: $key (known: omniwm, logo, volume)" >&2; exit 2 ;; esac
+                case "$key" in omniwm|logo|apple-logo|volume) ;; *) echo "Unknown key for --only: $key (known: omniwm, logo, apple-logo, volume)" >&2; exit 2 ;; esac
             done
+            [[ ",$ONLY," != *",logo,"* || ",$ONLY," != *",apple-logo,"* ]] \
+                || { echo "--only takes logo or apple-logo, not both" >&2; exit 2; }
             ;;
-        -h|--help) sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '2,37p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) echo "Unknown option: $1 (try --help)" >&2; exit 2 ;;
     esac
     shift
@@ -147,6 +151,20 @@ if wants logo; then
     else
         echo "  +  the Omarchy logo in OmniWM's menu bar ($logo_dir, in place of the Apple logo)"
         run omniwm_logo_install || echo "  !  could not put the Omarchy logo in OmniWM's menu bar" >&2
+    fi
+fi
+
+# The Apple logo back: Kadomo's Omarchy logo goes, and OmniWM shows its own
+# again. An apple-menu widget of yours stays.
+if wants apple-logo; then
+    logo_dir="$(dirname "$OMNIWM_LOGO_WIDGET")"; logo_dir="${logo_dir/#$HOME/~}"
+    if omniwm_logo_ours; then
+        echo "  -  $logo_dir (the Omarchy logo; the Apple logo comes back)"
+        run omniwm_logo_remove || echo "  !  could not put the Apple logo back in OmniWM's menu bar" >&2
+    elif [[ -e "$OMNIWM_LOGO_WIDGET" ]]; then
+        echo "  =  $logo_dir is your own widget; it stays"
+    else
+        echo "  =  the Apple logo in OmniWM's menu bar (already there)"
     fi
 fi
 

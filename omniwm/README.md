@@ -46,10 +46,12 @@ shows, in the bar's text color; clicking it still opens the Apple menu.
 of OmniWM's own of the same name. OmniWM picks it up without a restart, and
 OmniWM itself is not changed.
 
-It is on by default. To keep the Apple logo, turn off Kadomo Core › Omarchy
-logo under Advanced in the top-level installer, or run `./install.sh --only
-omniwm` here. The uninstaller takes it away again, and the Apple logo comes
-back. An `apple-menu` widget of your own there is never replaced or removed:
+The top-level installer asks which logo you want, Omarchy's or Apple's, once
+you have picked Kadomo Core (Omarchy's is the default; `--logo apple` chooses
+Apple's without asking). Choosing Apple's when Kadomo's Omarchy logo is already
+there takes it away again. Here, `./install.sh --only omniwm` leaves the logo
+as it is, and `./install.sh --only apple-logo` puts the Apple logo back. The
+uninstaller takes it away too, and the Apple logo comes back. An `apple-menu` widget of your own there is never replaced or removed:
 the widget's first line, `-- Kadomo:`, is how Kadomo knows its own.
 
 Because it takes the place of OmniWM's widget, a change OmniWM makes to its own

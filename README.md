@@ -57,7 +57,7 @@ Pick any mix of these when you install. **Kadomo Core** is on by default.
 
 | Category | Includes |
 | --- | --- |
-| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager with its own menu bar (the Omarchy logo in place of Apple's and the volume as a speaker icon without the percentage, unless you turn them off), the Ghostty terminal, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
+| 🧩 **Kadomo Core** | Kadomo Menu (launcher), [OmniWM](https://github.com/BarutSRB/OmniWM) tiling window manager with its own menu bar (the Omarchy logo or Apple's, which the installer asks you to choose, and the volume as a speaker icon without the percentage, unless you turn it off), the Ghostty terminal, btop, htop, the Starship prompt, the theme manager and its themes, and Homebrew if you don't have it |
 | 🛠 **Developer** | Neovim set up as an IDE for Java, JavaScript/TypeScript, Node, and AWS ([LazyVim](https://www.lazyvim.org)), Node.js, Java 25 (Temurin), Rancher Desktop, and VS Code in your theme's colors |
 | 🤖 **AI** | GitHub Copilot in Neovim, and [Claude Code](https://code.claude.com) with its Neovim integration ([details](neovim/README.md#the-ai-tools)) |
 | 🎮 **Gaming** | Moonlight, plus a mouse profile with no acceleration that applies only inside Moonlight (LinearMouse) |

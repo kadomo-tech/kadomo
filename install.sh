@@ -3,8 +3,8 @@
 # under Advanced; nothing is installed until you confirm the review.
 #   Kadomo Core   Homebrew (when it is not here yet), Kadomo Menu and its
 #                 font, the OmniWM window manager (with the Omarchy logo in
-#                 its menu bar, or Apple's under Advanced, and the volume as a
-#                 speaker icon without the percentage), Ghostty, btop, htop,
+#                 its menu bar or Apple's, which you choose, and the volume as
+#                 a speaker icon without the percentage), Ghostty, btop, htop,
 #                 the Starship prompt, and the theme manager with its themes
 #                                                             (on by default)
 #   Developer     Neovim, Kadomo's Vim and Neovim settings, and Neovim set
@@ -21,10 +21,12 @@
 # SketchyBar (OmniWM's own menu bar replaces it) is removed first. Remove
 # everything again with ./uninstall.sh.
 #
-# Usage: ./install.sh [--yes | --only LIST | --version]
+# Usage: ./install.sh [--yes | --only LIST] [--logo omarchy|apple] | --version
 #   --yes         ask nothing, and install Kadomo Core
 #   --only LIST   ask nothing, and install these categories, comma-separated:
 #                 core, developer, ai, gaming, other
+#   --logo WHICH  the logo in OmniWM's menu bar: omarchy (the default) or
+#                 apple, which also takes an Omarchy logo Kadomo put there away
 #   --version     print the Kadomo version (from VERSION) and exit
 #
 # Without a checkout, like Homebrew's installer (KADOMO_REF picks a released
@@ -138,6 +140,8 @@ export KADOMO_INSTALL_CMD="${KADOMO_INSTALL_CMD:-./install.sh}" KADOMO_UNINSTALL
 KADOMO_VERSION="$(cat "$ROOT/VERSION")"
 ASSUME_YES=0
 ONLY_CATS=""
+# The logo in OmniWM's menu bar: omarchy or apple; empty until chosen.
+LOGO_CHOICE=""
 
 source "$ROOT/lib/tui.sh"
 source "$ROOT/apps/apps.sh"
@@ -157,20 +161,26 @@ CAT_BLURB=(
     "Firefox"
 )
 
-case "${1:-}" in
-    "") ;;
-    --yes|-y) ASSUME_YES=1 ;;
-    --only)
-        [[ -n "${2:-}" ]] || die "--only needs a list: core, developer, ai, gaming, other"
-        ONLY_CATS="$2"; ASSUME_YES=1
-        for key in ${ONLY_CATS//,/ }; do
-            [[ " ${CAT_KEYS[*]} " == *" $key "* ]] || die "unknown category for --only: $key (known: ${CAT_KEYS[*]})"
-        done
-        ;;
-    --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
-    -h|--help) sed -n '2,35p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
-    *) die "unknown option: $1 (try --help)" ;;
-esac
+while (($#)); do
+    case "$1" in
+        --yes|-y) ASSUME_YES=1 ;;
+        --only)
+            [[ -n "${2:-}" ]] || die "--only needs a list: core, developer, ai, gaming, other"
+            ONLY_CATS="$2"; ASSUME_YES=1; shift
+            for key in ${ONLY_CATS//,/ }; do
+                [[ " ${CAT_KEYS[*]} " == *" $key "* ]] || die "unknown category for --only: $key (known: ${CAT_KEYS[*]})"
+            done
+            ;;
+        --logo)
+            case "${2:-}" in omarchy|apple) LOGO_CHOICE="$2" ;; *) die "--logo needs omarchy or apple" ;; esac
+            shift
+            ;;
+        --version|-v) echo "$KADOMO_VERSION"; exit 0 ;;
+        -h|--help) sed -n '2,37p' "$ROOT/install.sh" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) die "unknown option: $1 (try --help)" ;;
+    esac
+    shift
+done
 
 [[ "$(uname -s)" == Darwin ]] || die "Kadomo is for macOS."
 ((EUID != 0)) || die "run this as your own user, not with sudo."
@@ -185,7 +195,7 @@ ITEMS=(
     "Kadomo Core|kadomo-menu|font|JetBrainsMono Nerd Font|for the launcher and VS Code's terminal; 7 MB from GitHub"
     "Kadomo Core|kadomo-menu|start|Start Kadomo Menu|opens it now; it starts at login by default"
     "Kadomo Core|omniwm|omniwm|OmniWM|window manager: scrolling and tiling, its border in the theme's colors, its own menu bar"
-    "Kadomo Core|omniwm|logo|Omarchy logo|in OmniWM's menu bar, in place of the Apple logo; leave it off to keep Apple's"
+    "Kadomo Core|omniwm|logo|Omarchy logo|in OmniWM's menu bar, in place of the Apple logo; you choose which after picking"
     "Kadomo Core|omniwm|volume|Volume icon only|OmniWM's menu bar shows the speaker icon without the percentage"
     "Kadomo Core|apps|ghostty|Ghostty|terminal app, from Homebrew"
     "Kadomo Core|dotfiles|ghostty|Ghostty config|~/.config/ghostty; a different file there is backed up"
@@ -440,6 +450,66 @@ advanced() {
     done
 }
 
+# --- the menu bar logo -------------------------------------------------------------
+
+# The Omarchy logo's row in ITEMS.
+LOGO_ITEM=-1
+for ((i=0; i<N; i++)); do [[ "${ITEM_COMPONENT[i]}:${ITEM_KEY[i]}" != omniwm:logo ]] || LOGO_ITEM=$i; done
+
+# Whether Kadomo can change the logo on this Mac: OmniWM runs here, and no
+# apple-menu widget of yours is in its shell folder.
+logo_choosable() { omniwm_supported && { [[ ! -e "$OMNIWM_LOGO_WIDGET" ]] || omniwm_logo_ours; }; }
+# Whether to ask which logo: Kadomo Core is picked and the logo can change.
+logo_asked() { [[ "$(category_mark 0)" != ' ' ]] && logo_choosable; }
+# Whether the Apple logo was chosen while Kadomo's Omarchy logo is there, so it goes.
+logo_removal() { [[ "$LOGO_CHOICE" == apple ]] && logo_choosable && omniwm_logo_ours; }
+
+# Turns the Omarchy logo item on or off for the choice. One already up to date
+# stays off, as there is nothing to do, unless you turned it on under Advanced.
+apply_logo_choice() {
+    ((LOGO_ITEM >= 0)) || return 0
+    if [[ "$LOGO_CHOICE" == apple ]]; then ITEM_ON[LOGO_ITEM]=0
+    elif ((ITEM_PRESENT[LOGO_ITEM] == 0)); then ITEM_ON[LOGO_ITEM]=1; fi
+}
+
+draw_logo_choice() {
+    local cursor="$1" n mark labels=("Omarchy logo" "Apple logo") details=()
+    details[0]="the glyph Omarchy's bar shows; clicking it still opens the Apple menu"
+    if omniwm_logo_ours; then details[1]="macOS's own; the Omarchy logo Kadomo put there goes"
+    else details[1]="macOS's own, as OmniWM shows it"; fi
+    clear_screen; banner
+    printf "  Which logo should OmniWM's menu bar show?\n\n"
+    for ((n=0; n<2; n++)); do
+        mark=' '; ((n != cursor)) || mark='•'
+        if ((n == cursor)); then printf '%s > (%s) %-13s %s%s\n' "$CYAN" "$mark" "${labels[n]}" "${details[n]}" "$RESET"
+        else printf '   (%s) %-13s %s%s%s\n' "$mark" "${labels[n]}" "$DIM" "${details[n]}" "$RESET"; fi
+    done
+    printf '\n  %s↑/↓ move · Enter choose · Esc back%s\n' "$DIM" "$RESET"
+}
+
+# Asks which logo, starting on the current one. Returns 0 once chosen, 1 to go back.
+choose_logo() {
+    local cursor=1
+    if ((LOGO_ITEM >= 0 && ITEM_ON[LOGO_ITEM])); then cursor=0
+    elif [[ -n "$LOGO_CHOICE" ]]; then [[ "$LOGO_CHOICE" == apple ]] || cursor=0
+    elif omniwm_logo_ours; then cursor=0; fi
+    while :; do
+        draw_logo_choice "$cursor"
+        read_key
+        case "$KEY" in
+            up|down|left|right|$'\t') cursor=$((1-cursor)) ;;
+            enter|space)
+                if ((cursor == 0)); then LOGO_CHOICE=omarchy; else LOGO_CHOICE=apple; fi
+                apply_logo_choice; return 0
+                ;;
+            escape|q|Q) return 1 ;;
+        esac
+    done
+}
+
+# What will be done, the logo's removal counted too.
+pending_count() { local n; n="$(selected_count)"; ! logo_removal || n=$((n+1)); printf '%s' "$n"; }
+
 # --- the review --------------------------------------------------------------------
 
 item_on() { # <component> <key>
@@ -496,9 +566,18 @@ review() {
         ((${#names[@]} == 0)) || fields+=("${CATS[c]}${TAB}$(wrap_list "$width" "${names[@]}")")
         # What is here already in a category you picked, and so left off.
         if ((${#names[@]})); then
-            for ((i=0; i<N; i++)); do ((ITEM_CAT[i] != c || ITEM_ON[i] || ITEM_PRESENT[i] == 0)) || present+=("${ITEM_LABEL[i]}"); done
+            for ((i=0; i<N; i++)); do
+                ((ITEM_CAT[i] != c || ITEM_ON[i] || ITEM_PRESENT[i] == 0)) || { ((i == LOGO_ITEM)) && logo_removal; } || present+=("${ITEM_LABEL[i]}")
+            done
         fi
     done
+    if logo_removal; then
+        fields+=("Menu bar${TAB}the Apple logo again: the Omarchy logo goes")
+    elif logo_asked && [[ "$LOGO_CHOICE" == apple ]]; then
+        fields+=("Menu bar${TAB}the Apple logo, as it is")
+    elif logo_asked && [[ "$LOGO_CHOICE" == omarchy ]]; then
+        fields+=("Menu bar${TAB}the Omarchy logo, in place of the Apple logo")
+    fi
     ((${#present[@]} == 0)) || fields+=("Already here${TAB}$(wrap_list "$width" "${present[@]}")"$'\n'"(left as they are)")
     if [[ -z "$BREW_PATH" && ${#brew_needed[@]} -gt 0 ]] && ! item_on homebrew homebrew; then
         fields+=("No Homebrew${TAB}$(wrap_list "$width" "${brew_needed[@]}")"$'\n'"need Homebrew and are skipped: turn on Kadomo Core › Homebrew")
@@ -545,7 +624,7 @@ run_component() { # <label> <step or step_open> <component> [args...]
 }
 
 install_selected() {
-    local keys later dev_args=()
+    local keys label later dev_args=()
     # First: everything after it installs with Homebrew. It asks for your password, so it runs in the open.
     if component_on homebrew; then
         if [[ -t 0 ]]; then run_component "Homebrew" step_open homebrew; else run_component "Homebrew" step homebrew; fi
@@ -578,8 +657,9 @@ install_selected() {
         run_component "$(labels_for neovim)" step neovim --only "$keys" ${later:+--later "$later"}
     fi
     ! component_on moonlight-mouse || run_component "Moonlight Mouse Optimization" step moonlight-mouse
-    keys="$(keys_for omniwm)"
-    [[ -z "$keys" ]] || run_component "$(labels_for omniwm)" step omniwm --only "$keys"
+    keys="$(keys_for omniwm)"; label="$(labels_for omniwm)"
+    if logo_removal; then keys="${keys:+$keys,}apple-logo"; label="${label:+$label, }Apple logo"; fi
+    [[ -z "$keys" ]] || run_component "$label" step omniwm --only "$keys"
     # After the configs and apps it wires.
     keys="$(keys_for kadomo-theme-manager)"
     [[ -z "$keys" ]] || run_component "Theme manager and themes" step kadomo-theme-manager --only "$keys"
@@ -630,19 +710,23 @@ if ((ASSUME_YES)); then
     for key in ${ONLY_CATS//,/ }; do
         for ((c=0; c<${#CATS[@]}; c++)); do [[ "${CAT_KEYS[c]}" != "$key" ]] || set_category "$c" 1; done
     done
+    [[ -n "$LOGO_CHOICE" ]] || LOGO_CHOICE=omarchy
+    [[ "$LOGO_CHOICE" != apple ]] || apply_logo_choice
     printf '\n  %sInstalling Kadomo %s:%s %s\n\n' "$BOLD" "$KADOMO_VERSION" "$RESET" "${ONLY_CATS//,/, }"
 else
     [[ -t 0 && -t 1 ]] || die "run this in a terminal, or pass --yes or --only."
     set_category 0 1
+    [[ -z "$LOGO_CHOICE" ]] || apply_logo_choice
     while :; do
         main_menu || { clear_screen; printf '\n  Nothing changed.\n\n'; exit 0; }
-        if (($(selected_count) == 0)); then continue; fi
+        if logo_asked; then choose_logo || continue; fi
+        if (($(pending_count) == 0)); then continue; fi
         review && break
     done
     clear_screen; logo
     printf '  Setting up Kadomo...\n\n'
 fi
-(($(selected_count))) || { printf '\n  Nothing selected. Nothing changed.\n\n'; exit 0; }
+(($(pending_count))) || { printf '\n  Nothing selected. Nothing changed.\n\n'; exit 0; }
 
 STEP_LOG="$(mktemp "${TMPDIR:-/tmp}/kadomo-install.XXXXXX")"
 trap stop_tail EXIT
